@@ -6,5 +6,5 @@ import { Error } from './error';
 export default [
     { path: 'access', component: Access },
     { path: 'error', component: Error },
-    { path: 'login', component: Login }
+    { path: 'auth', component: Login },
 ] as Routes;
