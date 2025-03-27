@@ -1,0 +1,15 @@
+server:
+  port: 7878
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/bbs
+    username: bonnie
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQLDialect
+
