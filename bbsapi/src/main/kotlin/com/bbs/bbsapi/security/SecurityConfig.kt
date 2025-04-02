@@ -31,9 +31,8 @@ class SecurityConfig(private val userDetailsService: CustomUserDetailsService, p
 
         config.allowedOrigins = listOf("http://localhost:4200") // Adjust to match your frontend URL
         config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        config.allowedHeaders = listOf("Authorization", "Content-Type")
-        config.allowCredentials = true // If you need cookies/authentication
-
+        config.addAllowedHeader("*")
+        config.allowCredentials = true
         source.registerCorsConfiguration("/**", config)
         return CorsFilter(source)
     }

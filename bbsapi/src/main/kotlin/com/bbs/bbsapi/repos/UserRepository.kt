@@ -20,3 +20,5 @@ interface PrivilegeRepository : JpaRepository<Privilege, Long> {
 interface UserRepository : JpaRepository<User, Long> {
     fun findByUsername(username: String): User?
 }
+
+

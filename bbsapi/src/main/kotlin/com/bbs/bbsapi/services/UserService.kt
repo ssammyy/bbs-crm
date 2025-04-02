@@ -19,7 +19,11 @@ import kotlin.math.log
 
 
 @Service
-class UserService(private val userRepository: UserRepository, private val passwordEncoder: PasswordEncoder, private val roleRepository: RoleRepository) {
+class UserService(
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder,
+    private val roleRepository: RoleRepository
+) {
     @Transactional
     fun registerUser(userDTO: UserRegeDTO): User {
 
@@ -34,7 +38,7 @@ class UserService(private val userRepository: UserRepository, private val passwo
             )
             return userRepository.save(user)
 
-        }catch (e: Exception) {
+        } catch (e: Exception) {
             throw Exception("Error registering user", e)
         }
 
@@ -44,9 +48,72 @@ class UserService(private val userRepository: UserRepository, private val passwo
         return userRepository.findByUsername(username)
     }
 
+
+    fun getAllUsers(): List<UserDTO> {
+        return userRepository.findAll().map { user ->
+            UserDTO(
+                id = user.id,
+                username = user.username,
+                email = user.email,
+                password = passwordEncoder.encode("password"),
+                phonenumber = user.phonenumber,
+                role = RoleDTO(
+                    id = user.role?.id,
+                    name = user.role?.name,
+                    privileges = user.role?.privileges?.map {
+                        PrivilegeDTO(
+                            it.name,
+                            it.id,
+                            it.createdOn,
+                            it.createdBy,
+                            it.updatedOn
+                        )
+                    } ?: emptyList(),
+                )
+
+            )
+        }
+    }
+
+    @Transactional
+    fun updateUser(userId: Long, updatedUserDTO: UserDTO): UserDTO {
+        val user = userRepository.findById(userId)
+            .orElseThrow { IllegalArgumentException("User not found with ID: $userId") }
+
+        user.username = updatedUserDTO.username
+        user.email = updatedUserDTO.email
+        user.phonenumber = updatedUserDTO.phonenumber
+        user.role = updatedUserDTO.role.id?.let {
+            roleRepository.findById(it)
+                .orElseThrow { IllegalArgumentException("Role not found with ID: ${updatedUserDTO.role.id}") }
+        }
+
+        val updatedUser = userRepository.save(user)
+        return UserDTO(
+            username = updatedUser.username,
+            email = updatedUser.email,
+            phonenumber = updatedUser.phonenumber,
+            password = passwordEncoder.encode("password"),
+            role = RoleDTO(
+                id = updatedUser.role?.id,
+                name = updatedUser.role?.name,
+                privileges = updatedUser.role?.privileges?.map {
+                    PrivilegeDTO(it.name, it.id, it.createdOn, it.createdBy, it.updatedOn)
+                } ?: emptyList()
+            )
+        )
+    }
+
+    @Transactional
+    fun deleteUser(userId: Long) {
+       userRepository.deleteById(userId)
+    }
+
+
     fun validatePassword(rawPassword: String, encodedPassword: String): Boolean {
         return passwordEncoder.matches(rawPassword, encodedPassword)
     }
+
     fun getUserDetails(username: String): UserDTO {
         val user = userRepository.findByUsername(username) ?: throw RuntimeException("User not found")
 
@@ -59,7 +126,15 @@ class UserService(private val userRepository: UserRepository, private val passwo
             role = RoleDTO(
                 id = user.role?.id,
                 name = user.role?.name,
-                privileges = user.role?.privileges?.map { PrivilegeDTO(it.name, it.id, it.createdOn, it.createdBy, it.updatedOn) }?:emptyList(),
+                privileges = user.role?.privileges?.map {
+                    PrivilegeDTO(
+                        it.name,
+                        it.id,
+                        it.createdOn,
+                        it.createdBy,
+                        it.updatedOn
+                    )
+                } ?: emptyList(),
             )
         )
     }

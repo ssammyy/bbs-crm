@@ -28,13 +28,14 @@ class DataInitializer(
             .toSet()
 
         val roles = mapOf(
-            "Super Admin" to privileges,
-            "Sales Director" to privileges.filter { it.name in listOf("VIEW_REPORTS", "MANAGE_PROJECTS") }.toSet(),
-            "Sales Rep" to privileges.filter { it.name in listOf("EDIT_PROFILE") }.toSet(),
-            "Technical Director" to privileges.filter { it.name in listOf("MANAGE_PROJECTS") }.toSet(),
-            "Architect" to privileges.filter { it.name in listOf("UPLOAD_DOCUMENTS") }.toSet(),
-            "Client" to emptySet<Privilege>()
+            "SUPER_ADMIN" to privileges,
+            "SALES_DIRECTOR" to privileges.filter { it.name in listOf("VIEW_REPORTS", "MANAGE_PROJECTS") }.toSet(),
+            "SALES_REP" to privileges.filter { it.name in listOf("EDIT_PROFILE") }.toSet(),
+            "TECHNICAL_DIRECTOR" to privileges.filter { it.name in listOf("MANAGE_PROJECTS") }.toSet(),
+            "ARCHITECT" to privileges.filter { it.name in listOf("UPLOAD_DOCUMENTS") }.toSet(),
+            "CLIENT" to emptySet<Privilege>()
         )
+
 
         roles.forEach { (roleName, rolePrivileges) ->
             roleRepository.findByName(roleName).orElseGet {

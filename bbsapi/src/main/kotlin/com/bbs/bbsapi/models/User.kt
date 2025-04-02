@@ -1,8 +1,7 @@
 package com.bbs.bbsapi.models
 
 import jakarta.persistence.*
-import lombok.Data
-import lombok.NoArgsConstructor
+
 
 @Entity
 @Table(name = "users")
@@ -26,7 +25,7 @@ data class User(
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
-    val role: Role?=null,
+    var role: Role?=null,
 
 ): BaseEntity()
 {

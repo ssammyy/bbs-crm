@@ -14,9 +14,9 @@ data class RoleDTO(
 data class PrivilegeDTO(
     val name: String,
     val id : Long? = null,
-    val createdOn : LocalDateTime,
+    val createdOn : LocalDateTime? = null,
     val createdBy : String? = null,
-    val updatedOn : LocalDateTime,
+    val updatedOn : LocalDateTime? = null,
     val updatedBy : String? = null,
 )
 
@@ -24,7 +24,7 @@ data class UserDTO(
     val id : Long? = null,
     val username: String,
     val email: String,
-    val password: String,
+    val password: String?=null,
     val phonenumber: String,
     val role: RoleDTO
 )
