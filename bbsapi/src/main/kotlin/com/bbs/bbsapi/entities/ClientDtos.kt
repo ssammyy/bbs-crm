@@ -6,6 +6,7 @@ import java.time.LocalDate
 
 
 data class ClientDTO(
+    val id:Long? = null,
     val firstName: String,
     val secondName: String,
     val surName: String,
@@ -15,8 +16,8 @@ data class ClientDTO(
     val dob: LocalDate,
     val preferredContact: PreferredContactMethod,
     val locationType: LocationType,
-    val county: String,
-    val country: String,
+    val county: String? =null,
+    val country: String? = null,
     val countryCode: String,
     val idNumber: Long
 

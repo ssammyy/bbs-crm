@@ -3,6 +3,7 @@ package com.bbs.bbsapi.repos
 import com.bbs.bbsapi.models.Privilege
 import com.bbs.bbsapi.models.Role
 import com.bbs.bbsapi.models.User
+import com.bbs.bbsapi.models.VerificationToken
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.*
@@ -19,6 +20,13 @@ interface PrivilegeRepository : JpaRepository<Privilege, Long> {
 @Repository
 interface UserRepository : JpaRepository<User, Long> {
     fun findByUsername(username: String): User?
+    fun findByEmail(email: String): User?
+}
+
+@Repository
+interface TokenRepository : JpaRepository<VerificationToken, Long> {
+    fun findByToken(token: String): VerificationToken?
+
 }
 
 

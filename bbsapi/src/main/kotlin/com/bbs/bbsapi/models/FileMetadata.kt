@@ -1,7 +1,11 @@
 package com.bbs.bbsapi.models
 
+import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.FileType
+import com.bbs.bbsapi.enums.LocationType
+import com.bbs.bbsapi.enums.PreferredContactMethod
 import jakarta.persistence.*
+import java.time.LocalDate
 
 @Entity
 @Table(name = "files")
@@ -12,15 +16,22 @@ data class FileMetadata(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val fileType: FileType,
+    var fileType: FileType,
 
     @Column(nullable = false)
-    val fileName: String,
+    var fileName: String,
 
     @Column(nullable = false)
+    var objectKey: String,
+
+    @Column(nullable = false, length = 2000)
     val fileUrl: String,
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "client_id", referencedColumnName = "id")
     val client: Client
-): BaseEntity()
+): BaseEntity() {
+    constructor() : this(
+        0, FileType.ID, "",  "", "", Client(),
+    )
+}

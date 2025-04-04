@@ -6,7 +6,9 @@ import com.bbs.bbsapi.entities.UserDTO
 import com.bbs.bbsapi.entities.UserRegeDTO
 import com.bbs.bbsapi.models.Role
 import com.bbs.bbsapi.models.User
+import com.bbs.bbsapi.models.VerificationToken
 import com.bbs.bbsapi.repos.RoleRepository
+import com.bbs.bbsapi.repos.TokenRepository
 import com.bbs.bbsapi.repos.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.BadCredentialsException
@@ -14,6 +16,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
+import java.util.*
 import kotlin.jvm.Throws
 import kotlin.math.log
 
@@ -22,7 +26,9 @@ import kotlin.math.log
 class UserService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val roleRepository: RoleRepository
+    private val roleRepository: RoleRepository,
+    private val tokenRepository: TokenRepository,
+    private val emailService: EmailService
 ) {
     @Transactional
     fun registerUser(userDTO: UserRegeDTO): User {
@@ -107,6 +113,23 @@ class UserService(
     @Transactional
     fun deleteUser(userId: Long) {
        userRepository.deleteById(userId)
+    }
+
+    fun generateRegisterToken(savedUser: User) {
+        val token = UUID.randomUUID().toString()
+        val expiry = LocalDateTime.now().plusHours(24)
+
+        val verificationToken = VerificationToken(
+            token = token,
+            user = savedUser,
+            expiryDate = expiry
+        )
+
+        tokenRepository.save(verificationToken)
+
+// Send email
+        emailService.sendConfirmationEmail(savedUser.email, token)
+
     }
 
 

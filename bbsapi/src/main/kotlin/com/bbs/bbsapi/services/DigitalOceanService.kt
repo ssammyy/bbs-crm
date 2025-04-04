@@ -1,7 +1,14 @@
 package com.bbs.bbsapi.services
 
+import com.bbs.bbsapi.entities.ClientDTO
+import com.bbs.bbsapi.enums.FileType
+import com.bbs.bbsapi.models.Client
+import com.bbs.bbsapi.models.FileMetadata
+import com.bbs.bbsapi.repos.FileRepository
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
@@ -12,8 +19,6 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.InputStream
-import java.net.URL
 import java.time.Duration
 
 @Service
@@ -21,7 +26,9 @@ class DigitalOceanService(
     @Value("\${digitalocean.spaces.endpoint}") private val endpoint: String,
     @Value("\${digitalocean.spaces.accessKey}") private val accessKey: String,
     @Value("\${digitalocean.spaces.secretKey}") private val secretKey: String,
-    @Value("\${digitalocean.spaces.bucketName}") private val bucketName: String
+    @Value("\${digitalocean.spaces.bucketName}") private val bucketName: String,
+    private val fileMetadataRepository: FileRepository,
+    private val fileRepository: FileRepository
 ) {
     private val s3Client: S3Client = S3Client.builder()
         .region(Region.US_EAST_1) // DigitalOcean Spaces uses any region, this is just a placeholder
@@ -39,10 +46,30 @@ class DigitalOceanService(
             .contentType(file.contentType)
             .build()
 
-        s3Client.putObject(putObjectRequest, software.amazon.awssdk.core.sync.RequestBody.fromInputStream(file.inputStream, file.inputStream.available().toLong()))
-
-        return "$endpoint/$bucketName/$file.originalFilename"
+        s3Client.putObject(
+            putObjectRequest,
+            software.amazon.awssdk.core.sync.RequestBody.fromInputStream(
+                file.inputStream,
+                file.inputStream.available().toLong()
+            )
+        )
+        return "success"
     }
+
+    fun getFileUrl(fileName: String): String {
+        val getObjectRequest = GetObjectRequest.builder()
+            .bucket(bucketName)
+            .key(fileName)
+            .build()
+
+        val presignRequest = GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.ofMinutes(30))
+            .getObjectRequest(getObjectRequest)
+            .build()
+
+        return presigner.presignGetObject(presignRequest).url().toString()
+    }
+
     fun getFileContent(fileName: String): ByteArray {
         val getObjectRequest = GetObjectRequest.builder()
             .bucket(bucketName)
@@ -75,19 +102,7 @@ class DigitalOceanService(
     /**
      * Get a **pre-signed** URL for secure downloads
      */
-    fun getFileUrl(fileName: String): String {
-        val getObjectRequest = GetObjectRequest.builder()
-            .bucket(bucketName)
-            .key(fileName)
-            .build()
 
-        val presignRequest = GetObjectPresignRequest.builder()
-            .signatureDuration(Duration.ofMinutes(30)) // URL expires in 30 minutes
-            .getObjectRequest(getObjectRequest) // ✅ Correct method
-            .build()
-
-        return presigner.presignGetObject(presignRequest).url().toString()
-    }
 
     /**
      * Delete a file from Spaces
@@ -99,5 +114,29 @@ class DigitalOceanService(
             .build()
 
         s3Client.deleteObject(deleteRequest)
+    }
+
+    fun getClientFiles(client: Client): ResponseEntity<List<Map<String, Any?>>> {
+        val clientFiles = fileRepository.findByClient(client)
+        val filesWithUrls = clientFiles.map { fileMetadata ->
+            val presignedUrl = getFileUrl(fileMetadata.objectKey)
+            mapOf(
+                "id" to fileMetadata.id,
+                "fileType" to fileMetadata.fileType,
+                "fileName" to fileMetadata.fileName,
+                "fileUrl" to presignedUrl
+            )
+        }
+        return ResponseEntity.ok(filesWithUrls)
+    }
+
+    @Transactional
+    fun updateMetadata(client: Client, file: MultipartFile, fileType: FileType): ResponseEntity<FileMetadata> {
+        val fileMetadata = fileMetadataRepository.findByClientAndFileType(client, fileType)
+        fileMetadata?.fileType = fileType
+        fileMetadata?.objectKey = file.originalFilename.toString()
+        fileMetadata?.fileName = file.originalFilename.toString()
+        fileMetadata?.let { fileMetadataRepository.save(it) }
+        return ResponseEntity.ok(fileMetadata);
     }
 }

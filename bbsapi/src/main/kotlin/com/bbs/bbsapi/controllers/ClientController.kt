@@ -3,6 +3,7 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.entities.ClientDTO
+import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.repos.ClientRepo
 import com.bbs.bbsapi.services.ClientService
 import org.springframework.http.ResponseEntity
@@ -14,22 +15,8 @@ class ClientController(private val clientService: ClientService, private val cli
 
     @PostMapping("/register")
     fun createClient(@RequestBody clientDTO: ClientDTO): ResponseEntity<Client> {
-        val client = Client(
-            firstName = clientDTO.firstName,
-            secondName = clientDTO.secondName,
-            lastName = clientDTO.surName,
-            email = clientDTO.email,
-            phoneNumber = clientDTO.phoneNumber,
-            dob = clientDTO.dob,
-            gender = clientDTO.gender,
-            preferredContact = clientDTO.preferredContact,
-            location = clientDTO.locationType,
-            country = clientDTO.country,
-            county = clientDTO.county,
-            countryCode = clientDTO.countryCode,
-            idNumber = clientDTO.idNumber
-        )
-        return ResponseEntity.ok(clientRepo.save(client))
+
+        return ResponseEntity.ok(clientService.registerClient(clientDTO))
     }
 
 
@@ -43,5 +30,10 @@ class ClientController(private val clientService: ClientService, private val cli
     fun getAllClients(): ResponseEntity<List<Client>> {
         val clients = clientService.getAllClients()
         return ResponseEntity.ok(clients)
+    }
+    @PutMapping("/update")
+    fun updateClient(@RequestBody clientDTO: ClientDTO): ResponseEntity<Client> {
+        val updatedClient = clientService.updateClient(clientDTO)
+        return ResponseEntity.ok(updatedClient)
     }
 }

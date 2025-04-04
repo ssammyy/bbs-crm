@@ -19,7 +19,7 @@ class UploadFile(
     private val clientRepository: ClientRepo,
     private val digitalOceanService: DigitalOceanService,
     private val fileRepository: FileRepository
-){
+) {
     @PostMapping("/upload")
     fun uploadFile(
         @RequestParam("clientId") clientId: Long,
@@ -37,13 +37,16 @@ class UploadFile(
         }
 
         // Upload to DigitalOcean Spaces
-        val fileUrl = digitalOceanService.uploadFile(file)
+        digitalOceanService.uploadFile(file)
+//        val fileUrl = file.originalFilename?.let { digitalOceanService.getFileUrl(it) }
+
 
         // Save file metadata
         val fileMetadata = FileMetadata(
             fileType = fileTypeEnum,
-            fileName = file.originalFilename ?: "unknown",
-            fileUrl = fileUrl,
+            fileName = file.originalFilename ?: "",
+            fileUrl = "",
+            objectKey = file.originalFilename ?: "",
             client = client
         )
 
@@ -91,5 +94,29 @@ class UploadFile(
         digitalOceanService.deleteFile(fileName)
         return ResponseEntity.ok("File deleted successfully")
     }
+
+    @GetMapping("/{clientId}")
+    fun getFiles(@PathVariable clientId: Long): ResponseEntity<List<Map<String, Any?>>> {
+        val client = clientRepository.findById(clientId)
+            .orElseThrow { RuntimeException("Client with ID $clientId not found") }
+
+        return digitalOceanService.getClientFiles(client)
+    }
+
+    @PostMapping("/{clientId}/{fileType}/update")
+    fun updateFile(
+        @PathVariable clientId: Long,
+        @PathVariable fileType: FileType,
+        @RequestParam("file") file: MultipartFile
+    ): ResponseEntity<FileMetadata> {
+        val client = clientRepository.findById(clientId)
+            .orElseThrow { RuntimeException("Client with ID $clientId not found") }
+        if(digitalOceanService.uploadFile(file)=="success"){
+            return digitalOceanService.updateMetadata(client, file, fileType)
+        }
+        else throw java.lang.IllegalArgumentException("file upload failed")
+
+    }
+
 
 }

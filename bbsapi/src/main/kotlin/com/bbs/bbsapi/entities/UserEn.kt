@@ -38,3 +38,7 @@ data class UserRegeDTO(
     val roleId: Long
 
 )
+
+data class SetPasswordRequest(
+    val newPassword: String
+)
