@@ -4,6 +4,7 @@ package com.bbs.bbsapi.controllers
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.entities.ClientDTO
 import com.bbs.bbsapi.enums.ClientStage
+import com.bbs.bbsapi.models.Activity
 import com.bbs.bbsapi.repos.ClientRepo
 import com.bbs.bbsapi.services.ClientService
 import org.springframework.http.ResponseEntity
@@ -36,4 +37,15 @@ class ClientController(private val clientService: ClientService, private val cli
         val updatedClient = clientService.updateClient(clientDTO)
         return ResponseEntity.ok(updatedClient)
     }
+
+    @GetMapping("/{clientId}/activities")
+    fun getClientActivities(@PathVariable clientId: Long) : ResponseEntity<List<Activity>> {
+        return ResponseEntity.ok(clientService.getClientActivities(clientId))
+    }
+    @GetMapping("/{clientEmail}/details")
+    fun getClientActivities(@PathVariable clientEmail: String) : ResponseEntity<Client> {
+        return ResponseEntity.ok(clientService.getClientByEmail(clientEmail))
+    }
+
+
 }

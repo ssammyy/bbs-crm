@@ -4,9 +4,6 @@ import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.LocationType
 import com.bbs.bbsapi.enums.PreferredContactMethod
 import jakarta.persistence.*
-import lombok.AllArgsConstructor
-import lombok.Data
-import lombok.NoArgsConstructor
 import java.time.LocalDate
 
 @Entity
@@ -43,9 +40,17 @@ data class Client(
 
     @Enumerated(EnumType.STRING)
     var clientStage: ClientStage,
+    @Enumerated(EnumType.STRING)
+    var nextStage: ClientStage,
+
+    var clientSource : String,
+    var projectName : String,
+    var projectActive: Boolean,
+
 ): BaseEntity(){
     constructor() : this(
         0, "", "", "", null, "", LocalDate.now(), "", PreferredContactMethod.EMAIL, LocationType.KENYA, "", null, "", 0, ClientStage.REGISTRATION,
+        ClientStage.PROFORMA_INVOICE_GENERATION,"", "", false
     )
     fun ensureCountryConsistency() {
         if (location == LocationType.KENYA) {

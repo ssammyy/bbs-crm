@@ -1,0 +1,30 @@
+package com.bbs.bbsapi.entities
+
+import com.bbs.bbsapi.enums.InvoiceType
+import java.time.LocalDate
+
+data class PdfInvoiceItemDTO(
+    val description: String,
+    val quantity: Int,
+    val unitPrice: Double,
+    val totalPrice: Double,
+)
+
+data class PdfInvoiceDTO(
+    val invoiceNumber: String,
+    val dateIssued: LocalDate,
+    val clientId: Long,
+    val clientName: String,
+    val clientPhone: String,
+    val projectName: String,
+    val items: List<PdfInvoiceItemDTO>,
+    val total: Double,
+    val invoiceType: InvoiceType
+)
+
+data class InvoiceResponse(
+    val invoiceId: Long,
+    val invoiceNumber: String,
+    val pdfContent: ByteArray
+)
+

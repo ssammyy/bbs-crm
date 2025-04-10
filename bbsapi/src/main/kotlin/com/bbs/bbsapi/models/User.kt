@@ -23,6 +23,7 @@ data class User(
     var phonenumber: String,
 
 
+
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     var role: Role?=null,

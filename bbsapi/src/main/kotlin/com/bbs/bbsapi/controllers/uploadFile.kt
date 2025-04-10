@@ -1,9 +1,11 @@
 package com.bbs.bbsapi.controllers
 
+import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.FileType
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.repos.ClientRepo
 import com.bbs.bbsapi.repos.FileRepository
+import com.bbs.bbsapi.services.ClientService
 import com.bbs.bbsapi.services.DigitalOceanService
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -18,7 +20,8 @@ import java.util.*
 class UploadFile(
     private val clientRepository: ClientRepo,
     private val digitalOceanService: DigitalOceanService,
-    private val fileRepository: FileRepository
+    private val fileRepository: FileRepository,
+    private val clientService: ClientService
 ) {
     @PostMapping("/upload")
     fun uploadFile(
@@ -36,12 +39,12 @@ class UploadFile(
             return ResponseEntity.badRequest().body("Invalid file type")
         }
 
+
+
         // Upload to DigitalOcean Spaces
         digitalOceanService.uploadFile(file)
 //        val fileUrl = file.originalFilename?.let { digitalOceanService.getFileUrl(it) }
-
-
-        // Save file metadata
+// Save file metadata
         val fileMetadata = FileMetadata(
             fileType = fileTypeEnum,
             fileName = file.originalFilename ?: "",
@@ -51,6 +54,9 @@ class UploadFile(
         )
 
         fileRepository.save(fileMetadata)
+        if (fileTypeEnum ==FileType.REQUIREMENTS){
+            clientService.changeClientStatus(ClientStage.PROFORMA_INVOICE_GENERATION, client, ClientStage.INVOICE_PENDING_DIRECTOR_APPROVAL, "Requirement documents uploaded")
+        }
 
         return ResponseEntity.ok(mapOf("message" to "File uploaded successfully"))
     }

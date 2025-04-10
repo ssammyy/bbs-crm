@@ -10,6 +10,9 @@ import com.bbs.bbsapi.models.VerificationToken
 import com.bbs.bbsapi.repos.RoleRepository
 import com.bbs.bbsapi.repos.TokenRepository
 import com.bbs.bbsapi.repos.UserRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -128,7 +131,9 @@ class UserService(
         tokenRepository.save(verificationToken)
 
 // Send email
-        emailService.sendConfirmationEmail(savedUser.email, token)
+        CoroutineScope(Dispatchers.IO).launch {
+            emailService.sendConfirmationEmail(savedUser.email, token)
+        }
 
     }
 
