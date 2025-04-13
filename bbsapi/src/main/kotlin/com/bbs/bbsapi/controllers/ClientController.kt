@@ -3,6 +3,7 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.entities.ClientDTO
+import com.bbs.bbsapi.entities.UpdateStageRequest
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.models.Activity
 import com.bbs.bbsapi.repos.ClientRepo
@@ -45,6 +46,20 @@ class ClientController(private val clientService: ClientService, private val cli
     @GetMapping("/{clientEmail}/details")
     fun getClientActivities(@PathVariable clientEmail: String) : ResponseEntity<Client> {
         return ResponseEntity.ok(clientService.getClientByEmail(clientEmail))
+    }
+    @PostMapping("/{id}/update-stage")
+    fun updateClientStage(
+        @PathVariable id: Long,
+        @RequestBody request: UpdateStageRequest
+    ): ResponseEntity<Client> {
+        val client = clientService.getClientById(id)
+        clientService.changeClientStatus(
+            ClientStage.valueOf(request.currentStage),
+            client,
+            ClientStage.valueOf(request.newStage),
+            request.message
+        )
+        return ResponseEntity.ok(client)
     }
 
 

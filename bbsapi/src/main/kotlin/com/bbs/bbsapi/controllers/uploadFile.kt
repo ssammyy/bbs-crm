@@ -2,6 +2,7 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.FileType
+import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.repos.ClientRepo
 import com.bbs.bbsapi.repos.FileRepository
@@ -55,7 +56,7 @@ class UploadFile(
 
         fileRepository.save(fileMetadata)
         if (fileTypeEnum ==FileType.REQUIREMENTS){
-            clientService.changeClientStatus(ClientStage.PROFORMA_INVOICE_GENERATION, client, ClientStage.INVOICE_PENDING_DIRECTOR_APPROVAL, "Requirement documents uploaded")
+            clientService.changeClientStatus(ClientStage.PROFORMA_INVOICE_GENERATION, client, ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL, "Requirement documents uploaded")
         }
 
         return ResponseEntity.ok(mapOf("message" to "File uploaded successfully"))

@@ -28,3 +28,16 @@ data class InvoiceResponse(
     val pdfContent: ByteArray
 )
 
+data class AcceptInvoiceRequest(
+    val stage: String,
+    val invoiceType: InvoiceType?=null,
+)
+
+data class RejectInvoiceRequest(
+    val stage: String,
+    val remarks: String
+)
+
+
+
+

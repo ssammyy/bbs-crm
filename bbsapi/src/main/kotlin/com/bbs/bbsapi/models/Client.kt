@@ -49,7 +49,7 @@ data class Client(
 
 ): BaseEntity(){
     constructor() : this(
-        0, "", "", "", null, "", LocalDate.now(), "", PreferredContactMethod.EMAIL, LocationType.KENYA, "", null, "", 0, ClientStage.REGISTRATION,
+        0, "", "", "", null, "", LocalDate.now(), "", PreferredContactMethod.EMAIL, LocationType.KENYA, "", null, "", 0, ClientStage.REQUIREMENTS_GATHERING,
         ClientStage.PROFORMA_INVOICE_GENERATION,"", "", false
     )
     fun ensureCountryConsistency() {

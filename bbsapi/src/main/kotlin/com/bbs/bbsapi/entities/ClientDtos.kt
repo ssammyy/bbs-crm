@@ -33,3 +33,9 @@ data class LocationDTO(
     val county: String?,
     val country: String
 )
+
+data class UpdateStageRequest(
+    val currentStage: String,
+    val newStage: String,
+    val message: String
+)

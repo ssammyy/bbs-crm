@@ -3,7 +3,7 @@ package com.bbs.bbsapi.enums
 enum class ClientStage {
     REQUIREMENTS_GATHERING,
     PROFORMA_INVOICE_GENERATION,
-    INVOICE_PENDING_DIRECTOR_APPROVAL,
+    PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL,
     GENERATE_SITE_VISIT_INVOICE,
     PENDING_CLIENT_SITE_VISIT_PAYMENT,//payment happens off the system, the SYSTEM_ADMIN just presses a button to notify the system that the client has paid
     PENDING_SITE_VISIT, //once site visit is done, a button is clicked with attachments and remarks as evidence (optional)

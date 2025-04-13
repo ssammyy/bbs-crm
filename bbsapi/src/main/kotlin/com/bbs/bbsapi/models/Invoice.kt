@@ -46,6 +46,11 @@ data class Invoice(
     @Enumerated(EnumType.STRING)
     val invoiceType: InvoiceType = InvoiceType.PROFORMA,
 
+    @Column(nullable = true)
+    var rejectionRemarks: String = "",
+    @Column(nullable = false)
+    var cleared: Boolean = false,
+
 
 
     ) {
