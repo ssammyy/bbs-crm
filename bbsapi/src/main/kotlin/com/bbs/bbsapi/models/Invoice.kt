@@ -4,10 +4,12 @@ import com.bbs.bbsapi.enums.InvoiceType
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDate
+
 @Entity
 @Table(name = "invoices")
 data class Invoice(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
     @Column(nullable = false)
@@ -41,18 +43,27 @@ data class Invoice(
     var directorApproved: Boolean = false,
 
     @Column(nullable = false)
-    val invoiceReconciled: Boolean = false,
+    var invoiceReconciled: Boolean = false,
 
     @Enumerated(EnumType.STRING)
     val invoiceType: InvoiceType = InvoiceType.PROFORMA,
 
     @Column(nullable = true)
     var rejectionRemarks: String = "",
+
     @Column(nullable = false)
     var cleared: Boolean = false,
 
+    @Column(nullable = false)
+    var pendingBalance : Boolean = false,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "preliminary_id", nullable = true)
+    var preliminary: Preliminary? = null,
 
-    ) {
-    // No explicit constructor or init block - rely on defaults and service validation
-}
+    @OneToMany(mappedBy = "invoice", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    val receipts: MutableList<Receipt> = mutableListOf(),
+
+    @Column(nullable = false)
+    var balance: Double = total
+)

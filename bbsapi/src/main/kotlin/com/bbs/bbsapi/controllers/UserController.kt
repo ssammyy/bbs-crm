@@ -1,6 +1,7 @@
 package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.entities.UserDTO
+import com.bbs.bbsapi.models.Role
 import com.bbs.bbsapi.models.User
 import com.bbs.bbsapi.security.CustomUserDetails
 import com.bbs.bbsapi.services.UserService
@@ -37,6 +38,14 @@ class UserController(private val userService: UserService) {
     fun deleteUser(@PathVariable userId: Long): ResponseEntity<Void> {
         userService.deleteUser(userId)
         return ResponseEntity.noContent().build()
+    }
+
+    @GetMapping("/agents")
+    fun getAgents(): ResponseEntity<List<User>> {
+        val agents = userService.getAllUsers()
+            .filter { it.role.name == "AGENT" }
+            .map { User(it.id, it.username, "", it.email, it.phonenumber) }
+        return ResponseEntity.ok(agents)
     }
 }
 

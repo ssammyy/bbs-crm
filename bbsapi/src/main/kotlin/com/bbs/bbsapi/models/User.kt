@@ -2,7 +2,6 @@ package com.bbs.bbsapi.models
 
 import jakarta.persistence.*
 
-
 @Entity
 @Table(name = "users")
 data class User(
@@ -22,13 +21,48 @@ data class User(
     @Column(nullable = false)
     var phonenumber: String,
 
+    @Column
+    var paymentMethod: String? = null,
 
+    @Column
+    var bankName: String? = null,
+
+    @Column
+    var bankAccountNumber: String? = null,
+
+    @Column
+    var bankBranch: String? = null,
+
+    @Column
+    var bankAccountHolderName: String? = null,
+
+    @Column
+    var nextOfKinIdNumber: String? = null,
+
+    @Column
+    var nextOfKinName: String? = null,
+
+    @Column
+    var nextOfKinPhoneNumber: String? = null,
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
-    var role: Role?=null,
-
-): BaseEntity()
-{
-    constructor() : this(null, "","", "", "" , Role())
+    var role: Role? = null,
+) : BaseEntity() {
+    constructor() : this(
+        id = null,
+        username = "",
+        password = "",
+        email = "",
+        phonenumber = "",
+        paymentMethod = null,
+        bankName = null,
+        bankAccountNumber = null,
+        bankBranch = null,
+        bankAccountHolderName = null,
+        nextOfKinIdNumber = null,
+        nextOfKinName = null,
+        nextOfKinPhoneNumber = null,
+        role = Role()
+    )
 }

@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ActivityRepository : JpaRepository<Activity, Long> {
     fun findByClientIdOrderByTimestampDesc(clientId: Long): List<Activity>
+    fun findTop10ByOrderByTimestampDesc(): List<Activity>
 }

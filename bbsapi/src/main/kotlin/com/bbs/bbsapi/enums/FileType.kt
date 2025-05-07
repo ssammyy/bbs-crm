@@ -3,10 +3,17 @@ package com.bbs.bbsapi.enums
 enum class FileType {
     ID,
     TITLE_DEED,
-    TAX_COMPLIANCE_CERT,
+    KRA_PIN,
     REQUIREMENTS,
     SITE_VISIT_REPORT,
     ARCHITECTURAL_SKETCHES,
-    WORKING_DRAWINGS
+    WORKING_DRAWINGS,
+    LAND_RATES,
+    DEED_PLAN,
+    SURVEY_MAP,
+    SIGNED_AGREEMENT,
+    PRELIMINARY,
+
+
 
 }

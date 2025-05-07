@@ -1,9 +1,9 @@
 package com.bbs.bbsapi.services
 
-import com.bbs.bbsapi.entities.ClientDTO
 import com.bbs.bbsapi.enums.FileType
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
+import com.bbs.bbsapi.models.Preliminary
 import com.bbs.bbsapi.repos.FileRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
@@ -18,7 +18,6 @@ import software.amazon.awssdk.services.s3.model.*
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.time.Duration
 
 @Service
@@ -119,7 +118,20 @@ class DigitalOceanService(
     fun getClientFiles(client: Client): ResponseEntity<List<Map<String, Any?>>> {
         val clientFiles = fileRepository.findByClient(client)
         val filesWithUrls = clientFiles.map { fileMetadata ->
-            val presignedUrl = getFileUrl(fileMetadata.objectKey)
+            val presignedUrl = getFileUrl(fileMetadata.objectKey.toString())
+            mapOf(
+                "id" to fileMetadata.id,
+                "fileType" to fileMetadata.fileType,
+                "fileName" to fileMetadata.fileName,
+                "fileUrl" to presignedUrl
+            )
+        }
+        return ResponseEntity.ok(filesWithUrls)
+    }
+    fun getPreliminaryFiles(client: Client, preliminary: Preliminary): ResponseEntity<List<Map<String, Any?>>> {
+        val clientFiles = fileRepository.findByClientAndPreliminary(client, preliminary)
+        val filesWithUrls = clientFiles.map { fileMetadata ->
+            val presignedUrl = getFileUrl(fileMetadata.objectKey.toString())
             mapOf(
                 "id" to fileMetadata.id,
                 "fileType" to fileMetadata.fileType,
@@ -130,6 +142,7 @@ class DigitalOceanService(
         return ResponseEntity.ok(filesWithUrls)
     }
 
+
     @Transactional
     fun updateMetadata(client: Client, file: MultipartFile, fileType: FileType): ResponseEntity<FileMetadata> {
         val fileMetadata = fileMetadataRepository.findByClientAndFileType(client, fileType)
@@ -137,6 +150,6 @@ class DigitalOceanService(
         fileMetadata?.objectKey = file.originalFilename.toString()
         fileMetadata?.fileName = file.originalFilename.toString()
         fileMetadata?.let { fileMetadataRepository.save(it) }
-        return ResponseEntity.ok(fileMetadata);
+        return ResponseEntity.ok(fileMetadata)
     }
 }

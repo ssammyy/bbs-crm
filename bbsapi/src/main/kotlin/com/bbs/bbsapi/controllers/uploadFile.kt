@@ -2,12 +2,15 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.FileType
-import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
+import com.bbs.bbsapi.models.Preliminary
 import com.bbs.bbsapi.repos.ClientRepo
 import com.bbs.bbsapi.repos.FileRepository
+import com.bbs.bbsapi.repos.PreliminaryRepository
+import com.bbs.bbsapi.repos.UserRepository
 import com.bbs.bbsapi.services.ClientService
 import com.bbs.bbsapi.services.DigitalOceanService
+import org.apache.coyote.BadRequestException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -22,42 +25,74 @@ class UploadFile(
     private val clientRepository: ClientRepo,
     private val digitalOceanService: DigitalOceanService,
     private val fileRepository: FileRepository,
-    private val clientService: ClientService
+    private val clientService: ClientService,
+    private val userRepository: UserRepository,
+    private val clientRepo: ClientRepo,
+    private val preliminaryRepository: PreliminaryRepository
 ) {
     @PostMapping("/upload")
     fun uploadFile(
-        @RequestParam("clientId") clientId: Long,
+        @RequestParam(required = false) clientId: Long?,
+        @RequestParam(required = false) userId: Long?,
+        @RequestParam(required = false) preliminaryId: Long?,
         @RequestParam("fileType") fileType: String,
         @RequestParam("file") file: MultipartFile
     ): ResponseEntity<*> {
-        val client = clientRepository.findByIdNumber(clientId) ?: return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body("Client with ID $clientId not found")
-        // Convert string to enum safely
-        val fileTypeEnum = try {
-            FileType.valueOf(fileType.uppercase())
-        } catch (e: IllegalArgumentException) {
-            return ResponseEntity.badRequest().body("Invalid file type")
+        var preliminary: Preliminary? = null
+        if (clientId != null) {
+            val client = clientRepository.findById(clientId).orElseThrow {
+                throw BadRequestException("Client not found")
+            }
+            val fileTypeEnum = try {
+                FileType.valueOf(fileType.uppercase())
+            } catch (e: IllegalArgumentException) {
+                return ResponseEntity.badRequest().body("Invalid file type")
+            }
+            if(preliminaryId != null) {
+                preliminary = preliminaryRepository.findById(preliminaryId).orElseThrow { IllegalArgumentException("Preliminary not found") }
+            }
+
+            val fileMetadata = FileMetadata(
+                fileType = fileTypeEnum,
+                fileName = file.originalFilename ?: "",
+                preliminary = preliminary ,
+                fileUrl = "",
+                objectKey = file.originalFilename ?: "",
+                client = client,
+            )
+            fileRepository.save(fileMetadata)
+            if (fileTypeEnum ==FileType.REQUIREMENTS){
+                clientService.changeClientStatus(ClientStage.PROFORMA_INVOICE_GENERATION, client, ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL, "Requirement documents uploaded")
+            }
+        }
+        if (userId != null) {
+            val user = userRepository.findById(userId).orElseThrow {
+                throw BadRequestException("User not found")
+            }
+            val fileTypeEnum = try {
+                FileType.valueOf(fileType.uppercase())
+            } catch (e: IllegalArgumentException) {
+                return ResponseEntity.badRequest().body("Invalid file type")
+            }
+
+            val fileMetadata = FileMetadata(
+                fileType = fileTypeEnum,
+                fileName = file.originalFilename ?: "",
+                fileUrl = "",
+                objectKey = file.originalFilename ?: "",
+                user = user,
+            )
+            fileRepository.save(fileMetadata)
+
         }
 
 
-
-        // Upload to DigitalOcean Spaces
         digitalOceanService.uploadFile(file)
 //        val fileUrl = file.originalFilename?.let { digitalOceanService.getFileUrl(it) }
 // Save file metadata
-        val fileMetadata = FileMetadata(
-            fileType = fileTypeEnum,
-            fileName = file.originalFilename ?: "",
-            fileUrl = "",
-            objectKey = file.originalFilename ?: "",
-            client = client
-        )
 
-        fileRepository.save(fileMetadata)
-        if (fileTypeEnum ==FileType.REQUIREMENTS){
-            clientService.changeClientStatus(ClientStage.PROFORMA_INVOICE_GENERATION, client, ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL, "Requirement documents uploaded")
-        }
+
+
 
         return ResponseEntity.ok(mapOf("message" to "File uploaded successfully"))
     }

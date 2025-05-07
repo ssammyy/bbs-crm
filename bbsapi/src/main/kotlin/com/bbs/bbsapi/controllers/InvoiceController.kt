@@ -1,81 +1,84 @@
 package com.bbs.bbsapi.controllers
 
-import com.bbs.bbsapi.entities.AcceptInvoiceRequest
-import com.bbs.bbsapi.services.InvoiceService
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
-import com.bbs.bbsapi.entities.InvoiceResponse
-import com.bbs.bbsapi.entities.RejectInvoiceRequest
 import com.bbs.bbsapi.enums.ClientStage
-import com.bbs.bbsapi.models.Client
-import com.bbs.bbsapi.repos.InvoiceRepository
-import com.bbs.bbsapi.services.PdfGenerator
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
+import com.bbs.bbsapi.enums.InvoiceType
+import com.bbs.bbsapi.models.Invoice
+import com.bbs.bbsapi.services.InvoiceService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/invoices")
 class InvoiceController(
-    private val invoiceService: InvoiceService,
-    private val invoiceRepository: InvoiceRepository,
-    private val pdfGenerator: PdfGenerator
+    private val invoiceService: InvoiceService
 ) {
-    @PostMapping( produces = [MediaType.APPLICATION_PDF_VALUE])
+
+    @PostMapping
     fun createInvoice(@RequestBody request: PdfInvoiceDTO): ResponseEntity<ByteArray> {
         val response = invoiceService.createInvoice(request)
         return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoice-${response.invoiceNumber}.pdf")
-            .contentType(MediaType.APPLICATION_PDF)
+            .header("Content-Disposition", "attachment; filename=invoice-${response.invoiceNumber}.pdf")
             .body(response.pdfContent)
     }
-    @GetMapping("/{invoiceId}/pdf", produces = [MediaType.APPLICATION_PDF_VALUE])
-    fun getInvoicePdf(@PathVariable invoiceId: Long): ResponseEntity<ByteArray> {
-        val pdfBytes = invoiceService.getInvoicePdf(invoiceId)
+
+    @GetMapping("/{clientId}/{invoiceType}/pdf")
+    fun getInvoicePdf(@PathVariable clientId: Long, @PathVariable invoiceType: InvoiceType): ResponseEntity<ByteArray> {
+        val pdfBytes = invoiceService.getInvoicePdf(clientId, invoiceType)
         return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoice-$invoiceId.pdf")
-            .contentType(MediaType.APPLICATION_PDF)
+            .header("Content-Type", "application/pdf")
+            .header("Content-Disposition", "attachment; filename=invoice-$clientId.pdf")
             .body(pdfBytes)
     }
+    @GetMapping("/{clientId}/prelim/{preliminaryId}/pdf")
+    fun getPreliminaryInvoicePdy(@PathVariable clientId: Long, @PathVariable preliminaryId: Long): ResponseEntity<ByteArray> {
+        val pdfBytes = invoiceService.getPreliminaryInvoicePdf(clientId, preliminaryId)
+        return ResponseEntity.ok()
+            .header("Content-Type", "application/pdf")
+            .header("Content-Disposition", "attachment; filename=invoice-$clientId.pdf")
+            .body(pdfBytes)
+    }
+
+    @GetMapping("/proforma/{clientId}")
+    fun getProformaInvoice(@PathVariable clientId: Long): ResponseEntity<PdfInvoiceDTO?> {
+        val proformaInvoice = invoiceService.getProformaInvoice(clientId)
+        return ResponseEntity.ok(proformaInvoice)
+    }
+
     @PostMapping("/{clientId}/accept")
     fun acceptInvoice(
         @PathVariable clientId: Long,
-        @RequestBody request: AcceptInvoiceRequest
-    ): ResponseEntity<*> {
-        try {
-            val client =
-                request.invoiceType?.let {
-                    invoiceService.acceptInvoice(clientId, ClientStage.valueOf(request.stage),
-                        it
-                    )
-                }
-            return ResponseEntity.ok(client)
-        } catch (e: IllegalArgumentException) {
-            e.printStackTrace()
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.message)
-        } catch (e: IllegalStateException) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
-        } catch (e: Exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-        }
+        @RequestBody request: Map<String, String>
+    ): ResponseEntity<Any> {
+        val stage = request["stage"]?.let { ClientStage.valueOf(it) }
+            ?: return ResponseEntity.badRequest().body("Stage is required")
+        val invoiceType = request["invoiceType"]?.let { InvoiceType.valueOf(it) }
+            ?: return ResponseEntity.badRequest().body("InvoiceType is required")
+        val client = invoiceService.acceptInvoice(clientId, stage, invoiceType)
+        return ResponseEntity.ok(client)
     }
 
     @PostMapping("/{clientId}/reject")
     fun rejectInvoice(
         @PathVariable clientId: Long,
-        @RequestBody request: RejectInvoiceRequest
-    ): ResponseEntity<Client> {
-        try {
-            val client = invoiceService.rejectInvoice(clientId, request.remarks, ClientStage.valueOf(request.stage))
-            return ResponseEntity.ok(client)
-        } catch (e: IllegalArgumentException) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null)
-        } catch (e: IllegalStateException) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
-        } catch (e: Exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
-        }
+        @RequestBody request: Map<String, String>
+    ): ResponseEntity<Any> {
+        val remarks = request["remarks"] ?: return ResponseEntity.badRequest().body("Remarks are required")
+        val stage = request["stage"]?.let { ClientStage.valueOf(it) }
+            ?: return ResponseEntity.badRequest().body("Stage is required")
+        val client = invoiceService.rejectInvoice(clientId, remarks, stage)
+        return ResponseEntity.ok(client)
+    }
+
+    @GetMapping("/preliminary/{preliminaryId}")
+    fun getPreliminaryInvoice(@PathVariable preliminaryId: Long): ResponseEntity<PdfInvoiceDTO?> {
+        val invoice = invoiceService.getInvoiceByPreliminaryId(preliminaryId)
+        return ResponseEntity.ok(invoice.let { invoiceService.convertToPdfDto(it!!) })
+    }
+
+    @GetMapping("/all-client-invoices/{clientId}")
+    fun getAllInvoices(@PathVariable clientId: Long): ResponseEntity<List<Invoice>> {
+        return ResponseEntity.ok(invoiceService.getInvoicesByClientId(clientId))
     }
 
 

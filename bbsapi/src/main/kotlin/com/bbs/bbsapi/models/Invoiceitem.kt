@@ -1,5 +1,6 @@
 package com.bbs.bbsapi.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 @Entity
 @Table(name = "invoice_items")
@@ -9,6 +10,7 @@ data class InvoiceItem(
 
     @ManyToOne
     @JoinColumn(name = "invoice_id", nullable = false)
+    @JsonIgnore
     var invoice: Invoice? = null, // Nullable for instantiation, set by service
 
     @Column(nullable = false)

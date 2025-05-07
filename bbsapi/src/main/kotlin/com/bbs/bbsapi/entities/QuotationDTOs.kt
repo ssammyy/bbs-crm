@@ -19,7 +19,9 @@ data class PdfInvoiceDTO(
     val projectName: String,
     val items: List<PdfInvoiceItemDTO>,
     val total: Double,
-    val invoiceType: InvoiceType
+    val invoiceType: InvoiceType,
+    val preliminaryId: Long? = null
+
 )
 
 data class InvoiceResponse(

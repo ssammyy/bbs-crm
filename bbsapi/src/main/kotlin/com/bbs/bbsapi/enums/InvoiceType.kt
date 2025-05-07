@@ -5,5 +5,6 @@ enum class InvoiceType {
     SITE_VISIT,
     ARCHITECTURAL_DRAWINGS,
     BOQ,
-    OPEN
+    OPEN,
+    PRELIMINARY,
 }

@@ -28,10 +28,10 @@ class AuthController(
 ) {
 
     @PostMapping("/register")
-    fun register(@RequestBody user: UserRegeDTO): ResponseEntity<Map<String, String>> {
+    fun register(@RequestBody user: UserRegeDTO): ResponseEntity<*> {
         return try {
-            userService.registerUser(user)
-            ResponseEntity.ok(mapOf("message" to "User registered successfully"))
+
+            ResponseEntity.ok( userService.registerUser(user))
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(mapOf("message" to (e.message ?: "Registration failed")))

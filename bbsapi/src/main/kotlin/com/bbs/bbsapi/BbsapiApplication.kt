@@ -1,5 +1,7 @@
 package com.bbs.bbsapi
 
+import com.bbs.bbsapi.services.EmailService
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
@@ -7,5 +9,14 @@ import org.springframework.boot.runApplication
 class BbsapiApplication
 
 fun main(args: Array<String>) {
+//     val emailService = EmailService()
+//    emailService.sendEmail(
+//        "samuikumbu@gmail.com",
+//       "Test",
+//        "test@test.com",
+//    )
+
     runApplication<BbsapiApplication>(*args)
 }
+
+

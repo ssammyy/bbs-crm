@@ -10,20 +10,19 @@ import com.bbs.bbsapi.models.VerificationToken
 import com.bbs.bbsapi.repos.RoleRepository
 import com.bbs.bbsapi.repos.TokenRepository
 import com.bbs.bbsapi.repos.UserRepository
+import com.bbs.bbsapi.security.CustomUserDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.jvm.Throws
-import kotlin.math.log
-
 
 @Service
 class UserService(
@@ -35,7 +34,6 @@ class UserService(
 ) {
     @Transactional
     fun registerUser(userDTO: UserRegeDTO): User {
-
         try {
             val role: Role? = roleRepository.findById(userDTO.roleId).orElse(null)
             val user = User(
@@ -43,20 +41,24 @@ class UserService(
                 email = userDTO.email,
                 password = passwordEncoder.encode("password"),
                 phonenumber = userDTO.phonenumber,
+                paymentMethod = userDTO.paymentMethod,
+                bankName = userDTO.bankName,
+                bankAccountNumber = userDTO.bankAccountNumber,
+                bankBranch = userDTO.bankBranch,
+                bankAccountHolderName = userDTO.bankAccountHolderName,
                 role = role
             )
-            return userRepository.save(user)
-
+            val savedUser = userRepository.save(user)
+            generateRegisterToken(savedUser)
+            return savedUser
         } catch (e: Exception) {
             throw Exception("Error registering user", e)
         }
-
     }
 
     fun findByUsername(username: String): User? {
         return userRepository.findByUsername(username)
     }
-
 
     fun getAllUsers(): List<UserDTO> {
         return userRepository.findAll().map { user ->
@@ -66,6 +68,11 @@ class UserService(
                 email = user.email,
                 password = passwordEncoder.encode("password"),
                 phonenumber = user.phonenumber,
+                paymentMethod = user.paymentMethod,
+                bankName = user.bankName,
+                bankAccountNumber = user.bankAccountNumber,
+                bankBranch = user.bankBranch,
+                bankAccountHolderName = user.bankAccountHolderName,
                 role = RoleDTO(
                     id = user.role?.id,
                     name = user.role?.name,
@@ -79,7 +86,6 @@ class UserService(
                         )
                     } ?: emptyList(),
                 )
-
             )
         }
     }
@@ -92,6 +98,11 @@ class UserService(
         user.username = updatedUserDTO.username
         user.email = updatedUserDTO.email
         user.phonenumber = updatedUserDTO.phonenumber
+        user.paymentMethod = updatedUserDTO.paymentMethod
+        user.bankName = updatedUserDTO.bankName
+        user.bankAccountNumber = updatedUserDTO.bankAccountNumber
+        user.bankBranch = updatedUserDTO.bankBranch
+        user.bankAccountHolderName = updatedUserDTO.bankAccountHolderName
         user.role = updatedUserDTO.role.id?.let {
             roleRepository.findById(it)
                 .orElseThrow { IllegalArgumentException("Role not found with ID: ${updatedUserDTO.role.id}") }
@@ -103,6 +114,11 @@ class UserService(
             email = updatedUser.email,
             phonenumber = updatedUser.phonenumber,
             password = passwordEncoder.encode("password"),
+            paymentMethod = updatedUser.paymentMethod,
+            bankName = updatedUser.bankName,
+            bankAccountNumber = updatedUser.bankAccountNumber,
+            bankBranch = updatedUser.bankBranch,
+            bankAccountHolderName = updatedUser.bankAccountHolderName,
             role = RoleDTO(
                 id = updatedUser.role?.id,
                 name = updatedUser.role?.name,
@@ -115,7 +131,7 @@ class UserService(
 
     @Transactional
     fun deleteUser(userId: Long) {
-       userRepository.deleteById(userId)
+        userRepository.deleteById(userId)
     }
 
     fun generateRegisterToken(savedUser: User) {
@@ -130,13 +146,11 @@ class UserService(
 
         tokenRepository.save(verificationToken)
 
-// Send email
+        // Send email
         CoroutineScope(Dispatchers.IO).launch {
             emailService.sendConfirmationEmail(savedUser.email, token)
         }
-
     }
-
 
     fun validatePassword(rawPassword: String, encodedPassword: String): Boolean {
         return passwordEncoder.matches(rawPassword, encodedPassword)
@@ -151,6 +165,11 @@ class UserService(
             email = user.email,
             password = passwordEncoder.encode(user.password),
             phonenumber = user.phonenumber,
+            paymentMethod = user.paymentMethod,
+            bankName = user.bankName,
+            bankAccountNumber = user.bankAccountNumber,
+            bankBranch = user.bankBranch,
+            bankAccountHolderName = user.bankAccountHolderName,
             role = RoleDTO(
                 id = user.role?.id,
                 name = user.role?.name,
@@ -165,5 +184,15 @@ class UserService(
                 } ?: emptyList(),
             )
         )
+    }
+
+    fun getLoggedInUser(): CustomUserDetails {
+        val authentication = SecurityContextHolder.getContext().authentication
+        return authentication.principal as CustomUserDetails
+    }
+
+    fun getActualUSer(): User{
+        val userName = getLoggedInUser().username
+        return userRepository.findByUsername(userName) ?: throw RuntimeException("User not found")
     }
 }

@@ -16,22 +16,32 @@ data class FileMetadata(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var fileType: FileType,
+    var fileType: FileType? = null,
 
     @Column(nullable = false)
-    var fileName: String,
+    var fileName: String? = null,
 
     @Column(nullable = false)
-    var objectKey: String,
+    var objectKey: String? = null,
 
     @Column(nullable = false, length = 2000)
-    val fileUrl: String,
+    val fileUrl: String? = "",
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "client_id", referencedColumnName = "id")
-    val client: Client
-): BaseEntity() {
+    val client: Client? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "preliminary_id", referencedColumnName = "id")
+    val preliminary: Preliminary? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    val user: User? = null
+
+
+) : BaseEntity() {
     constructor() : this(
-        0, FileType.ID, "",  "", "", Client(),
+        0, FileType.ID, "", "", "", null, null
     )
 }

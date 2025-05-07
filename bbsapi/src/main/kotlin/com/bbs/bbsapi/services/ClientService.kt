@@ -2,13 +2,12 @@ package com.bbs.bbsapi.services
 
 import com.bbs.bbsapi.entities.ClientDTO
 import com.bbs.bbsapi.enums.ClientStage
+import com.bbs.bbsapi.enums.ContactStatus
+import com.bbs.bbsapi.enums.InvoiceType
 import com.bbs.bbsapi.models.Activity
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.User
-import com.bbs.bbsapi.repos.ActivityRepository
-import com.bbs.bbsapi.repos.ClientRepo
-import com.bbs.bbsapi.repos.RoleRepository
-import com.bbs.bbsapi.repos.UserRepository
+import com.bbs.bbsapi.repos.*
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -22,21 +21,27 @@ class ClientService(
     private val passwordEncoder: PasswordEncoder,
     private val roleRepository: RoleRepository,
     private val userService: UserService,
-    private val activityRepository: ActivityRepository
+    private val activityRepository: ActivityRepository,
+    private val invoiceRepository: InvoiceRepository
 ) {
     @Transactional
     fun registerClient(clientDTO: ClientDTO): Client {
-
         val clientRole = roleRepository.findByName("CLIENT")
             .orElseThrow { RuntimeException("CLIENT role not found") }
         val user = User(
-            username = clientDTO.firstName, // or email/phone depending on your login strategy
-            password = passwordEncoder.encode("defaultPassword123"), // Replace with actual generated or provided password
+            username = clientDTO.email ?: clientDTO.phoneNumber,
+            password = passwordEncoder.encode("defaultPassword123"),
             email = clientDTO.email.toString(),
             phonenumber = clientDTO.phoneNumber,
             role = clientRole
         )
         userRepository.save(user)
+
+        val agent = clientDTO.agentId?.let {
+            userRepository.findById(it)
+                .orElseThrow { IllegalArgumentException("Agent with ID $it not found") }
+        }
+
         val client = Client(
             firstName = clientDTO.firstName,
             secondName = clientDTO.secondName,
@@ -51,11 +56,18 @@ class ClientService(
             county = clientDTO.county,
             countryCode = clientDTO.countryCode,
             idNumber = clientDTO.idNumber,
-            clientStage = ClientStage.REQUIREMENTS_GATHERING,
-            nextStage = ClientStage.PROFORMA_INVOICE_GENERATION,
+            clientStage = ClientStage.GENERATE_SITE_VISIT_INVOICE,
+            nextStage = ClientStage.PENDING_DIRECTOR_SITE_VISIT_INVOICE_APPROVAL,
             clientSource = clientDTO.clientSource,
             projectName = clientDTO.projectName,
             projectActive = false,
+            productOffering = clientDTO.productOffering!!,
+            productTag = clientDTO.productTag!!,
+            bankName = clientDTO.bankName,
+            bankBranch = clientDTO.bankBranch,
+            notes = clientDTO.notes,
+            followUpDate = clientDTO.followUpDate,
+            agent = agent
         )
         clientRepository.save(client)
         addClientActivity(client, "Registration on the system")
@@ -78,20 +90,30 @@ class ClientService(
             clientRepository.findById(it)
                 .orElseThrow { IllegalArgumentException("CLIENT does not exist") }
         }
+        val loggedInUser = userService.getLoggedInUser().username
+        if (clientDTO.contactStatus == ContactStatus.ONBOARDED) {
+            addClientActivity(client!!, "$loggedInUser changed on-boarded client ${client?.firstName} ${client?.lastName}  ")
+        }
+        addClientActivity(client!!, "$loggedInUser changed lead ${client?.firstName} ${client?.lastName}  status to ${client.contactStatus}  ")
+
         client?.country = clientDTO.country.toString()
         client?.email = clientDTO.email
         client?.firstName = clientDTO.firstName
         client?.secondName = clientDTO.secondName
-        client?.email = clientDTO.email
         client?.lastName = clientDTO.surName
         client?.county = clientDTO.county
         client?.dob = clientDTO.dob
         client?.gender = clientDTO.gender
         client?.idNumber = clientDTO.idNumber
         client?.location = clientDTO.locationType
+        client?.followUpDate = clientDTO.followUpDate
+        client?.contactStatus = clientDTO.contactStatus!!
+        client?.agent = clientDTO.agentId?.let {
+            userRepository.findById(it)
+                .orElseThrow { IllegalArgumentException("Agent with ID $it not found") }
+        }
         val updatedClient = client?.let { clientRepository.save(it) }
         return updatedClient
-
     }
 
     @Transactional
@@ -101,6 +123,22 @@ class ClientService(
         nextStage: ClientStage,
         activityDescription: String
     ): Client? {
+        if (clientStage == ClientStage.PENDING_SITE_VISIT) {
+            val invoice = invoiceRepository.findByClientIdAndInvoiceType(client.id, InvoiceType.SITE_VISIT)
+            invoice.cleared = true
+            invoiceRepository.save(invoice)
+        }
+        if (clientStage == ClientStage.ARCHITECTURAL_DRAWINGS_SKETCH) {
+            val invoice = invoiceRepository.findByClientIdAndInvoiceType(client.id, InvoiceType.ARCHITECTURAL_DRAWINGS)
+            invoice.cleared = true
+            invoiceRepository.save(invoice)
+        }
+        if (clientStage == ClientStage.UPLOAD_BOQ) {
+            val invoice = invoiceRepository.findByClientIdAndInvoiceType(client.id, InvoiceType.BOQ)
+            invoice.cleared = true
+            invoiceRepository.save(invoice)
+        }
+
         client.clientStage = clientStage
         client.nextStage = nextStage
         addClientActivity(client, activityDescription)
@@ -116,16 +154,22 @@ class ClientService(
             user = authentication.name
         )
         activityRepository.save(activity)
-
     }
 
     fun getClientActivities(clientId: Long): List<Activity> {
         return activityRepository.findByClientIdOrderByTimestampDesc(clientId)
-
     }
 
     fun getClientByEmail(email: String): Client? {
         val client = clientRepository.findByEmail(email) ?: throw NullPointerException("Client not found")
         return client
+    }
+
+    fun getLeads(): List<Client> {
+        return clientRepository.findByContactStatusNot(ContactStatus.ONBOARDED)
+    }
+
+    fun getOnBoardedClients(): List<Client> {
+        return clientRepository.findByContactStatus(ContactStatus.ONBOARDED)
     }
 }
