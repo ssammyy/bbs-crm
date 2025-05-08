@@ -20,8 +20,11 @@ data class PdfInvoiceDTO(
     val items: List<PdfInvoiceItemDTO>,
     val total: Double,
     val invoiceType: InvoiceType,
-    val preliminaryId: Long? = null
-
+    val preliminaryId: Long? = null,
+    val discountPercentage: Double = 0.0,
+    val discountAmount: Double = 0.0,
+    val subtotal: Double = total,
+    val finalTotal: Double = total
 )
 
 data class InvoiceResponse(

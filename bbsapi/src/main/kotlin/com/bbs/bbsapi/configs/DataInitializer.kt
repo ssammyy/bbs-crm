@@ -76,7 +76,8 @@ class DataInitializer(
             PreliminaryType(name = "ENVIRONMENTAL_IMPACT_ASSESSMENT", description = "Study to assess environmental effects, required for regulatory approval"),
             PreliminaryType(name = "GEOTECHNICAL_INVESTIGATION", description = "Soil testing to determine foundation requirements"),
             PreliminaryType(name = "COST_ESTIMATION", description = "Preliminary budgeting based on initial designs and BOQ"),
-            PreliminaryType(name = "REGULATORY_APPROVALS", description = "Documentation for permits from local authorities")
+            PreliminaryType(name = "REGULATORY_APPROVALS", description = "Documentation for permits from local authorities"),
+            PreliminaryType(name = "OPEN", description = "Open")
         )
 
         preliminaryTypes.forEach { type ->

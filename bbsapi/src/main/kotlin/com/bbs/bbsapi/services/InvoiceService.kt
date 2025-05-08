@@ -39,6 +39,19 @@ class InvoiceService(
                 .orElseThrow { IllegalArgumentException("Preliminary not found: $it") }
         }
 
+        // Calculate subtotal from items
+        val subtotal = request.items.sumOf { it.totalPrice }
+
+        // Calculate discount amount if percentage is provided
+        val discountAmount = if (request.discountPercentage > 0) {
+            (subtotal * request.discountPercentage / 100.0)
+        } else {
+            request.discountAmount
+        }
+
+        // Calculate final total after discount
+        val finalTotal = subtotal - discountAmount
+
         val invoice = Invoice(
             invoiceNumber = request.invoiceNumber,
             dateIssued = LocalDate.now(),
@@ -47,16 +60,19 @@ class InvoiceService(
             clientPhone = request.clientPhone,
             projectName = request.projectName,
             items = mutableListOf(),
-            total = request.total,
+            total = finalTotal,
             invoiceType = request.invoiceType,
-            preliminary = preliminary
+            preliminary = preliminary,
+            discountPercentage = request.discountPercentage,
+            discountAmount = discountAmount,
+            subtotal = subtotal,
+            finalTotal = finalTotal
         )
 
         if (preliminary != null) {
             preliminary?.invoiced = true
             preliminaryRepository.save(preliminary!!)
         }
-
 
         val invoiceItems = request.items.map { itemDto ->
             InvoiceItem(
@@ -69,9 +85,6 @@ class InvoiceService(
         }.toMutableList()
 
         invoice.items.addAll(invoiceItems)
-
-        val calculatedTotal = invoiceItems.sumOf { it.totalPrice }
-        require(calculatedTotal == invoice.total) { "Total (${invoice.total}) does not match sum of item totals ($calculatedTotal)" }
 
         val savedInvoice = invoiceRepository.save(invoice)
 
@@ -96,7 +109,6 @@ class InvoiceService(
                 )
             }
             InvoiceType.SITE_VISIT -> {
-
                 clientService.changeClientStatus(
                     ClientStage.PENDING_DIRECTOR_SITE_VISIT_INVOICE_APPROVAL,
                     client,
@@ -105,7 +117,6 @@ class InvoiceService(
                 )
             }
             InvoiceType.ARCHITECTURAL_DRAWINGS -> {
-
                 clientService.changeClientStatus(
                     ClientStage.PENDING_CLIENT_DRAWINGS_PAYMENT,
                     client,
@@ -114,7 +125,6 @@ class InvoiceService(
                 )
             }
             InvoiceType.BOQ -> {
-
                 clientService.changeClientStatus(
                     ClientStage.GENERATE_BOQ_PREPARATION_INVOICE,
                     client,
@@ -123,10 +133,10 @@ class InvoiceService(
                 )
             }
             InvoiceType.OPEN -> {
-
+                // No status change needed
             }
-            InvoiceType.PRELIMINARY->{
-
+            InvoiceType.PRELIMINARY -> {
+                // No status change needed
             }
         }
 
@@ -324,7 +334,11 @@ class InvoiceService(
             }.toMutableList(),
             total = invoice.total,
             invoiceType = invoice.invoiceType,
-            preliminaryId = invoice.preliminary?.id
+            preliminaryId = invoice.preliminary?.id,
+            discountPercentage = invoice.discountPercentage,
+            discountAmount = invoice.discountAmount,
+            subtotal = invoice.subtotal,
+            finalTotal = invoice.finalTotal
         )
     }
 

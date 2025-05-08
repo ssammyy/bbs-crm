@@ -65,5 +65,17 @@ data class Invoice(
     val receipts: MutableList<Receipt> = mutableListOf(),
 
     @Column(nullable = false)
-    var balance: Double = total
+    var balance: Double = total,
+
+    @Column(nullable = false)
+    var discountPercentage: Double = 0.0,
+
+    @Column(nullable = false)
+    var discountAmount: Double = 0.0,
+
+    @Column(nullable = false)
+    var subtotal: Double = total,
+
+    @Column(nullable = false)
+    var finalTotal: Double = total
 )
