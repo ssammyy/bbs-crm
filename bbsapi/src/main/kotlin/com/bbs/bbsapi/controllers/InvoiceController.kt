@@ -1,9 +1,15 @@
 package com.bbs.bbsapi.controllers
 
+import com.bbs.bbsapi.entities.AcceptInvoiceRequest
+import com.bbs.bbsapi.entities.InvoiceResponse
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
+import com.bbs.bbsapi.entities.RejectInvoiceRequest
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
+import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.Invoice
+import com.bbs.bbsapi.models.PreliminaryType
+import com.bbs.bbsapi.repos.PreliminaryTypeRepository
 import com.bbs.bbsapi.services.InvoiceService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -80,6 +86,5 @@ class InvoiceController(
     fun getAllInvoices(@PathVariable clientId: Long): ResponseEntity<List<Invoice>> {
         return ResponseEntity.ok(invoiceService.getInvoicesByClientId(clientId))
     }
-
 
 }

@@ -6,15 +6,18 @@ import com.bbs.bbsapi.enums.InvoiceType
 import com.bbs.bbsapi.models.Receipt
 import com.bbs.bbsapi.repos.InvoiceRepository
 import com.bbs.bbsapi.repos.ReceiptRepository
+import com.bbs.bbsapi.repos.PreliminaryRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import kotlin.math.log
 
 @Service
 class ReceiptService(
     private val receiptRepository: ReceiptRepository,
     private val invoiceRepository: InvoiceRepository,
     private val clientService: ClientService,
+    private val preliminaryRepository: PreliminaryRepository
 ) {
     @Transactional
     fun createReceipt(receiptDTO: ReceiptDTO): ReceiptDTO {
@@ -42,28 +45,36 @@ class ReceiptService(
         // Update invoice balance and reconciled status
         invoice.balance -= receiptDTO.amountPaid
         invoice.invoiceReconciled = invoice.balance <= 0
-        if (invoice.invoiceReconciled) {
+        if (invoice.invoiceReconciled ) {
             invoice.cleared = true
             invoice.pendingBalance = false
-            if (invoice.invoiceType=== InvoiceType.SITE_VISIT){
-                clientService.changeClientStatus(
-                    ClientStage.PENDING_SITE_VISIT,
-                    client,
-                    ClientStage.REQUIREMENTS_PENDING_DIRECTOR_APPROVAL,
-                    "Client Paid for site visit"
-                )
-
+            
+            // Update preliminary's invoiceClearedFlag if it exists
+            val prelimsToClear = preliminaryRepository.findByInvoiceId(invoice.id)
+            prelimsToClear.forEach { prelim ->
+                println("updating prelims ")
+                prelim.invoiceClearedFlag = true
+                preliminaryRepository.save(prelim)
             }
-        }else{
-            invoice.pendingBalance = true
-            if (invoice.invoiceType=== InvoiceType.SITE_VISIT){
+
+
+            if (invoice.invoiceType === InvoiceType.SITE_VISIT && !client.siteVisitDone ) {
                 clientService.changeClientStatus(
                     ClientStage.PENDING_SITE_VISIT,
                     client,
                     ClientStage.REQUIREMENTS_PENDING_DIRECTOR_APPROVAL,
                     "Client Paid for site visit"
                 )
-
+            }
+        } else {
+            invoice.pendingBalance = true
+            if (invoice.invoiceType === InvoiceType.SITE_VISIT && !client.siteVisitDone ) {
+                clientService.changeClientStatus(
+                    ClientStage.PENDING_SITE_VISIT,
+                    client,
+                    ClientStage.REQUIREMENTS_PENDING_DIRECTOR_APPROVAL,
+                    "Client Paid for site visit"
+                )
             }
         }
         invoiceRepository.save(invoice)

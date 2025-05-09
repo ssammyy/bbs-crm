@@ -56,6 +56,9 @@ class SiteReportService(
             IllegalArgumentException("Client with ID $clientId not found")
         }
 
+        client.siteVisitDone = true
+        clientRepository.save(client)
+
         val existingReport = siteReportRepository.findByClientId(clientId)
         val username = principal?.name ?: userService.getLoggedInUser().username
 

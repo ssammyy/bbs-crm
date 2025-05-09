@@ -134,6 +134,9 @@ class PreliminaryController(
 }
 
 
-data class InitiatePreliminaryRequest(val preliminaryType: Long)
+data class InitiatePreliminaryRequest(
+    val preliminaryType: Long,
+    val invoiced: Boolean = false
+)
 data class InvoiceRequest(val amount: BigDecimal)
 data class ApprovalRequest(val approvalStage: ApprovalStage, val status: String, val comments: String?)

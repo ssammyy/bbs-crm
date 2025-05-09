@@ -1,5 +1,6 @@
 package com.bbs.bbsapi.models
 import com.bbs.bbsapi.enums.PreliminaryStatus
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -23,10 +24,14 @@ data class Preliminary(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id", nullable = true)
-    val invoice: Invoice? = null,
+    @JsonIgnore
+    var invoice: Invoice? = null,
 
     @Column(name="invoiced", nullable = false)
     var invoiced: Boolean = false,
+
+    @Column(name="invoice_cleared", nullable = false)
+    var invoiceClearedFlag: Boolean = false,
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

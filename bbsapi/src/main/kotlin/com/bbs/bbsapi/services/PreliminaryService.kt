@@ -25,7 +25,7 @@ class PreliminaryService(
     private val userService: UserService
 ) {
 
-    fun initiatePreliminary(clientId: Long, request: InitiatePreliminaryRequest): Preliminary {
+    fun initiatePreliminary(clientId: Long, request: InitiatePreliminaryRequest, invoice: Invoice? = null): Preliminary {
         val client = clientRepository.findById(clientId).orElseThrow { IllegalArgumentException("Client not found") }
         println("prelim id  " + request.preliminaryType)
         val preliminaryType = preliminaryTypeRepository.findById(request.preliminaryType)
@@ -35,8 +35,9 @@ class PreliminaryService(
             client = client,
             preliminaryType = preliminaryType,
             status = PreliminaryStatus.INITIATED,
-            invoiced = false,
-            createdAt = LocalDateTime.now()
+            invoiced = request.invoiced,
+            createdAt = LocalDateTime.now(),
+            invoice = invoice
         )
         return preliminaryRepository.save(preliminary)
     }

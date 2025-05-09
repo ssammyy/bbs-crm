@@ -1,17 +1,14 @@
 package com.bbs.bbsapi.services
 
+import com.bbs.bbsapi.controllers.InitiatePreliminaryRequest
 import com.bbs.bbsapi.entities.InvoiceResponse
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
 import com.bbs.bbsapi.entities.PdfInvoiceItemDTO
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
-import com.bbs.bbsapi.models.Client
-import com.bbs.bbsapi.models.Invoice
-import com.bbs.bbsapi.models.InvoiceItem
-import com.bbs.bbsapi.models.ProformaInvoice
-import com.bbs.bbsapi.repos.InvoiceRepository
-import com.bbs.bbsapi.repos.PreliminaryRepository
-import com.bbs.bbsapi.repos.ProformaInvoiceRepository
+import com.bbs.bbsapi.enums.PaymentMethod
+import com.bbs.bbsapi.models.*
+import com.bbs.bbsapi.repos.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,14 +18,30 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+data class ReceiptDTO(
+    val invoiceId: Long,
+    val paymentDate: LocalDate,
+    val paymentMethod: PaymentMethod,
+    val amountPaid: Double,
+    val transactionId: String?
+)
+
+data class ReceiptResponse(
+    val receiptId: Long,
+    val invoiceId: Long
+)
+
 @Service
 class InvoiceService(
     private val invoiceRepository: InvoiceRepository,
     private val preliminaryRepository: PreliminaryRepository,
     private val proformaInvoiceRepository: ProformaInvoiceRepository,
+    private val receiptRepository: ReceiptRepository,
     private val pdfGenerator: PdfGenerator,
     private val clientService: ClientService,
-    private val emailService: EmailService
+    private val emailService: EmailService,
+    private val preliminaryService: PreliminaryService,
+    private val preliminaryTypeRepository: PreliminaryTypeRepository
 ) {
 
     @Transactional
@@ -71,6 +84,7 @@ class InvoiceService(
 
         if (preliminary != null) {
             preliminary?.invoiced = true
+            preliminary?.invoice = invoice
             preliminaryRepository.save(preliminary!!)
         }
 
@@ -87,6 +101,33 @@ class InvoiceService(
         invoice.items.addAll(invoiceItems)
 
         val savedInvoice = invoiceRepository.save(invoice)
+
+        // Initialize preliminaries for SITE_VISIT invoice items
+        if (request.invoiceType == InvoiceType.SITE_VISIT) {
+            request.items.forEach { item ->
+                // Skip the SITE_VISIT item itself
+                if (item.description != "SITE_VISIT") {
+                    try {
+                        // Find the preliminary type by name
+                        val preliminaryType = preliminaryTypeRepository.findByName(item.description)
+                            .orElseThrow { IllegalArgumentException("Preliminary type not found for: ${item.description}") }
+                        
+                        // Initialize the preliminary
+                        preliminaryService.initiatePreliminary(
+                            clientId = request.clientId,
+                            request = InitiatePreliminaryRequest(
+                                preliminaryType = preliminaryType.id,
+                                invoiced = true
+                            ),
+                            invoice
+                        )
+                    } catch (e: Exception) {
+                        // Log the error but continue processing other items
+                        println("Failed to initialize preliminary for ${item.description}: ${e.message}")
+                    }
+                }
+            }
+        }
 
         // Update proforma invoice
         updateProformaInvoice(client.id, savedInvoice)
@@ -347,5 +388,42 @@ class InvoiceService(
     }
     fun getInvoicesByClientId(clientId: Long): List<Invoice> {
         return invoiceRepository.findByClientId(clientId)
+    }
+
+    @Transactional
+    fun generateReceipt(receiptDTO: ReceiptDTO): ReceiptResponse {
+        val invoice = invoiceRepository.findById(receiptDTO.invoiceId)
+            .orElseThrow { IllegalArgumentException("Invoice not found") }
+
+        val receipt = Receipt(
+            invoice = invoice,
+            paymentDate = receiptDTO.paymentDate,
+            paymentMethod = receiptDTO.paymentMethod,
+            amountPaid = receiptDTO.amountPaid,
+            transactionId = receiptDTO.transactionId
+        )
+        val savedReceipt = receiptRepository.save(receipt)
+
+        // Update invoice balance
+        invoice.balance = invoice.balance - receiptDTO.amountPaid
+        invoice.invoiceReconciled = invoice.balance <= 0
+        invoice.pendingBalance = !invoice.invoiceReconciled
+        invoiceRepository.save(invoice)
+
+        // Update preliminary's invoice cleared flag if invoice is fully paid
+        if (invoice.preliminary != null && invoice.invoiceReconciled) {
+            val preliminary = invoice.preliminary
+            if (preliminary != null) {
+                preliminary.invoiceClearedFlag = true
+            }
+            if (preliminary != null) {
+                preliminaryRepository.save(preliminary)
+            }
+        }
+
+        return ReceiptResponse(
+            receiptId = savedReceipt.id,
+            invoiceId = invoice.id
+        )
     }
 }

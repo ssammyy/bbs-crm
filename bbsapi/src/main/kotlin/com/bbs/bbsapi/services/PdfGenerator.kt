@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 
 @Component
 class PdfGenerator {
-
+//HELLO WORLD
     private val companyFont = Font(Font.HELVETICA, 10f, Font.NORMAL, CMYKColor.BLACK) // Adjusted font size
     private val companyBoldFont =
         Font(Font.HELVETICA, 10f, Font.BOLD, CMYKColor.BLACK) // New bold font for company name
@@ -29,97 +29,190 @@ class PdfGenerator {
     private val logoResource = ClassPathResource("static/logo.jpeg") // Assuming your logo is named bbs_logo.jpeg
 
     fun generateInvoicePdf(invoice: PdfInvoiceDTO): ByteArray {
-        val document = Document(PageSize.A4)
-        val out = ByteArrayOutputStream()
-        PdfWriter.getInstance(document, out)
+        val outputStream = ByteArrayOutputStream()
+        val document = Document(PageSize.A4, 36f, 36f, 36f, 36f)
+        val writer = PdfWriter.getInstance(document, outputStream)
+
         document.open()
 
-        // Add company logo
-        val logo = Image.getInstance(logoResource.inputStream.readBytes())
-        logo.scaleToFit(100f, 100f)
-        logo.alignment = Element.ALIGN_RIGHT
-        document.add(logo)
+        // Header Table with Logo and Company Details
+        val headerTable = PdfPTable(2).apply {
+            widthPercentage = 100f
+            setWidths(floatArrayOf(0.4f, 0.6f)) // Adjust proportions as needed
+            defaultCell.border = Rectangle.NO_BORDER
 
-        // Add company name
-        val companyName = Paragraph("BBS CONSTRUCTION", companyBoldFont)
-        companyName.alignment = Element.ALIGN_RIGHT
-        document.add(companyName)
+            // Logo Cell (Left-aligned)
+            val logoCell = PdfPCell().apply {
+                border = Rectangle.NO_BORDER
+                horizontalAlignment = Element.ALIGN_LEFT
+                verticalAlignment = Element.ALIGN_MIDDLE
+                try {
+                    val imageUrl = logoResource.url
+                    val image = Image.getInstance(imageUrl)
+                    image.scaleToFit(120f, 60f) // Adjust logo size
+                    addElement(image)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    addElement(Paragraph("Logo", normalFont))
+                }
+            }
+            addCell(logoCell)
 
-        // Add invoice title
-        val title = Paragraph("INVOICE", titleFont)
-        title.alignment = Element.ALIGN_CENTER
-        title.spacingAfter = 20f
+            // Company Details Cell (Right-aligned)
+            val companyDetails = PdfPTable(1).apply {
+                defaultCell.border = Rectangle.NO_BORDER
+                defaultCell.horizontalAlignment = Element.ALIGN_RIGHT
+                addCell(Phrase("BENCHMARK", companyBoldFont)) // "BENCHMARK" in bold
+                addCell(Phrase("Building Solutions Ltd", companyFont))
+                addCell(Phrase("K-unity Building, Basement, Biashara street, Kiambu", normalFont))
+                addCell(Phrase("P.O.BOX 8213 - 00200", normalFont))
+                addCell(Phrase("NAIROBI", normalFont))
+                addCell(Phrase("0722 333 324", normalFont)) // Adjusted spacing
+            }
+            val companyCell = PdfPCell(companyDetails).apply {
+                border = Rectangle.NO_BORDER
+                verticalAlignment = Element.ALIGN_MIDDLE
+            }
+            addCell(companyCell)
+
+            setSpacingAfter(15f)
+        }
+        document.add(headerTable)
+
+        // Invoice Title (Left-aligned, below header)
+        val title = Paragraph("INVOICE", titleFont).apply {
+            alignment = Element.ALIGN_LEFT
+            spacingBefore = 10f
+            spacingAfter = 15f
+        }
         document.add(title)
 
-        // Add invoice details
-        val detailsTable = PdfPTable(2)
-        detailsTable.widthPercentage = 100f
-        detailsTable.setWidths(floatArrayOf(1f, 1f))
+        // Details Table (Adjusted to match layout)
+        val detailsTable = PdfPTable(4).apply { // Increased to 4 columns
+            widthPercentage = 100f
+            setWidths(floatArrayOf(0.5f, 1.5f, 0.5f, 1.5f)) // Adjust column widths
+            setSpacingAfter(20f)
+            defaultCell.border = Rectangle.NO_BORDER
 
-        // Left column
-        detailsTable.addCell(createCell("Invoice Number: ${invoice.invoiceNumber}", normalFont))
-        detailsTable.addCell(createCell("Date: ${invoice.dateIssued}", normalFont))
-        detailsTable.addCell(createCell("Client Name: ${invoice.clientName}", normalFont))
-        detailsTable.addCell(createCell("Phone: ${invoice.clientPhone}", normalFont))
-        detailsTable.addCell(createCell("Project: ${invoice.projectName}", normalFont))
+            addCell(Phrase("Submitted on:", companyBoldFont))
+            addCell(
+                Phrase(
+                    invoice.dateIssued.format(DateTimeFormatter.ofPattern("d'th' MMMM yyyy")),
+                    normalFont
+                )
+            ) // Added year
+            addCell(Phrase("Due Date:", companyBoldFont))
+            addCell(Phrase("12th March 2025", normalFont)) // Hardcoded due date as in the image
+
+            addCell(Phrase("Invoice for", companyBoldFont))
+            addCell(Phrase(invoice.clientName, normalFont))
+            addCell(Phrase("Project", companyBoldFont))
+            addCell(Phrase(invoice.projectName, normalFont))
+
+            addCell(Phrase(" ", normalFont)) // Empty cell for spacing
+            addCell(Phrase(invoice.clientPhone, normalFont))
+            addCell(Phrase("Invoice #", companyBoldFont))
+            addCell(Phrase(invoice.invoiceNumber, normalFont))
+        }
         document.add(detailsTable)
 
-        // Add items table
-        val itemsTable = PdfPTable(4)
-        itemsTable.widthPercentage = 100f
-        itemsTable.setWidths(floatArrayOf(3f, 1f, 1f, 1f))
+        // Payment Details Table (Similar two-column layout)
+        val paymentTable = PdfPTable(2).apply {
+            widthPercentage = 100f
+            setWidths(floatArrayOf(0.5f, 1.5f))
+            setSpacingBefore(15f)
+            setSpacingAfter(20f)
+            defaultCell.border = Rectangle.NO_BORDER
 
-        // Add table headers
-        itemsTable.addCell(createCell("Description", companyBoldFont))
-        itemsTable.addCell(createCell("Quantity", companyBoldFont))
-        itemsTable.addCell(createCell("Unit Price", companyBoldFont))
-        itemsTable.addCell(createCell("Total", companyBoldFont))
+            addCell(Phrase("Payable to", companyBoldFont))
+            addCell(
+                Phrase(
+                    "Bank: NCBA\nBranch: Kiambu\nA/C Number: 5810980017\nA/C Name: Benchmark Building Solutions LTD",
+                    normalFont
+                )
+            )
 
-        // Add items
-        invoice.items.forEach { item ->
-            itemsTable.addCell(createCell(item.description, normalFont))
-            itemsTable.addCell(createCell(item.quantity.toString(), normalFont))
-            itemsTable.addCell(createCell(String.format("%.2f", item.unitPrice), normalFont))
-            itemsTable.addCell(createCell(String.format("%.2f", item.totalPrice), normalFont))
+            addCell(Phrase("NCBA PAYBILL NO", companyBoldFont))
+            addCell(Phrase("880100", normalFont))
+
+            addCell(Phrase("SEND MONEY", companyBoldFont))
+            addCell(Phrase("0741 817007", normalFont)) // Adjusted spacing
         }
+        document.add(paymentTable)
 
+        // Items Table
+        val itemsTable = PdfPTable(4).apply {
+            widthPercentage = 100f
+            setWidths(floatArrayOf(4f, 1f, 2f, 2f))
+            headerRows = 1
+            setSpacingBefore(10f)
+            setSpacingAfter(20f)
+
+            addCell(createCell("Description", companyBoldFont, true))
+            addCell(createCell("Qty", companyBoldFont, true))
+            addCell(createCell("Unit price(kshs)", companyBoldFont, true))
+            addCell(createCell("Total price(kshs)", companyBoldFont, true))
+
+            invoice.items.forEach {
+                addCell(createCell(it.description, normalFont))
+                addCell(createCell(it.quantity.toString(), normalFont))
+                addCell(createCell(it.unitPrice.toString(), normalFont))
+                addCell(createCell(it.totalPrice.toString(), normalFont))
+            }
+        }
         document.add(itemsTable)
 
-        // Add totals
-        val totalsTable = PdfPTable(2)
-        totalsTable.widthPercentage = 50f
-        totalsTable.horizontalAlignment = Element.ALIGN_RIGHT
-        totalsTable.setWidths(floatArrayOf(1f, 1f))
+        // Total Section (Right-aligned)
+        val totalTable = PdfPTable(2).apply {
+            widthPercentage = 40f
+            setWidths(floatArrayOf(2f, 2f))
+            horizontalAlignment = Element.ALIGN_RIGHT
+            setSpacingBefore(10f)
 
-        // Add subtotal
-        totalsTable.addCell(createCell("Subtotal:", companyBoldFont))
-        totalsTable.addCell(createCell(String.format("%.2f", invoice.subtotal), normalFont))
+            addCell(createCell("Subtotal", normalFont, horizontalAlignment = Element.ALIGN_RIGHT))
+            addCell(createCell("kshs ${invoice.subtotal}", normalFont))
 
-        // Add discount if applicable
-        if (invoice.discountPercentage > 0 || invoice.discountAmount > 0) {
-            if (invoice.discountPercentage > 0) {
-                totalsTable.addCell(createCell("Discount (${invoice.discountPercentage}%):", companyBoldFont))
-            } else {
-                totalsTable.addCell(createCell("Discount:", companyBoldFont))
+            if (invoice.discountPercentage > 0 || invoice.discountAmount > 0) {
+                if (invoice.discountPercentage > 0) {
+                    addCell(createCell("Discount (${invoice.discountPercentage}%)", normalFont, horizontalAlignment = Element.ALIGN_RIGHT))
+                } else {
+                    addCell(createCell("Discount", normalFont, horizontalAlignment = Element.ALIGN_RIGHT))
+                }
+                addCell(createCell("kshs ${invoice.discountAmount}", normalFont))
             }
-            totalsTable.addCell(createCell(String.format("%.2f", invoice.discountAmount), normalFont))
+
+            addCell(createCell("TOTAL", companyBoldFont, horizontalAlignment = Element.ALIGN_RIGHT))
+            addCell(createCell("kshs ${invoice.finalTotal}", companyBoldFont))
         }
+        document.add(totalTable)
 
-        // Add final total
-        totalsTable.addCell(createCell("Total:", companyBoldFont))
-        totalsTable.addCell(createCell(String.format("%.2f", invoice.finalTotal), companyBoldFont))
-
-        document.add(totalsTable)
+        // Total in Words (Right-aligned)
+        val totalWords = Paragraph("${convertToWords(invoice.finalTotal.toInt())} Kenya shillings only.", normalFont).apply {
+            alignment = Element.ALIGN_RIGHT
+            spacingBefore = 5f
+        }
+        document.add(totalWords)
 
         document.close()
-        return out.toByteArray()
+        writer.close()
+
+        return outputStream.toByteArray()
     }
 
-    private fun createCell(text: String, font: Font): PdfPCell {
-        val cell = PdfPCell(Phrase(text, font))
-        cell.border = Rectangle.NO_BORDER
-        cell.setPadding(5f)
-        return cell
+    private fun createCell(
+        text: String,
+        font: Font,
+        isHeader: Boolean = false,
+        horizontalAlignment: Int = Element.ALIGN_LEFT
+    ): PdfPCell {
+        return PdfPCell(Phrase(text, font)).apply {
+            setPadding(5f)
+            borderWidth = if (isHeader) 1f else 0.5f
+            backgroundColor = if (isHeader) CMYKColor.LIGHT_GRAY else CMYKColor.WHITE
+            setHorizontalAlignment(
+                if (isHeader && horizontalAlignment == Element.ALIGN_LEFT) Element.ALIGN_CENTER else horizontalAlignment
+            )
+        }
     }
 
     private fun convertToWords(number: Int): String {

@@ -20,6 +20,7 @@ interface InvoiceRepository: JpaRepository<Invoice, Long> {
     fun countByClearedTrue(): Long
     fun countByClearedFalse(): Long
     fun findByPreliminaryId(preliminaryId: Long): Invoice
+//    fun findByOriginalInvoiceId(originalInvoiceId: Long): List<Invoice>
 }
 @Repository
 interface InvoiceItemRepository: JpaRepository<InvoiceItem, Long> {

@@ -19,6 +19,9 @@ data class Client(
     @Column(nullable = true)
     var lastName: String,
 
+    @Column(nullable = false)
+    var siteVisitDone: Boolean = false,
+
     @Column(nullable = true, unique = true)
     var email: String?,
     @Column(nullable = false)
