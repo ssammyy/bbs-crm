@@ -20,13 +20,11 @@ import java.time.format.DateTimeFormatter
 
 @Component
 class PdfGenerator {
-//HELLO WORLD
-    private val companyFont = Font(Font.HELVETICA, 10f, Font.NORMAL, CMYKColor.BLACK) // Adjusted font size
-    private val companyBoldFont =
-        Font(Font.HELVETICA, 10f, Font.BOLD, CMYKColor.BLACK) // New bold font for company name
-    private val normalFont = Font(Font.HELVETICA, 8f, Font.NORMAL, CMYKColor.BLACK) // Adjusted font size
+    private val companyFont = Font(Font.HELVETICA, 10f, Font.NORMAL, CMYKColor.BLACK)
+    private val companyBoldFont = Font(Font.HELVETICA, 10f, Font.BOLD, CMYKColor.BLACK)
+    private val normalFont = Font(Font.HELVETICA, 8f, Font.NORMAL, CMYKColor.BLACK)
     private val titleFont = Font(Font.HELVETICA, 16f, Font.BOLD, CMYKColor.BLACK)
-    private val logoResource = ClassPathResource("static/logo.jpeg") // Assuming your logo is named bbs_logo.jpeg
+    private val logoResource = ClassPathResource("static/logo.jpeg")
 
     fun generateInvoicePdf(invoice: PdfInvoiceDTO): ByteArray {
         val outputStream = ByteArrayOutputStream()
@@ -38,10 +36,9 @@ class PdfGenerator {
         // Header Table with Logo and Company Details
         val headerTable = PdfPTable(2).apply {
             widthPercentage = 100f
-            setWidths(floatArrayOf(0.4f, 0.6f)) // Adjust proportions as needed
+            setWidths(floatArrayOf(0.4f, 0.6f))
             defaultCell.border = Rectangle.NO_BORDER
 
-            // Logo Cell (Left-aligned)
             val logoCell = PdfPCell().apply {
                 border = Rectangle.NO_BORDER
                 horizontalAlignment = Element.ALIGN_LEFT
@@ -49,7 +46,7 @@ class PdfGenerator {
                 try {
                     val imageUrl = logoResource.url
                     val image = Image.getInstance(imageUrl)
-                    image.scaleToFit(120f, 60f) // Adjust logo size
+                    image.scaleToFit(120f, 60f)
                     addElement(image)
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -58,16 +55,15 @@ class PdfGenerator {
             }
             addCell(logoCell)
 
-            // Company Details Cell (Right-aligned)
             val companyDetails = PdfPTable(1).apply {
                 defaultCell.border = Rectangle.NO_BORDER
                 defaultCell.horizontalAlignment = Element.ALIGN_RIGHT
-                addCell(Phrase("BENCHMARK", companyBoldFont)) // "BENCHMARK" in bold
+                addCell(Phrase("BENCHMARK", companyBoldFont))
                 addCell(Phrase("Building Solutions Ltd", companyFont))
                 addCell(Phrase("K-unity Building, Basement, Biashara street, Kiambu", normalFont))
                 addCell(Phrase("P.O.BOX 8213 - 00200", normalFont))
                 addCell(Phrase("NAIROBI", normalFont))
-                addCell(Phrase("0722 333 324", normalFont)) // Adjusted spacing
+                addCell(Phrase("0722 333 324", normalFont))
             }
             val companyCell = PdfPCell(companyDetails).apply {
                 border = Rectangle.NO_BORDER
@@ -79,7 +75,7 @@ class PdfGenerator {
         }
         document.add(headerTable)
 
-        // Invoice Title (Left-aligned, below header)
+        // Invoice Title
         val title = Paragraph("INVOICE", titleFont).apply {
             alignment = Element.ALIGN_LEFT
             spacingBefore = 10f
@@ -87,36 +83,38 @@ class PdfGenerator {
         }
         document.add(title)
 
-        // Details Table (Adjusted to match layout)
-        val detailsTable = PdfPTable(4).apply { // Increased to 4 columns
+        // Details Table
+        val detailsTable = PdfPTable(4).apply {
             widthPercentage = 100f
-            setWidths(floatArrayOf(0.5f, 1.5f, 0.5f, 1.5f)) // Adjust column widths
+            setWidths(floatArrayOf(0.5f, 1.5f, 0.5f, 1.5f))
             setSpacingAfter(20f)
             defaultCell.border = Rectangle.NO_BORDER
 
             addCell(Phrase("Submitted on:", companyBoldFont))
-            addCell(
-                Phrase(
-                    invoice.dateIssued.format(DateTimeFormatter.ofPattern("d'th' MMMM yyyy")),
-                    normalFont
-                )
-            ) // Added year
+            addCell(Phrase(invoice.dateIssued.format(DateTimeFormatter.ofPattern("d'th' MMMM yyyy")), normalFont))
             addCell(Phrase("Due Date:", companyBoldFont))
-            addCell(Phrase("12th March 2025", normalFont)) // Hardcoded due date as in the image
+            addCell(Phrase("12th March 2025", normalFont))
 
             addCell(Phrase("Invoice for", companyBoldFont))
             addCell(Phrase(invoice.clientName, normalFont))
             addCell(Phrase("Project", companyBoldFont))
             addCell(Phrase(invoice.projectName, normalFont))
 
-            addCell(Phrase(" ", normalFont)) // Empty cell for spacing
+            addCell(Phrase(" ", normalFont))
             addCell(Phrase(invoice.clientPhone, normalFont))
             addCell(Phrase("Invoice #", companyBoldFont))
             addCell(Phrase(invoice.invoiceNumber, normalFont))
+
+            if (invoice.parentInvoiceId != null) {
+                addCell(Phrase("Parent Invoice #", companyBoldFont))
+                addCell(Phrase("Parent-${invoice.parentInvoiceId}", normalFont))
+                addCell(Phrase("", normalFont))
+                addCell(Phrase("", normalFont))
+            }
         }
         document.add(detailsTable)
 
-        // Payment Details Table (Similar two-column layout)
+        // Payment Details Table
         val paymentTable = PdfPTable(2).apply {
             widthPercentage = 100f
             setWidths(floatArrayOf(0.5f, 1.5f))
@@ -125,18 +123,11 @@ class PdfGenerator {
             defaultCell.border = Rectangle.NO_BORDER
 
             addCell(Phrase("Payable to", companyBoldFont))
-            addCell(
-                Phrase(
-                    "Bank: NCBA\nBranch: Kiambu\nA/C Number: 5810980017\nA/C Name: Benchmark Building Solutions LTD",
-                    normalFont
-                )
-            )
-
+            addCell(Phrase("Bank: NCBA\nBranch: Kiambu\nA/C Number: 5810980017\nA/C Name: Benchmark Building Solutions LTD", normalFont))
             addCell(Phrase("NCBA PAYBILL NO", companyBoldFont))
             addCell(Phrase("880100", normalFont))
-
             addCell(Phrase("SEND MONEY", companyBoldFont))
-            addCell(Phrase("0741 817007", normalFont)) // Adjusted spacing
+            addCell(Phrase("0741 817007", normalFont))
         }
         document.add(paymentTable)
 
@@ -162,7 +153,7 @@ class PdfGenerator {
         }
         document.add(itemsTable)
 
-        // Total Section (Right-aligned)
+        // Total Section
         val totalTable = PdfPTable(2).apply {
             widthPercentage = 40f
             setWidths(floatArrayOf(2f, 2f))
@@ -186,7 +177,7 @@ class PdfGenerator {
         }
         document.add(totalTable)
 
-        // Total in Words (Right-aligned)
+        // Total in Words
         val totalWords = Paragraph("${convertToWords(invoice.finalTotal.toInt())} Kenya shillings only.", normalFont).apply {
             alignment = Element.ALIGN_RIGHT
             spacingBefore = 5f
@@ -218,16 +209,7 @@ class PdfGenerator {
     private fun convertToWords(number: Int): String {
         val units = arrayOf("", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
         val teens = arrayOf(
-            "ten",
-            "eleven",
-            "twelve",
-            "thirteen",
-            "fourteen",
-            "fifteen",
-            "sixteen",
-            "seventeen",
-            "eighteen",
-            "nineteen"
+            "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"
         )
         val tens = arrayOf("", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety")
 

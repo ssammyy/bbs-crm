@@ -28,6 +28,14 @@ class InvoiceController(
             .body(response.pdfContent)
     }
 
+    @PostMapping("/balance/{parentInvoiceId}")
+    fun createBalanceInvoice(@PathVariable parentInvoiceId: Long): ResponseEntity<ByteArray> {
+        val response = invoiceService.createBalanceInvoice(parentInvoiceId)
+        return ResponseEntity.ok()
+            .header("Content-Disposition", "attachment; filename=invoice-${response.invoiceNumber}.pdf")
+            .body(response.pdfContent)
+    }
+
     @GetMapping("/{clientId}/{invoiceType}/pdf")
     fun getInvoicePdf(@PathVariable clientId: Long, @PathVariable invoiceType: InvoiceType): ResponseEntity<ByteArray> {
         val pdfBytes = invoiceService.getInvoicePdf(clientId, invoiceType)
@@ -36,8 +44,18 @@ class InvoiceController(
             .header("Content-Disposition", "attachment; filename=invoice-$clientId.pdf")
             .body(pdfBytes)
     }
+
+    @GetMapping("/{invoiceId}/pdf")
+    fun getInvoicePdfById(@PathVariable invoiceId: Long): ResponseEntity<ByteArray> {
+        val pdfBytes = invoiceService.getInvoicePdfById(invoiceId)
+        return ResponseEntity.ok()
+            .header("Content-Type", "application/pdf")
+            .header("Content-Disposition", "attachment; filename=invoice-$invoiceId.pdf")
+            .body(pdfBytes)
+    }
+
     @GetMapping("/{clientId}/prelim/{preliminaryId}/pdf")
-    fun getPreliminaryInvoicePdy(@PathVariable clientId: Long, @PathVariable preliminaryId: Long): ResponseEntity<ByteArray> {
+    fun getPreliminaryInvoicePdf(@PathVariable clientId: Long, @PathVariable preliminaryId: Long): ResponseEntity<ByteArray> {
         val pdfBytes = invoiceService.getPreliminaryInvoicePdf(clientId, preliminaryId)
         return ResponseEntity.ok()
             .header("Content-Type", "application/pdf")
@@ -79,7 +97,7 @@ class InvoiceController(
     @GetMapping("/preliminary/{preliminaryId}")
     fun getPreliminaryInvoice(@PathVariable preliminaryId: Long): ResponseEntity<PdfInvoiceDTO?> {
         val invoice = invoiceService.getInvoiceByPreliminaryId(preliminaryId)
-        return ResponseEntity.ok(invoice.let { invoiceService.convertToPdfDto(it!!) })
+        return ResponseEntity.ok(invoice?.let { invoiceService.convertToPdfDto(it) })
     }
 
     @GetMapping("/all-client-invoices/{clientId}")
@@ -87,4 +105,8 @@ class InvoiceController(
         return ResponseEntity.ok(invoiceService.getInvoicesByClientId(clientId))
     }
 
+    @GetMapping("/balance/{parentInvoiceId}")
+    fun getBalanceInvoices(@PathVariable parentInvoiceId: Long): ResponseEntity<List<Invoice>> {
+        return ResponseEntity.ok(invoiceService.getBalanceInvoicesByParentId(parentInvoiceId))
+    }
 }

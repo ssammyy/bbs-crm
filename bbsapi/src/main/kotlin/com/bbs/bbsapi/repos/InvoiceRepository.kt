@@ -9,21 +9,21 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface InvoiceRepository: JpaRepository<Invoice, Long> {
-
+interface InvoiceRepository : JpaRepository<Invoice, Long> {
     fun findByClientId(clientId: Long): List<Invoice>
-    fun findByClientIdAndInvoiceType(clientId: Long, invoiceType: InvoiceType): Invoice
-    fun findByClientIdAndPreliminaryId(clientId: Long, preliminaryId: Long): Invoice
+    fun findByClientIdAndInvoiceType(clientId: Long, invoiceType: InvoiceType): Invoice?
+    fun findByClientIdAndPreliminaryId(clientId: Long, preliminaryId: Long): Invoice?
     fun findByClearedTrue(): List<Invoice>
     fun findByClearedFalse(): List<Invoice>
     fun findByClearedFalseAndInvoiceTypeNot(invoiceType: InvoiceType): List<Invoice>
     fun countByClearedTrue(): Long
     fun countByClearedFalse(): Long
-    fun findByPreliminaryId(preliminaryId: Long): Invoice
-//    fun findByOriginalInvoiceId(originalInvoiceId: Long): List<Invoice>
+    fun findByPreliminaryId(preliminaryId: Long): Invoice?
+    fun findByParentInvoiceId(parentInvoiceId: Long): List<Invoice>
 }
+
 @Repository
-interface InvoiceItemRepository: JpaRepository<InvoiceItem, Long> {
+interface InvoiceItemRepository : JpaRepository<InvoiceItem, Long> {
 }
 
 @Repository

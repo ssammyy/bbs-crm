@@ -125,18 +125,18 @@ class ClientService(
     ): Client? {
         if (clientStage == ClientStage.PENDING_SITE_VISIT) {
             val invoice = invoiceRepository.findByClientIdAndInvoiceType(client.id, InvoiceType.SITE_VISIT)
-            invoice.cleared = true
-            invoiceRepository.save(invoice)
+            invoice?.cleared = true
+            invoiceRepository.save(invoice!!)
         }
         if (clientStage == ClientStage.ARCHITECTURAL_DRAWINGS_SKETCH) {
             val invoice = invoiceRepository.findByClientIdAndInvoiceType(client.id, InvoiceType.ARCHITECTURAL_DRAWINGS)
-            invoice.cleared = true
-            invoiceRepository.save(invoice)
+            invoice?.cleared = true
+            invoiceRepository.save(invoice!!)
         }
         if (clientStage == ClientStage.UPLOAD_BOQ) {
             val invoice = invoiceRepository.findByClientIdAndInvoiceType(client.id, InvoiceType.BOQ)
-            invoice.cleared = true
-            invoiceRepository.save(invoice)
+            invoice?.cleared = true
+            invoiceRepository.save(invoice!!)
         }
 
         client.clientStage = clientStage

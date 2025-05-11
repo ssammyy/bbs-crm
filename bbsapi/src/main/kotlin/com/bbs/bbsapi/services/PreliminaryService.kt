@@ -111,8 +111,8 @@ class PreliminaryService(
 
     fun approvePreliminaryInvoice(clientId: Long, preliminaryId: Long): ResponseEntity<Invoice> {
         val invoice = invoiceRepository.findByPreliminaryId(preliminaryId)
-        invoice.directorApproved = true
-        invoiceRepository.save(invoice)
+        invoice?.directorApproved = true
+        invoiceRepository.save(invoice!!)
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice)
 
 

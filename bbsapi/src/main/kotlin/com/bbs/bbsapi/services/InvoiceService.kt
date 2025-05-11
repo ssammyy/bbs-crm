@@ -52,17 +52,12 @@ class InvoiceService(
                 .orElseThrow { IllegalArgumentException("Preliminary not found: $it") }
         }
 
-        // Calculate subtotal from items
         val subtotal = request.items.sumOf { it.totalPrice }
-
-        // Calculate discount amount if percentage is provided
         val discountAmount = if (request.discountPercentage > 0) {
             (subtotal * request.discountPercentage / 100.0)
         } else {
             request.discountAmount
         }
-
-        // Calculate final total after discount
         val finalTotal = subtotal - discountAmount
 
         val invoice = Invoice(
@@ -83,9 +78,9 @@ class InvoiceService(
         )
 
         if (preliminary != null) {
-            preliminary?.invoiced = true
-            preliminary?.invoice = invoice
-            preliminaryRepository.save(preliminary!!)
+            preliminary.invoiced = true
+            preliminary.invoice = invoice
+            preliminaryRepository.save(preliminary)
         }
 
         val invoiceItems = request.items.map { itemDto ->
@@ -102,17 +97,12 @@ class InvoiceService(
 
         val savedInvoice = invoiceRepository.save(invoice)
 
-        // Initialize preliminaries for SITE_VISIT invoice items
         if (request.invoiceType == InvoiceType.SITE_VISIT) {
             request.items.forEach { item ->
-                // Skip the SITE_VISIT item itself
                 if (item.description != "SITE_VISIT") {
                     try {
-                        // Find the preliminary type by name
                         val preliminaryType = preliminaryTypeRepository.findByName(item.description)
                             .orElseThrow { IllegalArgumentException("Preliminary type not found for: ${item.description}") }
-                        
-                        // Initialize the preliminary
                         preliminaryService.initiatePreliminary(
                             clientId = request.clientId,
                             request = InitiatePreliminaryRequest(
@@ -122,17 +112,14 @@ class InvoiceService(
                             invoice
                         )
                     } catch (e: Exception) {
-                        // Log the error but continue processing other items
                         println("Failed to initialize preliminary for ${item.description}: ${e.message}")
                     }
                 }
             }
         }
 
-        // Update proforma invoice
         updateProformaInvoice(client.id, savedInvoice)
 
-        // Update client stage and preliminary status
         when (request.invoiceType) {
             InvoiceType.PROFORMA -> {
                 CoroutineScope(Dispatchers.IO).launch {
@@ -190,21 +177,73 @@ class InvoiceService(
         )
     }
 
+    @Transactional
+    fun createBalanceInvoice(parentInvoiceId: Long): InvoiceResponse {
+        val parentInvoice = invoiceRepository.findById(parentInvoiceId)
+            .orElseThrow { IllegalArgumentException("Parent invoice not found: $parentInvoiceId") }
+        if (parentInvoice.balance <= 0 || parentInvoice.invoiceReconciled) {
+            throw IllegalArgumentException("Parent invoice is already fully reconciled or has no balance")
+        }
+
+        val client = clientService.getClientById(parentInvoice.clientId)
+        val balanceInvoice = Invoice(
+            invoiceNumber = "${parentInvoice.invoiceNumber}-BAL-${generateRandomString(4)}",
+            dateIssued = LocalDate.now(),
+            clientId = parentInvoice.clientId,
+            clientName = parentInvoice.clientName,
+            clientPhone = parentInvoice.clientPhone,
+            projectName = parentInvoice.projectName,
+            items = mutableListOf(),
+            total = parentInvoice.balance,
+            invoiceType = InvoiceType.OPEN,
+            parentInvoice = parentInvoice,
+            subtotal = parentInvoice.balance,
+            finalTotal = parentInvoice.balance,
+            balance = parentInvoice.balance
+        )
+
+        val invoiceItem = InvoiceItem(
+            invoice = balanceInvoice, // Set the invoice reference here
+            description = "Remaining Balance for Invoice #${parentInvoice.invoiceNumber}",
+            quantity = 1,
+            unitPrice = parentInvoice.balance,
+            totalPrice = parentInvoice.balance
+        )
+
+        balanceInvoice.items.add(invoiceItem)
+
+        val savedInvoice = invoiceRepository.save(balanceInvoice)
+
+        val pdfBytes = pdfGenerator.generateInvoicePdf(convertToPdfDto(savedInvoice))
+
+        return InvoiceResponse(
+            invoiceId = savedInvoice.id,
+            invoiceNumber = savedInvoice.invoiceNumber,
+            pdfContent = pdfBytes
+        )
+    }
+
     @Transactional(readOnly = true)
     fun getInvoicePdf(clientId: Long, invoiceType: InvoiceType): ByteArray {
         if (invoiceType == InvoiceType.PROFORMA) {
-        return pdfGenerator.generateInvoicePdf( getProformaInvoice(clientId)!!)
-
+            return pdfGenerator.generateInvoicePdf(getProformaInvoice(clientId)!!)
         }
         val invoice = invoiceRepository.findByClientIdAndInvoiceType(clientId, invoiceType)
-
+            ?: throw IllegalArgumentException("Invoice not found for client $clientId and type $invoiceType")
         return pdfGenerator.generateInvoicePdf(convertToPdfDto(invoice))
     }
 
     @Transactional(readOnly = true)
     fun getPreliminaryInvoicePdf(clientId: Long, preliminaryId: Long): ByteArray {
         val invoice = invoiceRepository.findByClientIdAndPreliminaryId(clientId, preliminaryId)
+            ?: throw IllegalArgumentException("Invoice not found for client $clientId and preliminary $preliminaryId")
+        return pdfGenerator.generateInvoicePdf(convertToPdfDto(invoice))
+    }
 
+    @Transactional(readOnly = true)
+    fun getInvoicePdfById(invoiceId: Long): ByteArray {
+        val invoice = invoiceRepository.findById(invoiceId)
+            .orElseThrow { IllegalArgumentException("Invoice not found: $invoiceId") }
         return pdfGenerator.generateInvoicePdf(convertToPdfDto(invoice))
     }
 
@@ -228,10 +267,11 @@ class InvoiceService(
                     totalPrice = item.totalPrice
                 )
             }.toMutableList(),
-            total = proforma.totalAmount.toDouble() ,
+            total = proforma.totalAmount.toDouble(),
             invoiceType = InvoiceType.PROFORMA
         )
     }
+
     @Transactional
     fun acceptInvoice(clientId: Long, stage: ClientStage, invoiceType: InvoiceType): Client {
         val invoice = invoiceRepository.findByClientIdAndInvoiceType(clientId, invoiceType)
@@ -250,7 +290,6 @@ class InvoiceService(
                     "Director approved proforma invoice"
                 )
             }
-
             ClientStage.PENDING_DIRECTOR_SITE_VISIT_INVOICE_APPROVAL -> {
                 invoice.directorApproved = true
                 invoiceRepository.save(invoice)
@@ -264,7 +303,6 @@ class InvoiceService(
             ClientStage.GENERATE_DRAWINGS_INVOICE -> {
                 invoice.directorApproved = true
                 invoiceRepository.save(invoice)
-
                 clientService.changeClientStatus(
                     ClientStage.GENERATE_DRAWINGS_INVOICE,
                     client,
@@ -275,7 +313,6 @@ class InvoiceService(
             ClientStage.GENERATE_BOQ_PREPARATION_INVOICE -> {
                 invoice.directorApproved = true
                 invoiceRepository.save(invoice)
-
                 clientService.changeClientStatus(
                     ClientStage.GENERATE_BOQ_PREPARATION_INVOICE,
                     client,
@@ -309,7 +346,6 @@ class InvoiceService(
                 )
             }
             ClientStage.GENERATE_SITE_VISIT_INVOICE -> {
-
                 clientService.changeClientStatus(
                     ClientStage.GENERATE_SITE_VISIT_INVOICE,
                     client,
@@ -318,7 +354,6 @@ class InvoiceService(
                 )
             }
             ClientStage.GENERATE_DRAWINGS_INVOICE -> {
-
                 clientService.changeClientStatus(
                     ClientStage.GENERATE_DRAWINGS_INVOICE,
                     client,
@@ -327,7 +362,6 @@ class InvoiceService(
                 )
             }
             ClientStage.GENERATE_BOQ_PREPARATION_INVOICE -> {
-
                 clientService.changeClientStatus(
                     ClientStage.GENERATE_BOQ_PREPARATION_INVOICE,
                     client,
@@ -340,6 +374,7 @@ class InvoiceService(
 
         return client
     }
+
     private fun generateRandomString(length: Int = 8): String {
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
         return (1..length)
@@ -379,15 +414,21 @@ class InvoiceService(
             discountPercentage = invoice.discountPercentage,
             discountAmount = invoice.discountAmount,
             subtotal = invoice.subtotal,
-            finalTotal = invoice.finalTotal
+            finalTotal = invoice.finalTotal,
+            parentInvoiceId = invoice.parentInvoice?.id
         )
     }
 
     fun getInvoiceByPreliminaryId(preliminaryId: Long): Invoice? {
         return invoiceRepository.findByPreliminaryId(preliminaryId)
     }
+
     fun getInvoicesByClientId(clientId: Long): List<Invoice> {
         return invoiceRepository.findByClientId(clientId)
+    }
+
+    fun getBalanceInvoicesByParentId(parentInvoiceId: Long): List<Invoice> {
+        return invoiceRepository.findByParentInvoiceId(parentInvoiceId)
     }
 
     @Transactional
@@ -408,15 +449,24 @@ class InvoiceService(
         invoice.balance = invoice.balance - receiptDTO.amountPaid
         invoice.invoiceReconciled = invoice.balance <= 0
         invoice.pendingBalance = !invoice.invoiceReconciled
+        invoice.cleared = invoice.invoiceReconciled
         invoiceRepository.save(invoice)
+
+        // If this is a balance invoice, update the parent invoice
+        if (invoice.parentInvoice != null) {
+            val parentInvoice = invoice.parentInvoice!!
+            parentInvoice.balance = parentInvoice.balance - receiptDTO.amountPaid
+            parentInvoice.invoiceReconciled = parentInvoice.balance <= 0
+            parentInvoice.pendingBalance = !parentInvoice.invoiceReconciled
+            parentInvoice.cleared = parentInvoice.invoiceReconciled
+            invoiceRepository.save(parentInvoice)
+        }
 
         // Update preliminary's invoice cleared flag if invoice is fully paid
         if (invoice.preliminary != null && invoice.invoiceReconciled) {
             val preliminary = invoice.preliminary
             if (preliminary != null) {
                 preliminary.invoiceClearedFlag = true
-            }
-            if (preliminary != null) {
                 preliminaryRepository.save(preliminary)
             }
         }

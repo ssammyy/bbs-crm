@@ -153,7 +153,7 @@ class UploadFile(
     ): ResponseEntity<FileMetadata> {
         val client = clientRepository.findById(clientId)
             .orElseThrow { RuntimeException("Client with ID $clientId not found") }
-        if(digitalOceanService.uploadFile(file)=="success"){
+        if(digitalOceanService.uploadFile(file).equals("success")){
             return digitalOceanService.updateMetadata(client, file, fileType)
         }
         else throw java.lang.IllegalArgumentException("file upload failed")

@@ -1,6 +1,8 @@
 package com.bbs.bbsapi.models
 
 import com.bbs.bbsapi.enums.InvoiceType
+import com.fasterxml.jackson.annotation.JsonBackReference
+import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -48,8 +50,6 @@ data class Invoice(
     @Enumerated(EnumType.STRING)
     val invoiceType: InvoiceType = InvoiceType.PROFORMA,
 
-
-
     @Column(nullable = true)
     var rejectionRemarks: String = "",
 
@@ -57,7 +57,7 @@ data class Invoice(
     var cleared: Boolean = false,
 
     @Column(nullable = false)
-    var pendingBalance : Boolean = false,
+    var pendingBalance: Boolean = false,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "preliminary_id", nullable = true)
@@ -79,5 +79,14 @@ data class Invoice(
     var subtotal: Double = total,
 
     @Column(nullable = false)
-    var finalTotal: Double = total
+    var finalTotal: Double = total,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_invoice_id", nullable = true)
+    @JsonBackReference
+    var parentInvoice: Invoice? = null,
+
+    @OneToMany(mappedBy = "parentInvoice", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @JsonManagedReference
+    val balanceInvoices: MutableList<Invoice> = mutableListOf()
 )
