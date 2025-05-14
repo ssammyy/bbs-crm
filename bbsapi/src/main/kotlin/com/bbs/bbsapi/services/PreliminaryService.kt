@@ -27,7 +27,11 @@ class PreliminaryService(
 
     fun initiatePreliminary(clientId: Long, request: InitiatePreliminaryRequest, invoice: Invoice? = null): Preliminary {
         val client = clientRepository.findById(clientId).orElseThrow { IllegalArgumentException("Client not found") }
-        println("prelim id  " + request.preliminaryType)
+        val alreadyExists = preliminaryRepository.existsByPreliminaryType_Id(request.preliminaryType)
+        if (alreadyExists) {
+            throw IllegalStateException("A preliminary of that type already exists for this context.")
+        }
+
         val preliminaryType = preliminaryTypeRepository.findById(request.preliminaryType)
             .orElseThrow { IllegalArgumentException("Preliminary type not found") }
 
@@ -37,11 +41,11 @@ class PreliminaryService(
             status = PreliminaryStatus.INITIATED,
             invoiced = request.invoiced,
             createdAt = LocalDateTime.now(),
-            invoice = invoice
+            invoice = invoice,
+            rejectionRemarks = null
         )
         return preliminaryRepository.save(preliminary)
     }
-
 
     fun approvePreliminary(preliminaryId: Long, request: ApprovalRequest): Approval {
         val preliminary = preliminaryRepository.findById(preliminaryId)
@@ -58,7 +62,6 @@ class PreliminaryService(
         )
         val savedApproval = approvalRepository.save(approval)
 
-        // Update preliminary status based on approval
         if (request.status == "APPROVED") {
             val approvals = approvalRepository.findByPreliminaryId(preliminaryId)
             val hasTechnicalDirectorApproval = request.approvalStage == ApprovalStage.TECHNICAL_DIRECTOR
@@ -69,23 +72,43 @@ class PreliminaryService(
                 hasTechnicalDirectorApproval -> PreliminaryStatus.PENDING_M_D_APPROVAL
                 else -> PreliminaryStatus.COMPLETE
             }
+            preliminary.rejectionRemarks = null
             preliminaryRepository.save(preliminary)
         }
 
         return savedApproval
     }
 
+    fun rejectPreliminary(preliminaryId: Long, request: ApprovalRequest): Approval {
+        val preliminary = preliminaryRepository.findById(preliminaryId)
+            .orElseThrow { IllegalArgumentException("Preliminary not found") }
+
+        val approval = Approval(
+            preliminary = preliminary,
+            approvalStage = request.approvalStage,
+            status = ApprovalStatus.REJECTED,
+            remarks = request.comments,
+            approvedBy = userService.getActualUSer(),
+            technicalApproved = false,
+            directorApproved = false,
+        )
+        val savedApproval = approvalRepository.save(approval)
+
+        preliminary.status = PreliminaryStatus.INITIATED
+        preliminary.rejectionRemarks = request.comments
+        preliminaryRepository.save(preliminary)
+
+        return savedApproval
+    }
 
     fun getProformaInvoice(clientId: Long): ProformaInvoice {
         return proformaInvoiceRepository.findByClientId(clientId)
             ?: throw (IllegalArgumentException("Client not found"))
     }
 
-
-    private fun getTechnicalDirectorId(): Long = 2 // Placeholder: Fetch from user repository
-    private fun getMDId(): Long = 3 // Placeholder: Fetch from user repository
+    private fun getTechnicalDirectorId(): Long = 2
+    private fun getMDId(): Long = 3
     fun createNewPreliminaryType(preliminaryType: PreliminaryType): PreliminaryType {
-
         println("Preliminary type created " + preliminaryType.name)
         val preliminaryTypeV = PreliminaryType(
             name = preliminaryType.name,
@@ -97,7 +120,6 @@ class PreliminaryService(
     fun getClientPreliminaries(clientId: Long): List<Preliminary> {
         val preliminaryList = preliminaryRepository.findByClientId(clientId)
         return preliminaryList
-
     }
 
     fun submitTechnicalPreliminary(clientId: Long, preliminary: Preliminary): ResponseEntity<Preliminary> {
@@ -106,7 +128,6 @@ class PreliminaryService(
         prelim.status = PreliminaryStatus.PENDING_T_D_APPROVAL
         preliminaryRepository.save(prelim)
         return ResponseEntity.status(HttpStatus.CREATED).body(prelim)
-
     }
 
     fun approvePreliminaryInvoice(clientId: Long, preliminaryId: Long): ResponseEntity<Invoice> {
@@ -114,8 +135,6 @@ class PreliminaryService(
         invoice?.directorApproved = true
         invoiceRepository.save(invoice!!)
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice)
-
-
     }
 
     fun getPreliminaryById(preliminaryId: Long): Preliminary {
@@ -126,8 +145,10 @@ class PreliminaryService(
     fun approvePreliminaryStage(preliminary: Preliminary, approvalStage: ApprovalStage): Preliminary {
         if (approvalStage == ApprovalStage.TECHNICAL_DIRECTOR) {
             preliminary.status = PreliminaryStatus.PENDING_M_D_APPROVAL
+            preliminary.rejectionRemarks = null
         } else {
             preliminary.status = PreliminaryStatus.COMPLETE
+            preliminary.rejectionRemarks = null
         }
         return preliminaryRepository.save(preliminary)
     }
@@ -135,7 +156,7 @@ class PreliminaryService(
     fun updatePreliminaryStatus(preliminaryId: Long, status: PreliminaryStatus) {
         val preliminary = preliminaryRepository.findById(preliminaryId).orElseThrow()
         preliminary.status = status
+        preliminary.rejectionRemarks = null
         preliminaryRepository.save(preliminary)
     }
-
 }

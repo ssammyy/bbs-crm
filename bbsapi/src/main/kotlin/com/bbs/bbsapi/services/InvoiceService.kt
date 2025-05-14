@@ -184,6 +184,11 @@ class InvoiceService(
         if (parentInvoice.balance <= 0 || parentInvoice.invoiceReconciled) {
             throw IllegalArgumentException("Parent invoice is already fully reconciled or has no balance")
         }
+        // Check for existing balance invoices
+        val existingBalanceInvoices = invoiceRepository.findByParentInvoiceId(parentInvoiceId)
+        if (existingBalanceInvoices.isNotEmpty()) {
+            throw IllegalArgumentException("A balance invoice already exists for parent invoice $parentInvoiceId")
+        }
 
         val client = clientService.getClientById(parentInvoice.clientId)
         val balanceInvoice = Invoice(
@@ -203,7 +208,7 @@ class InvoiceService(
         )
 
         val invoiceItem = InvoiceItem(
-            invoice = balanceInvoice, // Set the invoice reference here
+            invoice = balanceInvoice,
             description = "Remaining Balance for Invoice #${parentInvoice.invoiceNumber}",
             quantity = 1,
             unitPrice = parentInvoice.balance,

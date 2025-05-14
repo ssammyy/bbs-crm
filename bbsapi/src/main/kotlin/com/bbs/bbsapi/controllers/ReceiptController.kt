@@ -20,6 +20,14 @@ class ReceiptController(private val receiptService: ReceiptService) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
         }
     }
+    @GetMapping("/client/{clientId}")
+    fun getReceiptsByClient(
+        @PathVariable clientId: Long,
+        @RequestParam(required = false) search: String?,
+        @RequestParam(required = false) paymentMethod: String?
+    ): List<ReceiptDTO> {
+        return receiptService.getReceiptsByClient(clientId, search, paymentMethod)
+    }
 
     @GetMapping("/invoice/{invoiceId}")
     fun getReceiptsForInvoice(@PathVariable invoiceId: Long): ResponseEntity<List<ReceiptDTO>> {

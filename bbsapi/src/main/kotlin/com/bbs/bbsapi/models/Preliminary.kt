@@ -20,17 +20,15 @@ data class Preliminary(
     val preliminaryType: PreliminaryType? = null,
 
 
-
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id", nullable = true)
     @JsonIgnore
     var invoice: Invoice? = null,
 
-    @Column(name="invoiced", nullable = false)
+    @Column(name = "invoiced", nullable = false)
     var invoiced: Boolean = false,
 
-    @Column(name="invoice_cleared", nullable = false)
+    @Column(name = "invoice_cleared", nullable = false)
     var invoiceClearedFlag: Boolean = false,
 
     @Column(nullable = false)
@@ -38,5 +36,6 @@ data class Preliminary(
     var status: PreliminaryStatus? = null,
 
     @Column(name = "created_at", nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+    var rejectionRemarks: String? = null,
 )

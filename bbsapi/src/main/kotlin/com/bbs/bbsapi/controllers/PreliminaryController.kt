@@ -1,6 +1,5 @@
 package com.bbs.bbsapi.controllers
 
-
 import com.bbs.bbsapi.entities.InvoiceResponse
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
 import com.bbs.bbsapi.enums.ApprovalStage
@@ -46,7 +45,6 @@ class PreliminaryController(
         return ResponseEntity.ok(newPreliminary)
     }
 
-
     @PostMapping("/{preliminaryId}/invoice")
     fun generateInvoice(
         @PathVariable preliminaryId: Long,
@@ -56,22 +54,21 @@ class PreliminaryController(
         return ResponseEntity.ok(invoice)
     }
 
-//    @PostMapping("/{preliminaryId}/upload")
-//    fun uploadDocument(
-//        @PathVariable preliminaryId: Long,
-//        @RequestParam("file") file: MultipartFile,
-//        @RequestParam("uploadedBy") uploadedBy: String
-//    ): ResponseEntity<Document> {
-//        val document = preliminaryService.uploadDocument(preliminaryId, file, uploadedBy)
-//        return ResponseEntity.ok(document)
-//    }
-
     @PostMapping("/{preliminaryId}/approve")
     fun approvePreliminary(
         @PathVariable preliminaryId: Long,
         @RequestBody request: ApprovalRequest
     ): ResponseEntity<Approval> {
         val approval = preliminaryService.approvePreliminary(preliminaryId, request)
+        return ResponseEntity.ok(approval)
+    }
+
+    @PostMapping("/{preliminaryId}/reject")
+    fun rejectPreliminary(
+        @PathVariable preliminaryId: Long,
+        @RequestBody request: ApprovalRequest
+    ): ResponseEntity<Approval> {
+        val approval = preliminaryService.rejectPreliminary(preliminaryId, request)
         return ResponseEntity.ok(approval)
     }
 
@@ -90,8 +87,6 @@ class PreliminaryController(
     ): ResponseEntity<Invoice> {
         return preliminaryService.approvePreliminaryInvoice(clientId, preliminaryId)
     }
-
-
 
     @GetMapping("/files/{clientId}/{preliminaryId}")
     fun getFiles(
@@ -112,6 +107,15 @@ class PreliminaryController(
         return ResponseEntity.ok(prelim)
     }
 
+    @PostMapping("/reject/{approvalStage}")
+    fun rejectPreliminaryStage(
+        @PathVariable approvalStage: ApprovalStage,
+        @RequestBody request: RejectionRequest
+    ): ResponseEntity<Preliminary> {
+        val prelim = preliminaryService.rejectPreliminary(request.preliminary.id, ApprovalRequest(approvalStage, "REJECTED", request.remarks))
+        return ResponseEntity.ok(prelim.preliminary)
+    }
+
     @GetMapping("/{clientId}/proforma")
     fun getProformaInvoice(@PathVariable clientId: Long): ResponseEntity<ProformaInvoice> {
         val proforma = preliminaryService.getProformaInvoice(clientId)
@@ -123,7 +127,6 @@ class PreliminaryController(
         return ResponseEntity.ok(preliminaryTypeRepository.findAll())
     }
 
-
     @PostMapping("/bypass-invoice")
     fun bypassInvoiceClearance(
         @RequestBody preliminary: Preliminary
@@ -133,10 +136,10 @@ class PreliminaryController(
     }
 }
 
-
 data class InitiatePreliminaryRequest(
     val preliminaryType: Long,
     val invoiced: Boolean = false
 )
 data class InvoiceRequest(val amount: BigDecimal)
 data class ApprovalRequest(val approvalStage: ApprovalStage, val status: String, val comments: String?)
+data class RejectionRequest(val preliminary: Preliminary, val remarks: String?)

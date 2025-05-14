@@ -9,11 +9,11 @@ import kotlin.math.log
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception::class)
-    fun handleGeneralException(ex: Exception): ResponseEntity<ErrorResponse> {
-        val errorResponse = ErrorResponse("An unexpected error occurred", ex.message)
+    @ExceptionHandler(IllegalStateException::class)
+    fun handleIllegalStateException(ex: IllegalStateException): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse("Business rule violation", ex.message) // Or a more specific error
         println(ex.printStackTrace().toString())
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse) // Return 409 Conflict
     }
 
     @ExceptionHandler(NullPointerException::class)
@@ -28,6 +28,13 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse("Invalid argument", ex.message)
         println(ex.printStackTrace().toString())
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
+    }
+
+    @ExceptionHandler(Exception::class)
+    fun handleGeneralException(ex: Exception): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse("An unexpected error occurred", ex.message)
+        println(ex.printStackTrace().toString())
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
     }
 }
 

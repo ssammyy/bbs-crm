@@ -10,7 +10,7 @@ import com.bbs.bbsapi.repos.PreliminaryRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import kotlin.math.log
+import java.util.*
 
 @Service
 class ReceiptService(
@@ -24,7 +24,7 @@ class ReceiptService(
         val invoice = invoiceRepository.findById(receiptDTO.invoiceId)
             .orElseThrow { IllegalArgumentException("Invoice with ID ${receiptDTO.invoiceId} not found") }
         val client = clientService.getClientById(invoice.clientId)
-        // Validate amountPaid
+
         if (receiptDTO.amountPaid <= 0) {
             throw IllegalArgumentException("Amount paid must be greater than zero")
         }
@@ -32,7 +32,6 @@ class ReceiptService(
             throw IllegalArgumentException("Amount paid (${receiptDTO.amountPaid}) exceeds remaining balance (${invoice.balance})")
         }
 
-        // Create receipt
         val receipt = Receipt(
             invoice = invoice,
             paymentDate = receiptDTO.paymentDate,
@@ -42,33 +41,37 @@ class ReceiptService(
             createdAt = LocalDateTime.now()
         )
 
-        // Update invoice balance and reconciled status
         invoice.balance -= receiptDTO.amountPaid
         invoice.invoiceReconciled = invoice.balance <= 0
-        if (invoice.invoiceReconciled ) {
+        if (invoice.invoiceReconciled) {
             invoice.cleared = true
             invoice.pendingBalance = false
-            
-            // Update preliminary's invoiceClearedFlag if it exists
+        } else {
+            invoice.pendingBalance = true
+        }
+
+        if (invoice.parentInvoice != null) {
+            val parentInvoice = invoice.parentInvoice!!
+            parentInvoice.balance -= receiptDTO.amountPaid
+            parentInvoice.invoiceReconciled = parentInvoice.balance <= 0
+            parentInvoice.pendingBalance = !parentInvoice.invoiceReconciled
+            parentInvoice.cleared = parentInvoice.invoiceReconciled
+            invoiceRepository.save(parentInvoice)
+            println("Updated parent invoice ${parentInvoice.id}: balance=${parentInvoice.balance}, reconciled=${parentInvoice.invoiceReconciled}")
+        }
+
+        invoiceRepository.save(invoice)
+        println("Updated invoice ${invoice.id}: balance=${invoice.balance}, reconciled=${invoice.invoiceReconciled}")
+
+        if (invoice.invoiceReconciled) {
             val prelimsToClear = preliminaryRepository.findByInvoiceId(invoice.id)
             prelimsToClear.forEach { prelim ->
-                println("updating prelims ")
+                println("Updating preliminary ${prelim.id} to invoiceClearedFlag=true")
                 prelim.invoiceClearedFlag = true
                 preliminaryRepository.save(prelim)
             }
 
-
-            if (invoice.invoiceType === InvoiceType.SITE_VISIT && !client.siteVisitDone ) {
-                clientService.changeClientStatus(
-                    ClientStage.PENDING_SITE_VISIT,
-                    client,
-                    ClientStage.REQUIREMENTS_PENDING_DIRECTOR_APPROVAL,
-                    "Client Paid for site visit"
-                )
-            }
-        } else {
-            invoice.pendingBalance = true
-            if (invoice.invoiceType === InvoiceType.SITE_VISIT && !client.siteVisitDone ) {
+            if (invoice.invoiceType === InvoiceType.SITE_VISIT && !client.siteVisitDone) {
                 clientService.changeClientStatus(
                     ClientStage.PENDING_SITE_VISIT,
                     client,
@@ -77,15 +80,14 @@ class ReceiptService(
                 )
             }
         }
-        invoiceRepository.save(invoice)
 
-        // Save receipt
         val savedReceipt = receiptRepository.save(receipt)
 
-        // Return DTO
         return ReceiptDTO(
             id = savedReceipt.id,
             invoiceId = savedReceipt.invoice!!.id,
+            invoiceNumber = savedReceipt.invoice!!.invoiceNumber,
+            clientName = savedReceipt.invoice!!.clientName,
             paymentDate = savedReceipt.paymentDate,
             paymentMethod = savedReceipt.paymentMethod!!,
             amountPaid = savedReceipt.amountPaid!!,
@@ -94,18 +96,34 @@ class ReceiptService(
         )
     }
 
-    fun getReceiptsForInvoice(invoiceId: Long): List<ReceiptDTO> {
-        val receipts = receiptRepository.findByInvoiceId(invoiceId)
+    fun getReceiptsByClient(clientId: Long, search: String? = null, paymentMethod: String? = null): List<ReceiptDTO> {
+        val receipts = receiptRepository.findReceiptsByInvoiceClientId(clientId)
+        println("Found ${receipts.size} receipts")
         return receipts.map { receipt ->
+            val invoice = receipt.invoice!!
             ReceiptDTO(
                 id = receipt.id,
-                invoiceId = receipt.invoice!!.id,
+                invoiceId = invoice.id,
+                invoiceNumber = invoice.invoiceNumber,
+                clientName = invoice.clientName,
                 paymentDate = receipt.paymentDate,
                 paymentMethod = receipt.paymentMethod!!,
                 amountPaid = receipt.amountPaid!!,
                 transactionId = receipt.transactionId,
                 createdAt = receipt.createdAt
             )
+        }.filter { receipt ->
+            val searchLower = search?.lowercase(Locale.getDefault()) ?: ""
+            val matchesSearch = search.isNullOrEmpty() ||
+                    receipt.invoiceNumber.lowercase(Locale.getDefault()).contains(searchLower) ||
+                    receipt.clientName.lowercase(Locale.getDefault()).contains(searchLower) ||
+                    (receipt.transactionId?.lowercase(Locale.getDefault())?.contains(searchLower) ?: false)
+            val matchesPaymentMethod = paymentMethod.isNullOrEmpty() || receipt.paymentMethod.equals(paymentMethod)
+            matchesSearch && matchesPaymentMethod
         }
+    }
+
+    fun getReceiptsForInvoice(invoiceId: Long): List<ReceiptDTO>? {
+        TODO("Not yet implemented")
     }
 }

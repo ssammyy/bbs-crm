@@ -10,6 +10,7 @@ import java.util.*
 interface PreliminaryRepository : JpaRepository<Preliminary, Long> {
     fun findByClientId(clientId: Long): List<Preliminary>
     fun findByInvoiceId(invoiceId: Long): List<Preliminary>
+    fun existsByPreliminaryType_Id(preliminaryTypeId: Long): Boolean
 }
 @Repository
 interface PreliminaryTypeRepository : JpaRepository<PreliminaryType, Long> {

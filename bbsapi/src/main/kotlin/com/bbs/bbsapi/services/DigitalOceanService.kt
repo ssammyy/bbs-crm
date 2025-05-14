@@ -165,6 +165,7 @@ class DigitalOceanService(
             mapOf(
                 "id" to fileMetadata.id,
                 "fileType" to fileMetadata.fileType,
+                "specific" to fileMetadata.preliminary?.preliminaryType?.name,
                 "fileName" to fileMetadata.fileName,
                 "fileUrl" to presignedUrl
             )
