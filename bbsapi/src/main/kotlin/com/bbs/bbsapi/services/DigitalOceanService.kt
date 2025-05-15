@@ -4,6 +4,7 @@ import com.bbs.bbsapi.enums.FileType
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.models.Preliminary
+import com.bbs.bbsapi.repos.ClientRepo
 import com.bbs.bbsapi.repos.FileRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -30,7 +31,9 @@ class DigitalOceanService(
     @Value("\${digitalocean.spaces.secretKey}") private val secretKey: String,
     @Value("\${digitalocean.spaces.bucketName}") private val bucketName: String,
     private val fileMetadataRepository: FileRepository,
-    private val fileRepository: FileRepository
+    private val fileRepository: FileRepository,
+    private val clientService: ClientService,
+    private val clientRepo: ClientRepo
 ) {
     private val logger = LoggerFactory.getLogger(DigitalOceanService::class.java)
 
@@ -167,7 +170,10 @@ class DigitalOceanService(
                 "fileType" to fileMetadata.fileType,
                 "specific" to fileMetadata.preliminary?.preliminaryType?.name,
                 "fileName" to fileMetadata.fileName,
-                "fileUrl" to presignedUrl
+                "fileUrl" to presignedUrl,
+                "version" to fileMetadata.version,
+                "versionNotes" to fileMetadata.versionNotes,
+                "createdAt" to fileMetadata.createdAt
             )
         }
         return ResponseEntity.ok(filesWithUrls)
@@ -194,12 +200,35 @@ class DigitalOceanService(
      * Update file metadata
      */
     @Transactional
-    fun updateMetadata(client: Client, file: MultipartFile, fileType: FileType): ResponseEntity<FileMetadata> {
-        val fileMetadata = fileMetadataRepository.findByClientAndFileType(client, fileType)
-        fileMetadata?.fileType = fileType
-        fileMetadata?.objectKey = file.originalFilename.toString()
-        fileMetadata?.fileName = file.originalFilename.toString()
-        fileMetadata?.let { fileMetadataRepository.save(it) }
-        return ResponseEntity.ok(fileMetadata)
+    fun updateMetadata(client: Client, file: MultipartFile, fileType: FileType, fileId: Long, versionNotes: String? = null): ResponseEntity<FileMetadata> {
+        val existingFile = fileMetadataRepository.findById(fileId)
+        if (existingFile.isPresent) {
+            val fileVar = existingFile.get()
+            val newVersion = fileVar.version + 1
+            val newFileMetadata = FileMetadata(
+                fileType = fileType,
+                fileName = file.originalFilename.toString(),
+                objectKey = file.originalFilename.toString(),
+                fileUrl = "",
+                version = newVersion,
+                versionNotes = versionNotes,
+                client = client,
+                preliminary = fileVar.preliminary,
+                user = fileVar.user
+            )
+            return ResponseEntity.ok(fileMetadataRepository.save(newFileMetadata))
+        } else {
+            // Create first version
+            val newFileMetadata = FileMetadata(
+                fileType = fileType,
+                fileName = file.originalFilename.toString(),
+                objectKey = file.originalFilename.toString(),
+                fileUrl = "",
+                version = 1,
+                versionNotes = versionNotes,
+                client = client
+            )
+            return ResponseEntity.ok(fileMetadataRepository.save(newFileMetadata))
+        }
     }
 }

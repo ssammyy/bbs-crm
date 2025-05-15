@@ -12,6 +12,6 @@ data class ReceiptDTO(
     val amountPaid: Double,
     val transactionId: String? = null,
     val createdAt: LocalDateTime? = null,
-    val invoiceNumber: String,
-    val clientName: String
+    val invoiceNumber: String?= null,
+    val clientName: String?= null
 )

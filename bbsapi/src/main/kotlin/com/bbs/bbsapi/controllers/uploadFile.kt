@@ -2,6 +2,7 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.FileType
+import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.models.Preliminary
 import com.bbs.bbsapi.repos.ClientRepo
@@ -17,7 +18,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import java.util.*
+import java.time.LocalDateTime
+import java.util.Base64
 
 @Controller
 @RequestMapping(value = ["/api/files"])
@@ -36,7 +38,8 @@ class UploadFile(
         @RequestParam(required = false) userId: Long?,
         @RequestParam(required = false) preliminaryId: Long?,
         @RequestParam("fileType") fileType: String,
-        @RequestParam("file") file: MultipartFile
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam(required = false) versionNotes: String?
     ): ResponseEntity<*> {
         var preliminary: Preliminary? = null
         if (clientId != null) {
@@ -52,19 +55,45 @@ class UploadFile(
                 preliminary = preliminaryRepository.findById(preliminaryId).orElseThrow { IllegalArgumentException("Preliminary not found") }
             }
 
+            // Upload file to storage
+            val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
+
+            // Create file metadata with versioning
+            val existingFile = fileRepository.findFirstByClientAndFileType(client, fileTypeEnum)
+            val version = existingFile?.version?.plus(1) ?: 1
+
             val fileMetadata = FileMetadata(
+                id = 0,
                 fileType = fileTypeEnum,
                 fileName = file.originalFilename ?: "",
-                preliminary = preliminary ,
-                fileUrl = "",
-                objectKey = file.originalFilename ?: "",
+                fileUrl = fileUrl,
+                objectKey = objectKey,
+                version = version,
+                versionNotes = versionNotes,
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(),
                 client = client,
+                preliminary = preliminary,
+                user = null
             )
             fileRepository.save(fileMetadata)
-            if (fileTypeEnum ==FileType.REQUIREMENTS){
-                clientService.changeClientStatus(ClientStage.PROFORMA_INVOICE_GENERATION, client, ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL, "Requirement documents uploaded")
+
+            if (fileTypeEnum == FileType.REQUIREMENTS) {
+                clientService.changeClientStatus(
+                    ClientStage.PROFORMA_INVOICE_GENERATION,
+                    client,
+                    ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL,
+                    "Requirement documents uploaded"
+                )
             }
+
+            return ResponseEntity.ok(mapOf(
+                "message" to "File uploaded successfully",
+                "fileUrl" to fileUrl,
+                "version" to version
+            ))
         }
+
         if (userId != null) {
             val user = userRepository.findById(userId).orElseThrow {
                 throw BadRequestException("User not found")
@@ -75,26 +104,33 @@ class UploadFile(
                 return ResponseEntity.badRequest().body("Invalid file type")
             }
 
+            // Upload file to storage
+            val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
+
             val fileMetadata = FileMetadata(
+                id = 0,
                 fileType = fileTypeEnum,
                 fileName = file.originalFilename ?: "",
-                fileUrl = "",
-                objectKey = file.originalFilename ?: "",
-                user = user,
+                fileUrl = fileUrl,
+                objectKey = objectKey,
+                version = 1,
+                versionNotes = versionNotes,
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(),
+                client = Client(), // Empty client for user files
+                preliminary = null,
+                user = user
             )
             fileRepository.save(fileMetadata)
 
+            return ResponseEntity.ok(mapOf(
+                "message" to "File uploaded successfully",
+                "fileUrl" to fileUrl,
+                "version" to 1
+            ))
         }
 
-
-        digitalOceanService.uploadFile(file)
-//        val fileUrl = file.originalFilename?.let { digitalOceanService.getFileUrl(it) }
-// Save file metadata
-
-
-
-
-        return ResponseEntity.ok(mapOf("message" to "File uploaded successfully"))
+        return ResponseEntity.badRequest().body("Either clientId or userId must be provided")
     }
 
     @GetMapping("/content/{fileName}")
@@ -108,18 +144,15 @@ class UploadFile(
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(fileContent)
             } else if (contentType == "application/pdf") {
-                val encodedPdf = Base64.getEncoder().encodeToString(fileContent);
-
+                val encodedPdf = Base64.getEncoder().encodeToString(fileContent)
                 ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(mapOf("pdfBase64" to encodedPdf))
-
             } else {
                 ResponseEntity.ok()
                     .contentType(MediaType.TEXT_PLAIN)
                     .body(String(fileContent))
             }
-
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving file: ${e.message}")
         }
@@ -141,24 +174,21 @@ class UploadFile(
     fun getFiles(@PathVariable clientId: Long): ResponseEntity<List<Map<String, Any?>>> {
         val client = clientRepository.findById(clientId)
             .orElseThrow { RuntimeException("Client with ID $clientId not found") }
-
         return digitalOceanService.getClientFiles(client)
     }
 
-    @PostMapping("/{clientId}/{fileType}/update")
+    @PostMapping("/{clientId}/{fileType}/{fileId}/update")
     fun updateFile(
         @PathVariable clientId: Long,
         @PathVariable fileType: FileType,
-        @RequestParam("file") file: MultipartFile
+        @PathVariable fileId: Long,
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam(required = false) versionNotes: String?
     ): ResponseEntity<FileMetadata> {
         val client = clientRepository.findById(clientId)
             .orElseThrow { RuntimeException("Client with ID $clientId not found") }
-        if(digitalOceanService.uploadFile(file).equals("success")){
-            return digitalOceanService.updateMetadata(client, file, fileType)
-        }
-        else throw java.lang.IllegalArgumentException("file upload failed")
-
+        
+        val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
+        return digitalOceanService.updateMetadata(client, file, fileType,  fileId, versionNotes)
     }
-
-
 }

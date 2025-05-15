@@ -86,7 +86,7 @@ class ReceiptService(
         return ReceiptDTO(
             id = savedReceipt.id,
             invoiceId = savedReceipt.invoice!!.id,
-            invoiceNumber = savedReceipt.invoice!!.invoiceNumber,
+            invoiceNumber = savedReceipt.invoice!!.invoiceNumber!!,
             clientName = savedReceipt.invoice!!.clientName,
             paymentDate = savedReceipt.paymentDate,
             paymentMethod = savedReceipt.paymentMethod!!,
@@ -104,7 +104,7 @@ class ReceiptService(
             ReceiptDTO(
                 id = receipt.id,
                 invoiceId = invoice.id,
-                invoiceNumber = invoice.invoiceNumber,
+                invoiceNumber = invoice.invoiceNumber!!,
                 clientName = invoice.clientName,
                 paymentDate = receipt.paymentDate,
                 paymentMethod = receipt.paymentMethod!!,
@@ -115,8 +115,8 @@ class ReceiptService(
         }.filter { receipt ->
             val searchLower = search?.lowercase(Locale.getDefault()) ?: ""
             val matchesSearch = search.isNullOrEmpty() ||
-                    receipt.invoiceNumber.lowercase(Locale.getDefault()).contains(searchLower) ||
-                    receipt.clientName.lowercase(Locale.getDefault()).contains(searchLower) ||
+                    receipt.invoiceNumber!!.lowercase(Locale.getDefault()).contains(searchLower) ||
+                    receipt.clientName!!.lowercase(Locale.getDefault()).contains(searchLower) ||
                     (receipt.transactionId?.lowercase(Locale.getDefault())?.contains(searchLower) ?: false)
             val matchesPaymentMethod = paymentMethod.isNullOrEmpty() || receipt.paymentMethod.equals(paymentMethod)
             matchesSearch && matchesPaymentMethod

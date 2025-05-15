@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository
 interface FileRepository : JpaRepository<FileMetadata, Long> {
     fun findByClient(client: Client): List<FileMetadata>
     fun findByClientAndPreliminary(client: Client, preliminary: Preliminary): List<FileMetadata>
-    fun findByClientAndFileType(client: Client, fileType: FileType): FileMetadata?
+    fun findFirstByClientAndFileType(client: Client, fileType: FileType): FileMetadata?
     fun countByFileType(type: FileType): Long
 
 }

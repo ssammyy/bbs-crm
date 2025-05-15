@@ -27,8 +27,8 @@ class PreliminaryService(
 
     fun initiatePreliminary(clientId: Long, request: InitiatePreliminaryRequest, invoice: Invoice? = null): Preliminary {
         val client = clientRepository.findById(clientId).orElseThrow { IllegalArgumentException("Client not found") }
-        val alreadyExists = preliminaryRepository.existsByPreliminaryType_Id(request.preliminaryType)
-        if (alreadyExists) {
+        val alreadyExists = preliminaryRepository.findByClientIdAndPreliminaryType_Id(clientId, request.preliminaryType)
+        if (alreadyExists !=null) {
             throw IllegalStateException("A preliminary of that type already exists for this context.")
         }
 

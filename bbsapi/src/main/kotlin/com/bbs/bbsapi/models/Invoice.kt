@@ -15,7 +15,7 @@ data class Invoice(
     val id: Long = 0,
 
     @Column(nullable = false)
-    val invoiceNumber: String = "",
+    val invoiceNumber: String? = null,
 
     @Column(nullable = false)
     val dateIssued: LocalDate = LocalDate.now(),

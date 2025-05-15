@@ -172,7 +172,7 @@ class InvoiceService(
 
         return InvoiceResponse(
             invoiceId = savedInvoice.id,
-            invoiceNumber = savedInvoice.invoiceNumber,
+            invoiceNumber = savedInvoice.invoiceNumber!!,
             pdfContent = pdfBytes
         )
     }
@@ -223,7 +223,7 @@ class InvoiceService(
 
         return InvoiceResponse(
             invoiceId = savedInvoice.id,
-            invoiceNumber = savedInvoice.invoiceNumber,
+            invoiceNumber = savedInvoice.invoiceNumber!!,
             pdfContent = pdfBytes
         )
     }
@@ -399,7 +399,7 @@ class InvoiceService(
 
     fun convertToPdfDto(invoice: Invoice): PdfInvoiceDTO {
         return PdfInvoiceDTO(
-            invoiceNumber = invoice.invoiceNumber,
+            invoiceNumber = invoice.invoiceNumber!!,
             dateIssued = invoice.dateIssued,
             clientId = invoice.clientId,
             clientName = invoice.clientName,
