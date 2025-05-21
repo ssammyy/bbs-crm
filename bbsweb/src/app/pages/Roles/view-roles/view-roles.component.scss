@@ -1,0 +1,54 @@
+:host {
+    .p-datatable-modern {
+        .p-datatable-table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .p-datatable-header {
+            background: #f8fafc;
+            padding: 1rem;
+        }
+        .p-paginator {
+            background: #f8fafc;
+            border: none;
+            padding: 0.5rem;
+        }
+    }
+
+    .p-dialog-modern {
+        .p-dialog-header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1.5rem;
+        }
+        .p-dialog-content {
+            padding: 1.5rem;
+        }
+    }
+
+    .p-chip-modern {
+        background: #e5e7eb;
+        color: #374151;
+        border-radius: 16px;
+        padding: 0.5rem 1rem;
+    }
+
+    .p-chip-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .p-multiselect {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        &:hover {
+            border-color: #3b82f6;
+        }
+    }
+
+    .p-button-rounded {
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+}

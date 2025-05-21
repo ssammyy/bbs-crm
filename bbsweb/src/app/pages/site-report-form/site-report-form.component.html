@@ -1,0 +1,198 @@
+<div class="container mx-auto p-6 max-w-5xl">
+    <p-card header="Architect's Site Visit Report" class="shadow-lg border border-gray-200 rounded-xl">
+        <p-message *ngIf="hasExistingReport" closable>
+            An existing site report was found for this client. You can update the details below.
+        </p-message>
+
+        <form [formGroup]="siteReportForm" (ngSubmit)="onSubmit()" class="space-y-6">
+            <!-- Form Fields in Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Client Name (Disabled) -->
+                <div class="field">
+                    <label for="clientName" class="block text-sm font-medium mb-1">Client Name</label>
+                    <input
+                        id="clientName"
+                        type="text"
+                        pInputText
+                        formControlName="clientName"
+                        class="w-full rounded-lg border-gray-300 bg-gray-100 cursor-not-allowed"
+                        readonly
+                    />
+                </div>
+
+                <!-- Location -->
+                <div class="field">
+                    <label for="location" class="block text-sm font-medium mb-1">Location</label>
+                    <input
+                        id="location"
+                        type="text"
+                        pInputText
+                        formControlName="location"
+                        class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+                        [ngClass]="{
+              'ng-invalid ng-dirty border-red-500': siteReportForm.get('location')?.invalid && siteReportForm.get('location')?.touched
+            }"
+                    />
+                    <small *ngIf="siteReportForm.get('location')?.invalid && siteReportForm.get('location')?.touched"
+                           class="p-error text-red-500 text-xs mt-1">
+                        Location is required.
+                    </small>
+                </div>
+
+                <!-- Type of Soil -->
+                <div class="field">
+                    <label for="soilType" class="block text-sm font-medium mb-1">Type of Soil</label>
+                    <input
+                        id="soilType"
+                        type="text"
+                        pInputText
+                        formControlName="soilType"
+                        class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+                        [ngClass]="{
+              'ng-invalid ng-dirty border-red-500': siteReportForm.get('soilType')?.invalid && siteReportForm.get('soilType')?.touched
+            }"
+                    />
+                    <small *ngIf="siteReportForm.get('soilType')?.invalid && siteReportForm.get('soilType')?.touched"
+                           class="p-error text-red-500 text-xs mt-1">
+                        Soil type is required.
+                    </small>
+                </div>
+
+                <!-- Site Measurements -->
+                <div class="field">
+                    <label for="measurements" class="block text-sm font-medium mb-1">Site Measurements (e.g., 50 x 100 m)</label>
+                    <input
+                        id="measurements"
+                        pInputText
+                        formControlName="measurements"
+                        class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+                        [ngClass]="{
+                  'ng-invalid ng-dirty border-red-500': siteReportForm.get('measurements')?.invalid && siteReportForm.get('measurements')?.touched
+                }"
+                    />
+                    <small
+                        *ngIf="siteReportForm.get('measurements')?.invalid && siteReportForm.get('measurements')?.touched"
+                        class="p-error text-red-500 text-xs mt-1">
+                        Valid measurements are required.
+                    </small>
+                </div>
+
+                <!-- Topography (Slope) -->
+                <div class="field">
+                    <label for="topography" class="block text-sm font-medium mb-1">Topography (Slope)</label>
+                    <input
+                        id="topography"
+                        type="text"
+                        pInputText
+                        formControlName="topography"
+                        class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+                        [ngClass]="{
+              'ng-invalid ng-dirty border-red-500': siteReportForm.get('topography')?.invalid && siteReportForm.get('topography')?.touched
+            }"
+                    />
+                    <small
+                        *ngIf="siteReportForm.get('topography')?.invalid && siteReportForm.get('topography')?.touched"
+                        class="p-error text-red-500 text-xs mt-1">
+                        Topography is required.
+                    </small>
+                </div>
+
+                <!-- Infrastructure -->
+                <div class="field">
+                    <label for="infrastructure" class="block text-sm font-medium mb-1">Infrastructure (Electricity,
+                        Water, Security, etc.)</label>
+                    <p-multiSelect
+                        id="infrastructure"
+                        formControlName="infrastructure"
+                        [options]="infrastructureOptions"
+                        placeholder="Select infrastructure"
+                        optionLabel="name"
+                        optionValue="value"
+                        appendTo="body"
+                        class="w-full"
+                        [ngClass]="{
+            'ng-invalid ng-dirty border-red-500': siteReportForm.get('infrastructure')?.invalid && siteReportForm.get('infrastructure')?.touched
+        }"
+                    ></p-multiSelect>
+                    <small
+                        *ngIf="siteReportForm.get('infrastructure')?.invalid && siteReportForm.get('infrastructure')?.touched"
+                        class="p-error text-red-500 text-xs mt-1">
+                        Infrastructure selection is required.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Notes (Full Width) -->
+            <div class="field">
+                <label for="notes" class="block text-sm font-medium mb-1">Notes (Extra Notes and General
+                    Comments)</label>
+                <textarea
+                    id="notes"
+                    pTextarea
+                    formControlName="notes"
+                    class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+                    rows="5"
+                ></textarea>
+            </div>
+
+            <!-- Document Uploads Section -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">KYC Documents (Optional)</h3>
+                <p class="text-sm text-gray-500 mb-4">You can upload these documents now or later from the client's profile.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div *ngFor="let doc of kycDocuments" class="field">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ doc.label }}</label>
+                        <div class="flex items-center space-x-3">
+                            <p-fileUpload
+                                mode="basic"
+                                [name]="doc.fileType"
+                                [customUpload]="true"
+                                (onSelect)="onSelect($event, doc.fileType)"
+                                chooseLabel="Select File"
+                                [disabled]="isDocumentSelected(doc.fileType)"
+                                class="w-full"
+                                styleClass="p-button-outlined p-button-secondary rounded-lg"
+                            ></p-fileUpload>
+                            <p-chip
+                                *ngIf="isDocumentSelected(doc.fileType)"
+                                [label]="selectedDocuments[doc.fileType]?.fileUrl ? 'Uploaded' : 'Selected'"
+                                [styleClass]="selectedDocuments[doc.fileType]?.fileUrl ? 'bg-green-100 text-green-800 px-3 py-1 rounded-full' : 'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full'"
+                            ></p-chip>
+                            <a
+                                *ngIf="isDocumentSelected(doc.fileType) && selectedDocuments[doc.fileType]?.fileUrl"
+                                [href]="selectedDocuments[doc.fileType]?.fileUrl"
+                                target="_blank"
+                                class="text-blue-600 hover:underline"
+                            >
+                                Preview
+                            </a>
+                            <p-button
+                                *ngIf="isDocumentSelected(doc.fileType)"
+                                icon="pi pi-times"
+                                styleClass="p-button-text p-button-danger"
+                                (onClick)="removeDocument(doc.fileType)"
+                            ></p-button>
+                        </div>
+                        <small *ngIf="isDocumentSelected(doc.fileType) && !selectedDocuments[doc.fileType]?.fileUrl"
+                               class="text-gray-500 text-xs mt-1">
+                            This file will be uploaded when you submit the report.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end mt-6">
+                <p-button
+                    type="submit"
+                    outlined
+                    [loading]="loading"
+                    [icon]="hasExistingReport ? 'pi pi-pencil' : 'pi pi-check'"
+                    [label]="hasExistingReport ? 'Update Report' : 'Submit Report'"
+                    [disabled]="siteReportForm.invalid"
+                ></p-button>
+            </div>
+        </form>
+    </p-card>
+    <p-toast />
+</div>

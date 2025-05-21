@@ -1,0 +1,230 @@
+<div class="p-4 sm:p-6 min-h-screen">
+    <div class="mx-auto max-w-7xl">
+        <!-- No Invoices Message -->
+
+
+        <!-- Search and Sort Controls -->
+        <div *ngIf="!loading && invoices.length > 0" class="flex flex-col sm:flex-row gap-4 mb-4">
+            <div class="flex-1">
+                <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()"
+                       placeholder="Search by invoice number or preliminary type"
+                       class="w-full p-2 border rounded-md" />
+            </div>
+            <div class="w-full sm:w-48">
+                <p-dropdown [(ngModel)]="sortOption" (ngModelChange)="onSortChange()" [options]="sortOptions"
+                            optionLabel="label" optionValue="value" placeholder="Sort by" class="w-full"></p-dropdown>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="text-center p-4 sm:p-6 rounded-lg shadow-sm animate-pulse">
+            <p class="text-sm sm:text-base">Loading your invoices, please wait...</p>
+            <i class="pi pi-spin pi-spinner text-blue-500 text-xl mt-2"></i>
+        </div>
+
+        <!-- Proforma Invoice Panel -->
+        <p-panel *ngIf="proformaInvoice" header="Summary Invoice" class="mb-4 sm:mb-6 shadow-md rounded-lg">
+            <div class="flex flex-col sm:flex-row justify-between items-center p-4 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-baseline">
+                    <p class="font-semibold text-sm sm:text-base">Total Amount:</p>
+                    <span
+                        class="text-lg sm:text-xl font-bold text-green-600">{{ proformaInvoice.total | currency:'KES' }}</span>
+                </div>
+                <p-button *ngIf="hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right" label="View Invoice" (onClick)="viewInvoicePdf('PROFORMA')" text
+                          severity="info" size="small"></p-button>
+            </div>
+        </p-panel>
+
+        <!-- Invoices List -->
+        <div *ngIf="!loading" class="space-y-4 sm:space-y-6">
+            <p-panel header="Invoices" class="shadow-md rounded-lg">
+                <div *ngFor="let invoice of filteredInvoices"
+                     class="p-4 border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-transparent transition-colors duration-200">
+                    <h3 class="text-base sm:text-lg font-semibold">Invoice #{{ invoice.invoiceNumber }}</h3>
+                    <div class="flex flex-col sm:flex-row sm:justify-between mt-2 gap-2 sm:gap-0">
+                        <p class="text-xs sm:text-sm">Invoice for: <span
+                            class="font-medium">{{ invoice.preliminary?.preliminaryType?.name || 'Site Visit' }}</span>
+                        </p>
+                        <p class="text-xs sm:text-sm">Client: <span class="font-medium">{{ invoice.clientName }}
+                            ({{ invoice.clientPhone }})</span></p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:justify-between mt-1 gap-2 sm:gap-0">
+                        <p class="text-xs sm:text-sm">Date Issued: <span
+                            class="font-medium">{{ invoice.dateIssued | date:'mediumDate' }}</span></p>
+                        <p class="text-xs sm:text-sm">Total: <span
+                            class="font-medium text-green-600">{{ invoice.total | currency:'KES' }}</span></p>
+                    </div>
+                    <div
+                        class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mt-3 gap-2 sm:gap-0">
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                [ngClass]="invoice.directorApproved ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'"
+                                class="text-xs font-medium px-2 py-1 rounded-full">
+                                {{ invoice.directorApproved ? 'Director Approved' : 'Director Pending' }}
+                            </span>
+                            <span
+                                [ngClass]="invoice.invoiceReconciled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                class="text-xs font-medium px-2 py-1 rounded-full">
+                                {{ invoice.invoiceReconciled ? 'Reconciled' : 'Not Reconciled' }}
+                            </span>
+                            <span *ngIf="invoice.pendingBalance"
+                                  class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded-full">
+                                Pending Balance: {{ invoice.balance | currency:'KES' }}
+                            </span>
+                        </div>
+                        <div class="flex gap-2 mt-2 sm:mt-0">
+                            <p-button *ngIf="InvoiceType.SITE_VISIT!=invoice.invoiceType && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
+                                      label="View Invoice" (onClick)="viewPreliminaryInvoice(invoice?.preliminary?.id)"
+                                      text severity="info" size="small"></p-button>
+                            <p-button *ngIf="InvoiceType.SITE_VISIT===invoice.invoiceType && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
+                                      label="View Invoice" (onClick)="viewInvoicePdf('SITE_VISIT')" text severity="info"
+                                      size="small"></p-button>
+                            <p-button
+                                *ngIf="!invoice.invoiceReconciled && invoice.directorApproved && invoice.pendingBalance && !hasBalanceInvoices(invoice) && hasPrivilege(Permissions.CREATE_INVOICES)"
+                                label="Create Balance Invoice" size="small" outlined
+                                icon="pi pi-plus" severity="secondary"
+                                (onClick)="createBalanceInvoice(invoice)"></p-button>
+                            <p-button *ngIf="!invoice.invoiceReconciled && invoice.directorApproved && hasPrivilege(Permissions.RECONCILE_INVOICES)"
+                                      label="Reconcile Invoice" size="small" outlined
+                                      icon="pi pi-receipt" severity="info" (onClick)="clearInvoice(invoice)"></p-button>
+                            <p-button [loading]="loading" *ngIf="!invoice.directorApproved && hasPrivilege(Permissions.APPROVE_INVOICE)" label="Approve Invoice"
+                                      size="small" outlined
+                                      icon="pi pi-check-square" severity="info"
+                                      (onClick)="approveInvoice(invoice)"></p-button>
+                        </div>
+                    </div>
+                    <p *ngIf="invoice.rejectionRemarks" class="text-red-600 text-xs sm:text-sm mt-2">
+                        Rejection Remarks: <span class="font-medium">{{ invoice.rejectionRemarks }}</span>
+                    </p>
+                    <!-- Balance Invoices -->
+                    <div *ngIf="invoice.balanceInvoices?.length" class="mt-4 pl-4 border-l-2 border-gray-200">
+                        <h4 class="text-sm font-semibold text-gray-600">Balance Invoices</h4>
+                        <div *ngFor="let balanceInvoice of invoice.balanceInvoices" class="py-2">
+                            <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-2">
+                                <p class="text-xs sm:text-sm">Balance Invoice #{{ balanceInvoice.invoiceNumber }}</p>
+                                <p class="text-xs sm:text-sm">Total: <span
+                                    class="font-medium text-green-600">{{ balanceInvoice.total | currency:'KES' }}</span>
+                                </p>
+                            </div>
+                            <div
+                                class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mt-1 gap-2">
+                                <p class="text-xs sm:text-sm">Date Issued: <span
+                                    class="font-medium">{{ balanceInvoice.dateIssued | date:'mediumDate' }}</span></p>
+                                <span
+                                    [ngClass]="balanceInvoice.invoiceReconciled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                    class="text-xs font-medium px-2 py-1 rounded-full">
+                                    {{ balanceInvoice.invoiceReconciled ? 'Reconciled' : 'Not Reconciled' }}
+                                </span>
+                            </div>
+                            <div class="flex gap-2 mt-2">
+                                <p-button icon="pi pi-arrow-up-right" label="View Invoice"
+                                          (onClick)="viewInvoicePdfById(balanceInvoice.id)" text severity="info"
+                                          size="small"></p-button>
+                                <p-button *ngIf="!balanceInvoice.invoiceReconciled" label="Reconcile Invoice"
+                                          size="small" outlined
+                                          icon="pi pi-receipt" severity="info"
+                                          (onClick)="clearInvoice(balanceInvoice)"></p-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </p-panel>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && invoices.length === 0 && !proformaInvoice"
+             class="text-center p-4 sm:p-6 rounded-lg shadow-md">
+            <p class="text-sm sm:text-base">No invoices found for this user.</p>
+            <i class="pi pi-file-o text-3xl sm:text-4xl mt-4"></i>
+            <p-button label="reload" text (onClick)="loadInvoices()"></p-button>
+
+        </div>
+
+        <!-- Dialog for Receipt -->
+        <p-dialog header="Receipt Details" [(visible)]="displayReceiptDialog" [modal]="true"
+                  [style]="{ width: '90vw', 'max-width': '30rem' }" [baseZIndex]="10000" [draggable]="false"
+                  [resizable]="false"
+                  class="shadow-lg">
+            <div class="p-4">
+                <!-- Invoice Details -->
+                <div class="mb-4">
+                    <h3 class="text-base sm:text-lg font-semibold mb-2">Invoice Details</h3>
+                    <div class="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                        <p>Invoice #:</p>
+                        <p class="font-medium">{{ selectedInvoice?.invoiceNumber }}</p>
+                        <p>Client:</p>
+                        <p class="font-medium">{{ selectedInvoice?.clientName }}</p>
+                        <p>Total Amount:</p>
+                        <p class="font-medium text-green-600">{{ selectedInvoice?.total | currency:'KES' }}</p>
+                        <p>Balance:</p>
+                        <p class="font-medium text-amber-600">{{ selectedInvoice?.balance | currency:'KES' }}</p>
+                        <p>Date Issued:</p>
+                        <p class="font-medium">{{ selectedInvoice?.dateIssued | date:'mediumDate' }}</p>
+                    </div>
+                </div>
+
+                <!-- Payment Details Form -->
+                <div class="mb-4">
+                    <h3 class="text-base sm:text-lg font-semibold mb-2">Payment Details</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="paymentDate" class="block text-xs sm:text-sm font-medium mb-1">Payment
+                                Date</label>
+                            <p-calendar id="paymentDate" [(ngModel)]="receipt.paymentDate" dateFormat="dd/mm/yy"
+                                        [showIcon]="true" class="w-full"></p-calendar>
+                        </div>
+                        <div>
+                            <label for="paymentMethod" class="block text-xs sm:text-sm font-medium mb-1">Payment
+                                Method</label>
+                            <p-dropdown id="paymentMethod" [(ngModel)]="receipt.paymentMethod"
+                                        [options]="paymentMethods" optionLabel="label" optionValue="value"
+                                        placeholder="Select Payment Method" class="w-full"></p-dropdown>
+                        </div>
+                        <div>
+                            <label class="flex items-center gap-2 text-xs sm:text-sm font-medium mb-1">
+                                <input type="checkbox" [(ngModel)]="fullAmountPaid" (ngModelChange)="toggleFullAmount()"
+                                       class="p-checkbox-input" />
+                                Full Amount Paid
+                            </label>
+                        </div>
+                        <div>
+                            <label for="amountPaid" class="block text-xs sm:text-sm font-medium mb-1">Amount
+                                Paid</label>
+                            <p-inputNumber id="amountPaid" [(ngModel)]="receipt.amountPaid" mode="currency"
+                                           currency="KES" locale="en-KE" [disabled]="fullAmountPaid"
+                                           [max]="selectedInvoice?.balance" (ngModelChange)="calculateBalance()"
+                                           class="w-full"></p-inputNumber>
+                        </div>
+                        <div *ngIf="!fullAmountPaid">
+                            <label for="balance" class="block text-xs sm:text-sm font-medium mb-1">Remaining
+                                Balance</label>
+                            <p-inputNumber id="balance" [ngModel]="balance" mode="currency" currency="KES"
+                                           locale="en-KE" [disabled]="true" class="w-full"></p-inputNumber>
+                        </div>
+                        <div>
+                            <label for="transactionId" class="block text-xs sm:text-sm font-medium mb-1">Transaction ID
+                                (Optional)</label>
+                            <input pInputText id="transactionId" [(ngModel)]="receipt.transactionId"
+                                   class="w-full p-2 border rounded-md" placeholder="Enter Transaction ID" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-2">
+                    <p-button label="Cancel" severity="secondary" outlined (onClick)="displayReceiptDialog = false"
+                              class="w-full sm:w-auto"></p-button>
+                    <p-button label="Generate Receipt" icon="pi pi-file-pdf" severity="info"
+                              (onClick)="generateReceipt()" class="w-full sm:w-auto"></p-button>
+                </div>
+            </div>
+        </p-dialog>
+
+        <!-- Dialog for Create Invoice -->
+        <p-dialog header="Create Invoice" [(visible)]="displayInvoiceDialog" [modal]="true"
+                  [style]="{ width: '90vw', 'max-width': '80rem' }" [baseZIndex]="10000" [draggable]="true"
+                  [resizable]="true"
+                  class="shadow-lg">
+        </p-dialog>
+    </div>
+</div>

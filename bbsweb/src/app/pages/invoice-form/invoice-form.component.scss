@@ -1,0 +1,14 @@
+:host ::ng-deep {
+    .p-inputtext, .p-calendar, .p-dropdown {
+        @apply w-full border rounded-md p-2;
+    }
+    .p-button {
+        @apply rounded-md;
+    }
+    .p-table {
+        @apply w-full;
+    }
+    .p-table th, .p-table td {
+        @apply border-gray-300;
+    }
+}

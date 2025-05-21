@@ -1,0 +1,46 @@
+:host {
+    display: block;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: #ef4444;
+    color: white;
+    padding: 0 6px;
+}
+
+.notification-dropdown {
+    min-width: 320px;
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: #f9fafb;
+    }
+
+    &.unread {
+        background-color: #eff6ff;
+    }
+}
+
+.notification-icon {
+    color: #6b7280;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+} 

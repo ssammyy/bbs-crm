@@ -1,0 +1,176 @@
+<div class=" mx-auto p-6 max-w-5xl">
+    <p-card class="shadow-lg border border-gray-200 rounded-xl">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-semibold ">Architect's Site Visit Report</h1>
+<!--            <p-chip-->
+<!--                [label]="report?.status"-->
+<!--                [styleClass]="{-->
+<!--          'bg-green-100 text-green-800': report?.status === 'APPROVED',-->
+<!--          'bg-red-100 text-red-800': report?.status === 'REJECTED',-->
+<!--          'bg-yellow-100 text-yellow-800': report?.status === 'PENDING'-->
+<!--        }"-->
+<!--                class="px-3 py-1 rounded-full"-->
+<!--            ></p-chip>-->
+        </div>
+
+        <div *ngIf="report?.status === 'REJECTED' && report?.rejectionComments" class="mb-6 p-4 bg-red-50 text-red-800 rounded-lg border border-red-200">
+            <h3 class="text-sm font-medium">Rejection Comments</h3>
+            <p class="text-sm mt-1">{{ report.rejectionComments }}</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Client Name -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Client Name</h3>
+                <p class="text-lg ">{{ report?.clientName || 'N/A' }}</p>
+            </div>
+
+            <!-- Location -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Location</h3>
+                <p class="text-lg ">{{ report?.location || 'N/A' }}</p>
+            </div>
+
+            <!-- Type of Soil -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Type of Soil</h3>
+                <p class="text-lg ">{{ report?.soilType || 'N/A' }}</p>
+            </div>
+
+            <!-- Site Measurements -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Site Measurements</h3>
+                <p class="text-lg ">{{ report?.siteMeasurements || 'N/A' }}</p>
+            </div>
+
+            <!-- Topography -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Topography (Slope)</h3>
+                <p class="text-lg ">{{ report?.topography || 'N/A' }}</p>
+            </div>
+
+            <!-- Infrastructure -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-500">Infrastructure</h3>
+                <p class="text-lg ">{{ report?.infrastructure || 'N/A' }}</p>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="mb-6">
+            <h3 class="text-sm font-medium text-gray-500">Notes</h3>
+            <p class="text-lg  whitespace-pre-wrap">{{ report?.notes || 'No additional notes.' }}</p>
+        </div>
+
+        <!-- Attached Documents -->
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold  mb-4">Attached Documents</h3>
+            <div *ngIf="report?.documents?.length > 0; else noDocuments" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div *ngFor="let doc of report.documents" class="flex items-center space-x-3">
+                    <p-chip
+                        [label]="doc.fileType.replace('_', ' ')"
+                        styleClass="bg-blue-100 text-blue-800 px-3 py-1 rounded-full"
+                    ></p-chip>
+                    <a [href]="doc.fileUrl" target="_blank" class="text-blue-600 hover:underline">
+                        {{ doc.fileName }}
+                    </a>
+                </div>
+            </div>
+            <ng-template #noDocuments>
+                <p class="text-gray-500">No documents attached.</p>
+            </ng-template>
+        </div>
+
+        <!-- Audit Logs -->
+<!--        <div class="mb-6">-->
+<!--            <h3 class="text-lg font-semibold  mb-4">Change History</h3>-->
+<!--            <p-table [value]="auditLogs" [tableStyle]="{'min-width': '50rem'}">-->
+<!--                <ng-template pTemplate="header">-->
+<!--                    <tr>-->
+<!--                        <th>Changed By</th>-->
+<!--                        <th>Field</th>-->
+<!--                        <th>Old Value</th>-->
+<!--                        <th>New Value</th>-->
+<!--                        <th>Date</th>-->
+<!--                    </tr>-->
+<!--                </ng-template>-->
+<!--                <ng-template pTemplate="body" let-log>-->
+<!--                    <tr>-->
+<!--                        <td>{{ log.changedBy }}</td>-->
+<!--                        <td>{{ log.fieldName }}</td>-->
+<!--                        <td>{{ log.oldValue || 'N/A' }}</td>-->
+<!--                        <td>{{ log.newValue || 'N/A' }}</td>-->
+<!--                        <td>{{ log.changeDate | date: 'medium' }}</td>-->
+<!--                    </tr>-->
+<!--                </ng-template>-->
+<!--                <ng-template pTemplate="emptymessage">-->
+<!--                    <tr>-->
+<!--                        <td colspan="5" class="text-center text-gray-500">No changes recorded.</td>-->
+<!--                    </tr>-->
+<!--                </ng-template>-->
+<!--            </p-table>-->
+<!--        </div>-->
+
+        <!-- Approval/Rejection Actions -->
+        <div *ngIf="report?.status === 'PENDING'" class="flex justify-end space-x-4">
+            <!-- Approve Button -->
+            <p-button
+                label="Approve"
+                icon="pi pi-check"
+                outlined
+                styleClass="p-button-success rounded-lg px-6 py-2"
+                (onClick)="approveReport()"
+                [loading]="loadingApprove"
+            ></p-button>
+
+            <!-- Reject Button with Dialog -->
+            <p-button
+                label="Reject for Amendment"
+                icon="pi pi-times"
+                outlined
+                styleClass="p-button-danger rounded-lg px-6 py-2"
+                (onClick)="showRejectDialog()"
+                [loading]="loadingReject"
+            ></p-button>
+        </div>
+    </p-card>
+
+    <!-- Rejection Dialog -->
+    <p-dialog
+        header="Reject Report for Amendment"
+        [(visible)]="showRejectDialogVisible"
+        [modal]="true"
+        [style]="{ width: '30rem' }"
+        [draggable]="false"
+        [resizable]="false"
+    >
+        <div class="mb-4">
+            <label for="rejectionComments" class="block text-sm font-medium text-gray-700 mb-1">Rejection Comments</label>
+            <textarea
+                id="rejectionComments"
+                pTextarea
+                [(ngModel)]="rejectionComments"
+                class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-indigo-500 transition-all"
+                rows="4"
+                placeholder="Please provide reasons for rejection..."
+            ></textarea>
+        </div>
+        <div class="flex justify-end space-x-4">
+            <p-button
+                label="Cancel"
+                styleClass=" p-button-secondary"
+                (onClick)="showRejectDialogVisible = false"
+            ></p-button>
+            <p-button
+
+                label="Submit Rejection"
+                styleClass="p-button-danger rounded-lg px-6 py-2"
+                (onClick)="rejectReport()"
+                [disabled]="!rejectionComments"
+                [loading]="loadingReject"
+            ></p-button>
+        </div>
+    </p-dialog>
+
+    <p-toast />
+</div>

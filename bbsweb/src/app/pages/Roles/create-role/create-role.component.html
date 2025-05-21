@@ -1,0 +1,44 @@
+<div>
+    <p-toast/>
+    <div class="card grid grid-cols-1 md:grid-cols-4">
+        <div class="font-semibold text-xl p-4 flex flex-col md:col-span-1">
+            <h3 class="text-red-400">
+                Create Role
+            </h3>
+            <p-divider layout="horizontal"/>
+            <small style="color:  var(--primary-color)">
+                A Role is a collection of privileges grouped under a single label.
+                Defines what a type of user can do.
+                <br>
+                For example,
+                Admin Role can
+                <br>
+                → CREATE_USER, DELETE_USER, CREATE_ROLE
+            </small>
+        </div>
+        <div class="flex flex-col gap-4 md:col-span-3 p-4">
+            <div class="flex flex-wrap gap-6 md:mt-12">
+                <div class="flex flex-col grow basis-0 gap-2 w-full">
+                    <div class="flex flex-col grow basis-0 gap-2 w-full">
+                        <label for="name2">Name</label>
+                        <input placeholder="e.g. SUPER_ADMIN" [(ngModel)]="roleName" pInputText id="name2" type="text" class="w-full"/>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Select Privileges</label>
+                        <p-multiSelect
+                            [options]="privileges"
+                            [(ngModel)]="selectedPrivileges"
+                            optionLabel="name"
+                            placeholder="Select privileges"
+                            display="chip"
+                            class="w-full min-h-28">
+                        </p-multiSelect>
+                    </div>
+                </div>
+            </div>
+            <p-button [disabled]="selectedPrivileges.length<1 || roleName===''" icon="pi pi-file-plus"
+                      (onClick)="createRole()" size="small"
+                      [outlined]="true" label="Create" [loading]="loading" class="w-full md:w-auto"></p-button>
+        </div>
+    </div>
+</div>

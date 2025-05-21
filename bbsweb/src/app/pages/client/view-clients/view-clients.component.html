@@ -1,0 +1,371 @@
+<div>
+    <div>
+        <p-toast />
+        <div class="card grid grid-cols-1 md:grid-cols-4">
+            <div class="font-semibold text-xl p-4 flex flex-col md:col-span-1">
+                <h3 class="text-red-400">
+                    View Clients
+                </h3>
+                <p-divider layout="horizontal" />
+                <small style="color: var(--primary-color)">
+                    View and manage client profiles.
+                </small>
+            </div>
+            <div class="md:col-span-3 md:mt-12 p-4">
+                <p-table [value]="clients" [loading]="loading" stripedRows [paginator]="true" [rows]="10"
+                         responsiveLayout="scroll">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Location</th>
+                            <th>Stage</th>
+                            <th>email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-client>
+                        <tr>
+                            <td>{{ client.firstName + ' ' + client.lastName }}</td>
+                            <td>{{ client.phoneNumber }}</td>
+                            <td>{{ client.location || 'KENYA' }}</td>
+                            <td>{{ client.clientStage || 'REGISTRATION' }}</td>
+                            <td>{{ client.email || 'System' }}</td>
+                            <td class="flex gap-2">
+                                <button pButton icon="pi pi-eye" class="p-button-info p-button-sm"
+                                        (click)="viewClient(client)">
+                                </button>
+                                <button pButton icon="pi pi-trash" class="p-button-danger p-button-sm"
+                                        (click)="deleteClient(client.id)">
+                                </button>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
+            <p-dialog header="Client Profile - {{selectedClient?.firstName}} {{selectedClient?.lastName}}" [(visible)]="visible" [modal]="true"
+                      [style]="{ width: '80vw', maxWidth: '1200px',maxHeight:'90vh', minHeight:'90vh' }"
+                      [draggable]="false" [resizable]="false" [breakpoints]="{ '960px': '95vw', '640px': '100vw' }">
+                <ng-template pTemplate="content">
+                    <p-tabs value="0">
+                        <p-tablist>
+                            <p-tab value="0">Details</p-tab>
+                            <p-tab value="1">Activity</p-tab>
+                        </p-tablist>
+                        <p-tabpanels>
+                            <p-tabpanel value="0">
+                                <div class="client-profile-container">
+                                    <form [formGroup]="personalInfoForm" class="space-y-8">
+                                        <!-- Personal Information Section -->
+                                        <div class="section-card">
+                                            <div class="section-header">
+                                                <i class="pi pi-user mr-2"></i>
+                                                <h3 class="section-title">Personal Information</h3>
+                                                <div class="section-actions">
+                                                    <p-button *ngIf="!editMode" icon="pi pi-pencil"
+                                                              (click)="editClient()" label="Edit"
+                                                              styleClass="p-button-text p-button-sm"></p-button>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                                                <div class="form-field">
+                                                    <label for="firstName" class="form-label">First Name</label>
+                                                    <input pInputText type="text" formControlName="firstName"
+                                                           id="firstName"
+                                                           class="form-input" [disabled]="!editMode">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label for="secondName" class="form-label">Middle Name</label>
+                                                    <input pInputText type="text" formControlName="secondName"
+                                                           id="secondName"
+                                                           class="form-input" [disabled]="!editMode">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label for="lastName" class="form-label">Last Name</label>
+                                                    <input pInputText type="text" formControlName="lastName"
+                                                           id="lastName"
+                                                           class="form-input" [disabled]="!editMode">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label for="dob" class="form-label">Date of Birth</label>
+                                                    <p-calendar formControlName="dob" id="dob" [disabled]="!editMode"
+                                                                [showIcon]="true" inputId="icon"
+                                                                class="w-full"></p-calendar>
+                                                </div>
+                                                <div class="form-field">
+                                                    <label for="gender" class="form-label">Gender</label>
+                                                    <p-dropdown [options]="genders" formControlName="gender" id="gender"
+                                                                [disabled]="!editMode" [styleClass]="'w-full'"
+                                                                placeholder="Select Gender">
+                                                    </p-dropdown>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Contact Information Section -->
+                                        <div class="section-card">
+                                            <div class="section-header">
+                                                <i class="pi pi-envelope mr-2"></i>
+                                                <h3 class="section-title">Contact Information</h3>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                                                <div class="form-field">
+                                                    <label for="email" class="form-label">Email Address</label>
+                                                    <input pInputText type="email" formControlName="email" id="email"
+                                                           class="form-input" [disabled]="!editMode">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label for="countryCode" class="form-label">Country Code</label>
+                                                    <p-dropdown [options]="countryCodes" formControlName="countryCode"
+                                                                id="countryCode"
+                                                                [disabled]="!editMode" [styleClass]="'w-full'"
+                                                                placeholder="Select Code">
+                                                    </p-dropdown>
+                                                </div>
+                                                <div class="form-field">
+                                                    <label for="phoneNumber" class="form-label">Phone Number</label>
+                                                    <input pInputText type="tel" formControlName="phoneNumber"
+                                                           id="phoneNumber"
+                                                           class="form-input" [disabled]="!editMode">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label for="preferredContact" class="form-label">Preferred Contact
+                                                        Method</label>
+                                                    <p-dropdown [options]="contactMethods"
+                                                                formControlName="preferredContact"
+                                                                id="preferredContact" [disabled]="!editMode"
+                                                                [styleClass]="'w-full'">
+                                                    </p-dropdown>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Location Information Section -->
+                                        <div class="section-card">
+                                            <div class="section-header">
+                                                <i class="pi pi-map-marker mr-2"></i>
+                                                <h3 class="section-title">Location Information</h3>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                                                <div class="form-field">
+                                                    <label for="locationType" class="form-label">Location Type</label>
+                                                    <p-dropdown
+                                                        [options]="locationTypes"
+                                                        formControlName="location"
+                                                        id="locationType"
+                                                        [disabled]="!editMode"
+                                                        [styleClass]="'w-full'"
+                                                        (onChange)="onLocationTypeChange($event)"
+                                                    >
+                                                    </p-dropdown>
+                                                </div>
+                                                <div class="form-field"
+                                                     *ngIf="personalInfoForm.get('location')?.value !== 'KENYA'">
+                                                    <label for="country" class="form-label">Country</label>
+                                                    <p-dropdown
+                                                        [options]="allCountries"
+                                                        formControlName="country"
+                                                        id="country"
+                                                        [disabled]="!editMode"
+                                                        [styleClass]="'w-full'"
+                                                        [filter]="true"
+                                                    >
+                                                    </p-dropdown>
+                                                </div>
+                                                <div class="form-field"
+                                                     *ngIf="personalInfoForm.get('location')?.value === 'KENYA'">
+                                                    <label for="county" class="form-label">County</label>
+                                                    <p-dropdown
+                                                        [options]="kenyanCounties"
+                                                        formControlName="county"
+                                                        id="county"
+                                                        [disabled]="!editMode"
+                                                        [styleClass]="'w-full'"
+                                                        [filter]="true"
+                                                    >
+                                                    </p-dropdown>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Identification Section -->
+                                        <div class="section-card">
+                                            <div class="section-header">
+                                                <i class="pi pi-id-card mr-2"></i>
+                                                <h3 class="section-title">Identification</h3>
+                                            </div>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                                                <div class="form-field">
+                                                    <label for="idNumber" class="form-label">ID Number</label>
+                                                    <input pInputText type="text" formControlName="idNumber"
+                                                           id="idNumber"
+                                                           class="form-input" [disabled]="!editMode">
+                                                </div>
+                                                <!--                                    <div class="form-field">-->
+                                                <!--                                        <label for="idType" class="form-label">ID Type</label>-->
+                                                <!--                                        <p-dropdown [options]="idTypeOptions" formControlName="idType" id="idType"-->
+                                                <!--                                                    [disabled]="!editMode" [styleClass]="'w-full'">-->
+                                                <!--                                        </p-dropdown>-->
+                                                <!--                                    </div>-->
+                                            </div>
+                                            <div class="w-full flex pt-4 justify-end gap-4">
+                                                <p-button outlined [disabled]="!personalInfoForm.valid"
+                                                          icon="pi pi-save" [loading]="loading" (click)="saveClient()"
+                                                          label="Update" styleClass="p-button-success"></p-button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Documents Section -->
+                                        <div class="section-card">
+                                            <div class="section-header">
+                                                <i class="pi pi-file-pdf mr-2"></i>
+                                                <h3 class="section-title">Uploaded Documents</h3>
+
+                                            </div>
+
+                                            <div *ngIf="clientFiles.length > 0; else noDocuments"
+                                                 class="mt-4 space-y-4">
+                                                <div *ngFor="let doc of clientFiles"
+                                                     class=" rounded-lg shadow-md p-4 flex items-center justify-between">
+                                                    <div class="flex items-center">
+                                                        <div class="flex-shrink-0">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                                 viewBox="0 0 24 24" stroke="currentColor"
+                                                                 class="w-6 h-6 text-gray-600 mr-3">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                      stroke-width="2"
+                                                                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v16a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <a [href]="doc.fileUrl" target="_blank"
+                                                               class="text-blue-600 hover:text-blue-800 transition-colors duration-200 block font-medium">
+                                                                {{ doc.fileName }}
+                                                            </a>
+                                                            <span
+                                                                class="text-sm text-gray-500">{{ doc.fileType }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-shrink-0">
+                                                        <p-button label="update" outlined severity="info"
+                                                                  class="p-button-warning p-button-sm"
+                                                                  (click)="editDocument(doc)"></p-button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                            <p-dialog header="Edit Document" [(visible)]="displayEditDialog"
+                                                      [modal]="true"
+                                                      [breakpoints]="{ '960px': '75vw', '640px': '90vw' }"
+                                                      [style]="{ width: '50vw', minWidth: '300px', padding: '1rem' }"
+                                                      [draggable]="false" [resizable]="false">
+                                                <br>
+                                                <ng-template pTemplate="content">
+                                                    <input type="file" (change)="onFileChange($event)" class="w-full" />
+                                                </ng-template>
+                                                <ng-template pTemplate="footer">
+                                                    <div class="flex flex-wrap justify-content-end gap-2">
+                                                        <p-button outlined [loading]="loading" icon="pi pi-upload"
+                                                                  (click)="uploadNewFile()" label="Upload"
+                                                                  styleClass="p-button-success"></p-button>
+                                                        <p-button icon="pi pi-times" (click)="displayEditDialog = false"
+                                                                  label="Cancel" styleClass="p-button-secondary"></p-button>
+                                                    </div>
+                                                </ng-template>
+                                            </p-dialog>
+                                            <ng-template #noDocuments>
+                                                <div class="text-gray-500 italic mt-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                         viewBox="0 0 24 24" stroke="currentColor"
+                                                         class="w-5 h-5 inline-block mr-1">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                              stroke-width="2"
+                                                              d="M12 9v2m0 4h.0a1 1 0 01-1 1h-1a1 1 0 01-1-1v-3m2 2h2m-4-3a1 1 0 011-1h1a1 1 0 011 1v3m-2-2h2m-4-3v2m0 4h.0a1 1 0 01-1 1h-1a1 1 0 01-1-1v-3m2 2h2m-4-3a1 1 0 011-1h1a1 1 0 011 1v3" />
+                                                    </svg>
+                                                    No documents uploaded.
+                                                </div>
+                                            </ng-template>
+
+                                        </div>
+
+                                        <!-- Form Actions -->
+
+                                    </form>
+                                </div>
+
+                            </p-tabpanel>
+                            <p-tabpanel value="1">
+                                <div class="flex justify-between w-full">
+                                    <div class="flex pt-4 gap-4">
+
+                                        <strong>Current Client Stage</strong>
+                                        <p-tag severity="info" [value]="selectedClient?.clientStage?.toLowerCase()?.replaceAll('_', ' ')"/>
+
+                                    </div>
+                                    <div class="flex pt-4 gap-4">
+
+                                        <strong>Next Action</strong>
+                                        <p-tag severity="info" [value]="selectedClient?.nextStage?.toLowerCase()?.replaceAll('_', ' ')"/>
+
+                                    </div>
+                                </div>
+
+                                <p-divider layout="horizontal"/>
+                                <div class="w-full flex justify-end">
+                                    <button
+                                        (click)="activityFeedVisible = !activityFeedVisible"
+                                        class="mb-2 text-sm text-blue-500 hover:underline">
+                                        {{ activityFeedVisible ? 'Hide' : 'Show' }} Activity Feed
+                                    </button>
+
+                                </div>
+
+
+                                <div  class="grid grid-cols-3 gap-4">
+                                    <div class="mb-4 "  [ngClass]="activityFeedVisible ? 'col-span-2' : 'col-span-3'"  >
+                                        <div *ngIf="clientStage ==='REQUIREMENTS_GATHERING'" >
+                                            <h3 class="text-xl font-semibold mb-2">Project Requirements Documents</h3>
+                                            <p class="text-gray-600 mb-2">
+                                                Upload documents related to the client's project requirements .
+                                            </p>
+                                            <input type="file" id="tccFile" (change)="onSelect($event)"
+                                                   class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+
+
+                                            <br>
+                                            <p-button [disabled]="!uploadedFile || uploadedFile.size === 0" outlined label="upload" icon="pi pi-upload" [loading]="loading" (onClick)="onUpload()"/>
+                                        </div>
+                                        <div *ngIf="clientStage ==='INVOICE_GENERATION'">
+                                            <app-invoice-form [client]="selectedClient" *ngIf="selectedClient"></app-invoice-form>
+                                        </div>
+
+                                    </div>
+
+                                    <div *ngIf="activityFeedVisible" class="mb-4 col-start-3  col-span-1">
+                                        <h3 class="text-xl font-semibold mb-2">Activity Feed</h3>
+                                        <p-listbox [options]="activities" [listStyle]="{ 'max-height': '250px' }">
+                                            <ng-template let-activity pTemplate="item">
+                                                <div>
+                                                    <p class="font-semibold">{{ activity.description }}</p>
+                                                    <span class="text-sm ">{{ activity.timestamp | date }}</span>
+                                                </div>
+                                            </ng-template>
+                                        </p-listbox>
+                                    </div>
+                                </div>
+
+
+
+                            </p-tabpanel>
+
+                        </p-tabpanels>
+                    </p-tabs>
+                </ng-template>
+            </p-dialog>
+
+            <!-- Add/Edit Document Dialog -->
+
+        </div>
+    </div>
+</div>

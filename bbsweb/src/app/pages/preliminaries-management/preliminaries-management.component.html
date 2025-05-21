@@ -1,0 +1,342 @@
+<p-toast></p-toast>
+
+<p *ngIf="preliminaries.length <= 0" class="mb-4">
+    <p-message severity="info" size="small">
+        <div class="flex items-center gap-2">
+            <i class="pi pi-info-circle text-blue-500"></i>
+            <span class="text-sm">This user has no preliminaries yet. Click the "Create New Preliminary" button below to get started!</span>
+        </div>
+    </p-message>
+</p>
+
+<p-accordion class=" " [value]="0">
+    <p-accordion-panel *ngIf="hasPrivileges(Permissions.CREATE_PRELIMINARY)" [value]="1">
+        <p-accordion-header>Initiate New Preliminary</p-accordion-header>
+        <p-accordion-content class="space-y-6">
+            <div class="space-y-4">
+                <label for="preliminaryType" class="block font-medium">Select Preliminary Type</label>
+                <p-dropdown
+                    class="z-50"
+                    id="preliminaryType"
+                    [options]="preliminaryTypes"
+                    [(ngModel)]="selectedPreliminaryType"
+                    placeholder="Select a preliminary type"
+                    optionLabel="name"
+                    appendTo="body"
+                    optionValue="id"
+                ></p-dropdown>
+            </div>
+
+            <!-- Toggle Add Form -->
+            <div class="flex items-center justify-between gap-4 p-4 border-t">
+                <span class="text-sm">Preliminary not available?</span>
+                <p-button
+                    text
+                    size="small"
+                    severity="info"
+                    (click)="toggleAddPreliminaryForm()"
+                    [label]="showAddForm ? 'Cancel' : 'Add New Preliminary Type'"
+                    class="hover:text-blue-400"
+                ></p-button>
+            </div>
+
+            <!-- Form to Add New Preliminary Type -->
+            <form *ngIf="showAddForm" (ngSubmit)="addPreliminaryType()" class="space-y-4">
+                <div>
+                    <label for="newPreliminaryName" class="block font-medium">Preliminary Name</label>
+                    <input
+                        pInputText
+                        id="newPreliminaryName"
+                        type="text"
+                        [(ngModel)]="newPreliminary.name"
+                        name="newPreliminaryName"
+                        placeholder="Enter preliminary name"
+                        required
+                        class="w-full"
+                    />
+                </div>
+                <div>
+                    <label for="newPreliminaryDescription" class="block font-medium">Description (Optional)</label>
+                    <textarea
+                        pTextarea
+                        id="newPreliminaryDescription"
+                        [(ngModel)]="newPreliminary.description"
+                        name="newPreliminaryDescription"
+                        placeholder="Enter description"
+                        rows="3"
+                        class="w-full"
+                    ></textarea>
+                </div>
+                <div class="flex gap-4">
+                    <label for="requiresGovernmentApproval" class="block font-medium">Requires Government Approval</label>
+                    <p-checkbox
+                        id="requiresGovernmentApproval"
+                        [(ngModel)]="newPreliminary.requiresGovernmentApproval"
+                        name="requiresGovernmentApproval"
+                        binary="true"
+                    ></p-checkbox>
+                </div>
+                <br>
+                <p-button
+                    label="Add New Preliminary Type"
+                    type="submit"
+                    outlined
+                    severity="primary"
+                    class="hover:text-primary-600"
+                ></p-button>
+            </form>
+
+            <!-- Initiate Activity Button -->
+            <p-button
+                class="mb-8"
+                outlined
+                [loading]="loading"
+                *ngIf="!showAddForm"
+                (click)="initiateActivity()"
+                [disabled]="!selectedPreliminaryType"
+                label="Initiate Activity"
+                severity="primary"
+                class="hover:text-primary-600"
+            ></p-button>
+        </p-accordion-content>
+    </p-accordion-panel>
+</p-accordion>
+
+<div  *ngIf="hasPrivileges(Permissions.VIEW_PRELIMINARY)" class=" mt-4 mx-auto space-y-4">
+    <div class="flex justify-between items-center">
+        <strong class="text-lg font-semibold">Available Preliminaries</strong>
+    </div>
+
+    <!-- Card for Each Preliminary -->
+    <div *ngFor="let preliminary of preliminaries" class="mt-2">
+        <p-panel  [header]="preliminary.preliminaryType.name" class="w-full shadow-md rounded-lg">
+            <div class="space-y-2">
+                <p class="text-sm">{{ preliminary.preliminaryType.description || 'No description available' }}</p>
+                <p class="text-sm">Requires Government Approval: {{ preliminary.preliminaryType?.requiresGovernmentApproval ? 'Yes' : 'No' }}</p>
+                <div class="flex justify-between items-center gap-4">
+                    <div class="flex flex-wrap gap-2">
+                        <span [ngClass]="getStatusChipClass(preliminary.status)" class="text-xs font-medium px-2 py-1 rounded-full">
+                            {{ preliminary.status }}
+                        </span>
+                        <span *ngIf="preliminary.invoiced" class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                            Invoiced
+                        </span>
+                        <span *ngIf="preliminary.invoiceClearedFlag" class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                            Invoice Cleared
+                        </span>
+                        <span *ngIf="preliminary.invoiced && !preliminary.invoiceClearedFlag" class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded-full">
+                            Pending Payment
+                        </span>
+                    </div>
+                    <p-button
+                        outlined
+                        size="small"
+                        icon="pi pi-eye"
+                        (onClick)="showPreliminaryDialog(preliminary)"
+                        label="View"
+                        class="hover:text-blue-400"
+                    ></p-button>
+                </div>
+            </div>
+        </p-panel>
+    </div>
+</div>
+
+<!-- Preliminary Dialog -->
+<p-dialog
+    [header]="modalPreliminary?.preliminaryType.name"
+    [(visible)]="displayDialog"
+    [modal]="true"
+    [style]="{ width: '50rem' }"
+    [baseZIndex]="10000"
+    [draggable]="false"
+    [resizable]="false"
+    class="shadow-lg"
+>
+    <div class="space-y-6 p-4">
+        <!-- Preliminary Details -->
+        <div *ngIf="!modalPreliminary?.invoiced && hasPrivileges(Permissions.CREATE_INVOICES)"   class="flex justify-between items-center gap-4">
+            <p-message severity="info" size="small" class="w-3/4">
+                This activity has not been invoiced yet. Use the button to proceed.
+            </p-message>
+            <p-button icon="pi pi-receipt" label="Raise Invoice" (onClick)="navigateToInvoiceForm()" text severity="info" class="hover:text-blue-400"></p-button>
+        </div>
+
+        <div>
+            <h3 class="text-lg font-medium">Details</h3>
+            <p class="text-sm">{{ modalPreliminary?.preliminaryType.description || 'No description available' }}</p>
+            <p class="text-xs mt-1">Status: <span class="font-medium">{{ modalPreliminary?.status }}</span></p>
+            <p *ngIf="modalPreliminary?.rejectionRemarks" class="text-xs mt-1">Rejection Remarks: <span class="font-medium">{{ modalPreliminary?.rejectionRemarks }}</span></p>
+        </div>
+
+        <div *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.UPLOAD_TECHNICAL_WORKS)" class="space-y-4">
+            <p class="text-sm">Upload documents for technical director approval</p>
+            <p-fileUpload
+                mode="basic"
+                [name]="modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ')"
+                [customUpload]="true"
+                (onSelect)="onFileSelect($event)"
+                chooseLabel="Select File"
+                class="w-full"
+                styleClass="p-button-outlined p-button-secondary rounded-lg"
+            ></p-fileUpload>
+            <div class="flex justify-end">
+                <p-button
+                    [disabled]="!uploadedFile"
+                    [loading]="loading"
+                    (onClick)="submitTechnicalWorks()"
+                    label="Submit"
+                    icon="pi pi-check"
+                    outlined
+                    severity="info"
+                    class="hover:text-blue-400"
+                ></p-button>
+            </div>
+        </div>
+
+        <div *ngIf="modalPreliminary?.status === 'PENDING_T_D_APPROVAL' && hasPrivileges(Permissions.APPROVE_TECHNICAL_WORKS)" class="space-y-4">
+            <p class="text-sm">View uploaded documents for {{ modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ') }} and take action</p>
+            <div *ngIf="clientFiles.length > 0" class="space-y-2">
+                <div *ngFor="let doc of clientFiles" class="rounded-lg shadow-md p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="flex-shrink-0">
+                            <!-- SVG for document icon will be inserted here -->
+                        </div>
+                        <a
+                            [href]="doc.fileUrl"
+                            target="_blank"
+                            pButton
+                            outlined
+                            severity="secondary"
+                            icon="pi pi-arrow-up-right"
+                            [label]="doc.fileName"
+                            class="text-blue-600 hover:text-blue-800 font-medium"
+                        ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-4">
+                <p-button
+                    [loading]="loading"
+                    (onClick)="acceptTechnicalWorks('TECHNICAL_DIRECTOR')"
+                    label="Accept"
+                    severity="success"
+                    outlined
+                    icon="pi pi-check"
+                    class="hover:text-green-400"
+                ></p-button>
+                <p-button
+                    [loading]="loading"
+                    (onClick)="showRejectDialog('TECHNICAL_DIRECTOR')"
+                    label="Reject"
+                    severity="danger"
+                    outlined
+                    icon="pi pi-times"
+                    class="hover:text-red-400"
+                ></p-button>
+            </div>
+        </div>
+
+        <div *ngIf="modalPreliminary?.status === 'PENDING_M_D_APPROVAL'" class="space-y-4">
+
+
+
+            <p class="text-sm">View uploaded documents for {{ modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ') }} and take action</p>
+            <div *ngIf="clientFiles.length > 0" class="space-y-2">
+                <div *ngFor="let doc of clientFiles" class="rounded-lg shadow-md p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="flex-shrink-0">
+                            <!-- SVG for document icon will be inserted here -->
+                        </div>
+                        <a
+                            [href]="doc.fileUrl"
+                            target="_blank"
+                            pButton
+                            outlined
+                            severity="secondary"
+                            icon="pi pi-arrow-up-right"
+                            [label]="doc.fileName"
+                            class="text-blue-600 hover:text-blue-800 font-medium"
+                        ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="custom-warn-chip" *ngIf="!modalPreliminary?.invoiced">
+                <small>                This activity has not been invoiced yet.
+                </small>
+            </div>
+            <div class="custom-warn-chip" *ngIf="!modalPreliminary?.invoiceClearedFlag">
+                <small>                This activity has an uncleared invoice.
+                </small>
+            </div>
+            <div class="flex justify-end gap-4">
+                <p-button
+                    [loading]="loading"
+                    (onClick)="acceptTechnicalWorks('MANAGING_DIRECTOR')"
+                    label="Accept"
+                    severity="success"
+                    outlined
+                    icon="pi pi-check"
+                    class="hover:text-green-400"
+                ></p-button>
+                <p-button
+                    [loading]="loading"
+                    (onClick)="showRejectDialog('MANAGING_DIRECTOR')"
+                    label="Reject"
+                    severity="danger"
+                    outlined
+                    icon="pi pi-times"
+                    class="hover:text-red-400"
+                ></p-button>
+            </div>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Close" (onClick)="displayDialog = false" styleClass="p-button-text hover:text-gray-400"></p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- Rejection Dialog -->
+<p-dialog
+    header="Reject Preliminary"
+    [(visible)]="displayRejectDialog"
+    [modal]="true"
+    [style]="{ width: '30rem' }"
+    [baseZIndex]="10000"
+    [draggable]="false"
+    [resizable]="false"
+>
+    <div class="space-y-4 p-4">
+        <p>Please provide remarks for rejection:</p>
+        <textarea
+            pTextarea
+            [(ngModel)]="rejectRemarks"
+            placeholder="Enter rejection remarks"
+            rows="4"
+            class="w-full"
+        ></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            label="Cancel"
+            (onClick)="displayRejectDialog = false"
+            styleClass="p-button-text hover:text-gray-400"
+        ></p-button>
+        <p-button
+            label="Reject"
+            [disabled]="!rejectRemarks"
+            (onClick)="confirmReject()"
+            severity="danger"
+            icon="pi pi-times"
+        ></p-button>
+    </ng-template>
+    <p-confirmdialog>
+        <ng-template #message let-message>
+            <div class="flex flex-col items-center w-full gap-4 border-b border-surface-200 dark:border-surface-700">
+                <i [ngClass]="message.icon" class="!text-6xl text-primary-500"></i>
+                <p>{{ message.message }}</p>
+            </div>
+        </ng-template>
+    </p-confirmdialog>
+</p-dialog>

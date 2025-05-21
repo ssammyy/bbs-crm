@@ -1,0 +1,75 @@
+<div>
+    <div>
+        <p-toast />
+        <div class="card grid grid-cols-1 md:grid-cols-4">
+            <div class="font-semibold text-xl p-4 flex flex-col md:col-span-1">
+                <h3 class="text-red-400">
+                    View Users
+                </h3>
+                <p-divider layout="horizontal" />
+                <small style="color: var(--primary-color)">
+                    Privileges are actions that a user can perform on the system, view and delete privileges from here.
+                </small>
+            </div>
+            <div class="md:col-span-3 md:mt-12 p-4">
+                <p-table [value]="users" [loading]="loading" stripedRows [paginator]="true" [rows]="10" responsiveLayout="scroll">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th>User Name</th>
+                            <th>Email</th>
+                            <th>Phone Number</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-user>
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phonenumber }}</td>
+                            <td>{{ user.role.name || 'System' }}</td>
+                            <td class="flex gap-4">
+                                <button pButton icon="pi pi-pencil" class="p-button-info p-button-sm" (click)="editUser(user)">
+                                </button>
+                                <button pButton icon="pi pi-trash" class="p-button-danger p-button-sm" (click)="confirm2($event, user)">
+                                </button>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
+        </div>
+    </div>
+    <p-dialog header="Edit User Details" [modal]="true" [(visible)]="visible" [style]="{ width: '90%', maxWidth: '50rem' }">
+        <span class="p-text-secondary">Update user information</span>
+        <form [formGroup]="editUserForm">
+            <div class="flex flex-col gap-6 mt-4">
+                <div class="md:flex gap-4">
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="username">User Name</label>
+                        <input placeholder="e.g. SALES_REP" pInputText id="username" formControlName="username" class="w-full" />
+                    </div>
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="email">Email</label>
+                        <input placeholder="e.g. user@example.com" pInputText id="email" formControlName="email" class="w-full" />
+                    </div>
+                </div>
+                <div class="md:flex gap-4">
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label for="phonenumber">Phone Number</label>
+                        <input placeholder="e.g. +254712345678" pInputText id="phonenumber" formControlName="phonenumber" class="w-full" />
+                    </div>
+                    <div class="flex flex-col grow basis-0 gap-2">
+                        <label class="block">Role</label>
+                        <p-dropdown formControlName="role" appendTo="body" [options]="roles"  optionLabel="name" placeholder="Select Role" class="w-full"></p-dropdown>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-4 mt-4">
+                <button pButton label="Cancel" icon="pi pi-times" class="p-button-text" (click)="visible = false"></button>
+                <p-button [outlined]="true" [disabled]="!editUserForm.valid" [loading]="loading" (onClick)="updateUser()" label="Save" icon="pi pi-check" class="p-button-primary"></p-button>
+            </div>
+        </form>
+    </p-dialog>
+    <p-confirm-popup></p-confirm-popup>
+</div>

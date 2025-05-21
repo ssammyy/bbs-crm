@@ -1,0 +1,463 @@
+<div>
+    <p-tabs [(value)]="activeTab" (valueChange)="onTabChange($event)">
+        <p-tablist>
+            <p-tab value="0" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)">Activity</p-tab>
+            <p-tab  value="1" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)">Details</p-tab>
+            <p-tab value="2" *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)">Invoices</p-tab>
+            <p-tab value="3" *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)">Receipts</p-tab>
+        </p-tablist>
+        <p-tabpanels>
+            <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)" value="0">
+                <div class="flex justify-between w-full">
+                    <div class="flex pt-4 gap-4">
+                        <strong>Current Client Stage</strong>
+                        <p-tag severity="info"
+                               [value]="selectedClient?.clientStage?.toLowerCase()?.replaceAll('_', ' ')" />
+                    </div>
+                    <div class="flex pt-4 gap-4">
+                        <strong>Next Action</strong>
+                        <p-tag severity="info"
+                               [value]="selectedClient?.nextStage?.toLowerCase()?.replaceAll('_', ' ')" />
+                    </div>
+                </div>
+
+                <p-divider layout="horizontal" />
+                <div *ngIf="hasPrivileges(Permissions.VIEW_ACTIVITY_FEED)" class="w-full flex justify-end">
+                    <button
+                        (click)="activityFeedVisible = !activityFeedVisible"
+                        class="mb-2 text-sm text-blue-500 hover:underline">
+                        {{ activityFeedVisible ? 'Hide' : 'Show' }} Activity Feed
+                    </button>
+                </div>
+
+                <div  class="grid grid-cols-3 gap-4">
+                    <div class="mb-4" [ngClass]="activityFeedVisible ? 'col-span-2' : 'col-span-3'">
+                        <!-- Stage 1: REQUIREMENTS_GATHERING -->
+                        <div *ngIf="clientStage === 'REQUIREMENTS_GATHERING' && userRole === 'SUPER_ADMIN'">
+                            <h3 class="text-xl font-semibold mb-2">Project Requirements Documents</h3>
+                            <p class="text-gray-600 mb-2">
+                                Upload documents related to the client's project requirements.
+                            </p>
+                            <input type="file" id="tccFile" (change)="onSelect($event)"
+                                   class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+                            <br>
+
+                        </div>
+
+                        <div
+                            *ngIf="clientStage === 'REQUIREMENTS_PENDING_DIRECTOR_APPROVAL' && userRole ==='SUPER_ADMIN'">
+                            <app-site-report-view [clientId]="selectedClient?.id"
+                                                  (statusChanged)="handleEventEmit()"></app-site-report-view>
+                        </div>
+
+                        <!-- Stage 2: PROFORMA_INVOICE_GENERATION -->
+                        <div *ngIf="clientStage === 'PROFORMA_INVOICE_GENERATION'">
+                            <app-invoice-form [client]="selectedClient" [invoiceType]="InvoiceType.PROFORMA"
+                                              *ngIf="selectedClient"
+                                              (invoiceGenerated)="handleEventEmit()"></app-invoice-form>
+                        </div>
+
+                        <!-- Stage 3: INVOICE_PENDING_DIRECTOR_APPROVAL -->
+                        <div
+                            *ngIf="clientStage === 'PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL' && userRole === 'SUPER_ADMIN'">
+                            <div class="flex flex-col gap-4">
+                                <span>Review attached client invoice and take action</span>
+                                <div class="w-full gap-4 card flex flex-col">
+                                    <div>
+                                        <p-button (onClick)="viewInvoice()" outlined severity="secondary"
+                                                  label="view invoice"
+                                                  icon="pi pi-arrow-up-right"></p-button>
+                                    </div>
+                                    <div class="justify-end flex gap-4">
+                                        <p-button
+                                            (onClick)="acceptInvoice('PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL', InvoiceType.PROFORMA)"
+                                            label="Approve" icon="pi pi-check" severity="success"
+                                            outlined></p-button>
+                                        <p-button label="Reject" (onClick)="rejectDialog=true" icon="pi pi-times"
+                                                  severity="warn" outlined></p-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            *ngIf="clientStage === 'PENDING_DIRECTOR_SITE_VISIT_INVOICE_APPROVAL' && hasPrivileges(Permissions.APPROVE_INVOICE)">
+                            <div class="flex flex-col gap-4">
+                                <span>Review attached client site visit invoice and take action</span>
+                                <div class="w-full gap-4 card flex flex-col">
+                                    <div>
+                                        <p-button (onClick)="viewInvoice()" outlined severity="secondary"
+                                                  label="view invoice"
+                                                  icon="pi pi-arrow-up-right"></p-button>
+                                    </div>
+                                    <div class="justify-end flex gap-4">
+                                        <p-button
+                                            (onClick)="acceptInvoice('PENDING_DIRECTOR_SITE_VISIT_INVOICE_APPROVAL', InvoiceType.SITE_VISIT)"
+                                            label="Approve" icon="pi pi-check" severity="success"
+                                            outlined></p-button>
+                                        <p-button label="Reject" (onClick)="rejectDialog=true" icon="pi pi-times"
+                                                  severity="warn" outlined></p-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stage 4: GENERATE_SITE_VISIT_INVOICE -->
+                        <div  *ngIf="clientStage === 'GENERATE_SITE_VISIT_INVOICE' && hasPrivileges(Permissions.CREATE_INVOICES)">
+                            <app-invoice-form [client]="selectedClient" [invoiceType]=InvoiceType.SITE_VISIT
+                                              *ngIf="selectedClient"
+                                              (invoiceGenerated)="handleEventEmit()"></app-invoice-form>
+                        </div>
+
+                        <!-- Stage 5: PENDING_CLIENT_SITE_VISIT_PAYMENT -->
+                        <div *ngIf="clientStage === 'PENDING_CLIENT_SITE_VISIT_PAYMENT' && hasPrivileges(Permissions.RECONCILE_INVOICES)">
+                            <div class="flex flex-col gap-4">
+                                <span>Confirm that the client has paid for the site visit (payment happens off-system).</span>
+                                <div class="w-full gap-4 card flex flex-col">
+                                    <p-button (onClick)="goToInvoices()" label="Confirm Payment"
+                                              icon="pi pi-check" severity="success"
+                                              outlined></p-button>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Stage 6: PENDING_SITE_VISIT -->
+                        <div *ngIf="clientStage === 'PENDING_SITE_VISIT' && hasPrivileges(Permissions.SUBMIT_SITE_VISIT_REPORT)">
+                            <div class="flex flex-col gap-4">
+                                <span>Complete the site visit by uploading a report and uploading client KYC documents.</span>
+                                <app-site-report-form [client]="selectedClient" (reportGenerated)="handleEventEmit()" />
+
+                                <div class="w-full gap-4 card flex flex-col">
+                                    <p-button (onClick)="siteVisitDialog=true" label="Complete Site Visit"
+                                              icon="pi pi-check" severity="success"
+                                              outlined></p-button>
+                                </div>
+                            </div>
+                            <p-dialog header="Complete Site Visit" [(visible)]="siteVisitDialog" [modal]="true"
+                                      [style]="{ width: '25rem' }">
+                                <div class="w-full flex flex-col justify-center p-4">
+                                    <span class="text-surface-500 dark:text-surface-400 block mb-8">Add remarks for the site visit (optional)</span>
+                                    <textarea rows="5" cols="30" pTextarea [(ngModel)]="siteVisitRemarks"></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2 p-4">
+                                    <p-button label="Cancel" severity="secondary" (click)="siteVisitDialog = false" />
+                                    <p-button label="Complete" (onClick)="completeSiteVisit()" />
+                                </div>
+                            </p-dialog>
+                        </div>
+
+
+
+
+
+                        <div>
+                            <app-preliminary-management *ngIf="clientStage==='PRELIMINARIES' && hasPrivileges(Permissions.MANAGE_PRELIMINARY)"
+                                                        [client]="selectedClient!!"></app-preliminary-management>
+                        </div>
+
+
+
+                    </div>
+
+                    <div *ngIf="activityFeedVisible && hasPrivileges(Permissions.VIEW_ACTIVITY_FEED)" class="mb-4 col-start-3 col-span-1">
+                        <h3 class="text-xl font-semibold mb-2">Activity Feed</h3>
+                        <p-listbox [options]="activities" [listStyle]="{ 'max-height': '250px' }">
+                            <ng-template let-activity pTemplate="item">
+                                <div>
+                                    <p class="font-semibold">{{ activity.description }}</p>
+                                    <span class="text-sm">{{ activity.timestamp | date }}</span>
+                                </div>
+                            </ng-template>
+                        </p-listbox>
+                    </div>
+                </div>
+            </p-tabpanel>
+            <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)" value="1">
+                <div class="client-profile-container">
+                    <form [formGroup]="personalInfoForm" class="space-y-8">
+                        <!-- Personal Information Section -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <i class="pi pi-user mr-2"></i>
+                                <h3 class="section-title">Personal Information</h3>
+                                <div class="section-actions">
+                                    <p-button *ngIf="!editMode" icon="pi pi-pencil"
+                                              (click)="editClient()" label="Edit"
+                                              styleClass="p-button-text p-button-sm"></p-button>
+                                    <p-button *ngIf="editMode" icon="pi pi-check"
+                                              (click)="saveClient()" label="Save"
+                                              styleClass="p-button-text p-button-sm" [loading]="loading"></p-button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                                <div class="form-field">
+                                    <label for="firstName" class="form-label">First Name</label>
+                                    <input pInputText type="text" formControlName="firstName"
+                                           id="firstName" class="form-input" [disabled]="!editMode">
+                                    <small
+                                        *ngIf="personalInfoForm.get('firstName')?.invalid && personalInfoForm.get('firstName')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">First name is required.</small>
+                                </div>
+                                <div class="form-field">
+                                    <label for="secondName" class="form-label">Middle Name</label>
+                                    <input pInputText type="text" formControlName="secondName"
+                                           id="secondName" class="form-input" [disabled]="!editMode">
+                                </div>
+                                <div class="form-field">
+                                    <label for="lastName" class="form-label">Last Name</label>
+                                    <input pInputText type="text" formControlName="lastName"
+                                           id="lastName" class="form-input" [disabled]="!editMode">
+                                    <small
+                                        *ngIf="personalInfoForm.get('lastName')?.invalid && personalInfoForm.get('lastName')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">Last name is required.</small>
+                                </div>
+                                <div class="form-field">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input pInputText type="email" formControlName="email"
+                                           id="email" class="form-input" [disabled]="!editMode">
+                                    <small
+                                        *ngIf="personalInfoForm.get('email')?.invalid && personalInfoForm.get('email')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">Valid email is required.</small>
+                                </div>
+                                <div class="form-field">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <p-dropdown formControlName="gender" [options]="genders" optionLabel="label"
+                                                optionValue="value" placeholder="Select gender"
+                                                [disabled]="!editMode" appendTo="body" class="w-full"></p-dropdown>
+                                    <small
+                                        *ngIf="personalInfoForm.get('gender')?.invalid && personalInfoForm.get('gender')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">Gender is required.</small>
+                                </div>
+                                <div class="form-field">
+                                    <label for="dob" class="form-label">Date of Birth</label>
+                                    <p-calendar formControlName="dob" id="dob" [disabled]="!editMode"
+                                                dateFormat="dd/mm/yy" appendTo="body" class="w-full"></p-calendar>
+                                </div>
+                                <div class="form-field">
+                                    <label for="idNumber" class="form-label">ID Number</label>
+                                    <input pInputText type="text" formControlName="idNumber"
+                                           id="idNumber" class="form-input" [disabled]="!editMode">
+                                    <small
+                                        *ngIf="personalInfoForm.get('idNumber')?.invalid && personalInfoForm.get('idNumber')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">ID number is required.</small>
+                                </div>
+                                <div class="form-field">
+                                    <label for="phoneNumber" class="form-label">Phone Number</label>
+                                    <div class="flex gap-2">
+                                        <p-dropdown formControlName="countryCode" [options]="countryCodes"
+                                                    optionLabel="code" optionValue="code" [disabled]="!editMode"
+                                                    appendTo="body" class="w-1/3"></p-dropdown>
+                                        <input pInputText type="text" formControlName="phoneNumber"
+                                               id="phoneNumber" class="form-input w-2/3" [disabled]="!editMode">
+                                    </div>
+                                    <small
+                                        *ngIf="personalInfoForm.get('phoneNumber')?.invalid && personalInfoForm.get('phoneNumber')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">Phone number is required.</small>
+                                </div>
+                                <div class="form-field">
+                                    <label for="preferredContact" class="form-label">Preferred Contact Method</label>
+                                    <p-dropdown formControlName="preferredContact" [options]="contactMethods"
+                                                optionLabel="label" optionValue="value"
+                                                placeholder="Select contact method"
+                                                [disabled]="!editMode" appendTo="body" class="w-full"></p-dropdown>
+                                    <small
+                                        *ngIf="personalInfoForm.get('preferredContact')?.invalid && personalInfoForm.get('preferredContact')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">Contact method is required.</small>
+                                </div>
+                                <div class="form-field">
+                                    <label for="location" class="form-label">Location Type</label>
+                                    <p-dropdown formControlName="location" [options]="locationTypes"
+                                                optionLabel="label" optionValue="value"
+                                                placeholder="Select location type"
+                                                [disabled]="!editMode" (onChange)="onLocationTypeChange($event)"
+                                                appendTo="body" class="w-full"></p-dropdown>
+                                    <small
+                                        *ngIf="personalInfoForm.get('location')?.invalid && personalInfoForm.get('location')?.touched"
+                                        class="p-error text-red-500 text-xs mt-1">Location type is required.</small>
+                                </div>
+                                <div class="form-field" *ngIf="personalInfoForm.get('location')?.value === 'KENYA'">
+                                    <label for="county" class="form-label">County</label>
+                                    <p-dropdown formControlName="county" [options]="kenyanCounties"
+                                                optionLabel="name" optionValue="name" placeholder="Select county"
+                                                [disabled]="!editMode" appendTo="body" class="w-full"></p-dropdown>
+                                </div>
+                                <div class="form-field"
+                                     *ngIf="personalInfoForm.get('location')?.value === 'INTERNATIONAL'">
+                                    <label for="country" class="form-label">Country</label>
+                                    <p-dropdown formControlName="country" [options]="allCountries"
+                                                optionLabel="name" optionValue="name" placeholder="Select country"
+                                                [disabled]="!editMode" appendTo="body" class="w-full"></p-dropdown>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KYC Documents Section -->
+                        <!-- KYC Documents Section -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <i class="pi pi-file mr-2"></i>
+                                <h3 class="section-title">KYC Documents</h3>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Upload or view KYC documents for the client.</p>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div *ngFor="let doc of kycDocuments" class="field">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ doc.label }}</label>
+                                    <div class="flex items-center space-x-3">
+                                        <!-- Show file upload option if the document is not uploaded -->
+                                        <p-fileUpload
+                                            *ngIf="!isKycDocumentUploaded(doc.fileType)"
+                                            mode="basic"
+                                            [name]="doc.fileType"
+                                            [customUpload]="true"
+                                            (onSelect)="onKycFileSelect($event, doc.fileType)"
+                                            chooseLabel="Select File"
+                                            class="w-full"
+                                            styleClass="p-button-outlined p-button-secondary rounded-lg"
+                                        ></p-fileUpload>
+                                        <!-- Show chip and upload button if a file is selected but not yet uploaded -->
+                                        <p-chip
+                                            *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
+                                            label="Selected"
+                                            styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"
+                                        ></p-chip>
+                                        <p-button
+                                            *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
+                                            label="Upload"
+                                            icon="pi pi-upload"
+                                            [loading]="loading"
+                                            styleClass="p-button-outlined p-button-success"
+                                            (onClick)="onUpload(doc.fileType)"
+                                        ></p-button>
+                                        <!-- Show uploaded status if the document is already uploaded -->
+                                        <p-chip
+                                            *ngIf="isKycDocumentUploaded(doc.fileType)"
+                                            label="Uploaded"
+                                            styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
+                                        ></p-chip>
+                                        <a
+                                            *ngIf="isKycDocumentUploaded(doc.fileType)"
+                                            (click)="viewDocument(doc.fileType)"
+                                            class="text-blue-600 hover:underline cursor-pointer"
+                                        >
+                                            View
+                                        </a>
+                                        <!--                                        <p-button-->
+                                        <!--                                            *ngIf="isKycDocumentUploaded(doc.fileType) && userRole === 'SUPER_ADMIN'"-->
+                                        <!--                                            icon="pi pi-pencil"-->
+                                        <!--                                            styleClass="p-button-text p-button-secondary"-->
+                                        <!--                                            [disabled]="!clientFiles.find(f => f.fileType === doc.fileType)"-->
+                                        <!--                                            (onClick)="editDocument(clientFiles.find(f => f.fileType === doc.fileType) || null)"-->
+                                        <!--                                        ></p-button>-->
+                                    </div>
+                                    <small
+                                        *ngIf="!isKycDocumentUploaded(doc.fileType) && !(uploadedFile && selectedDocument?.fileType === doc.fileType)"
+                                        class="text-gray-500 text-xs mt-1">
+                                        Upload this document to complete KYC requirements.
+                                    </small>
+                                    <small
+                                        *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
+                                        class="text-gray-500 text-xs mt-1">
+                                        Click Upload to save the selected file.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Other Uploaded Documents Section -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <i class="pi pi-folder mr-2"></i>
+                                <h3 class="section-title">Other Uploaded Documents</h3>
+                            </div>
+                            <p-table [value]="clientFiles | nonKycDocument" [tableStyle]="{'min-width': '50rem'}">
+                                <ng-template pTemplate="header">
+                                    <tr>
+                                        <th>File Type</th>
+                                        <th>File Name</th>
+                                        <th>Version</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="body" let-file>
+                                    <tr>
+                                        <td>{{ file.specific?.replace('_', ' ') || file.fileType?.replace('_', ' ') }}</td>
+                                        <td>{{ file.fileName }}</td>
+                                        <td>{{ file.version || '1' }}</td>
+                                        <td>
+                                            <p-button icon="pi pi-eye" styleClass="p-button-text p-button-secondary"
+                                                      (onClick)="viewDocument(file.fileType)"></p-button>
+                                            <p-button *ngIf="userRole === 'SUPER_ADMIN'" icon="pi pi-plus"
+                                                      styleClass="p-button-text p-button-success"
+                                                      (onClick)="addDocumentVersion(file)"></p-button>
+                                        </td>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="emptymessage">
+                                    <tr>
+                                        <td colspan="4">No other documents uploaded.</td>
+                                    </tr>
+                                </ng-template>
+                            </p-table>
+                        </div>
+                    </form>
+                </div>
+            </p-tabpanel>
+            <p-tabpanel  *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)" value="2">
+                <div class="client-profile-container">
+                    <app-view-invoices [client]="selectedClient!!"
+                                       [isActive]="activeTab === '2'"
+                                       (receiptGenerated)="handleEventEmit()"></app-view-invoices>
+
+                </div>
+            </p-tabpanel>
+
+            <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)" value="3">
+                <div class="client-profile-container">
+                    <app-receipts [clientId]="selectedClient?.id "></app-receipts>
+                </div>
+            </p-tabpanel>
+        </p-tabpanels>
+    </p-tabs>
+
+    <!-- Document Version Dialog -->
+    <p-dialog header="Add Document Version" [(visible)]="displayVersionDialog" [modal]="true" [style]="{ width: '25rem' }">
+        <div class="w-full flex flex-col justify-center p-4">
+            <span class="text-surface-500 dark:text-surface-400 block mb-4">
+                Upload a new version for {{ selectedDocument?.fileType?.replace("_", " ") }}
+            </span>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Version Notes</label>
+                <textarea rows="3" cols="30" pTextarea [(ngModel)]="versionNotes"
+                          placeholder="Enter notes about this version (optional)"></textarea>
+            </div>
+            <input type="file" (change)="onFileChange($event)"
+                   class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+        </div>
+        <div class="flex justify-end gap-2 p-4">
+            <p-button label="Cancel" severity="secondary" (click)="displayVersionDialog = false" />
+            <p-button label="Upload Version" severity="info" outlined [loading]="loading" [disabled]="!newFile" (onClick)="uploadNewVersion()" />
+        </div>
+    </p-dialog>
+
+    <!-- Reject Invoice Dialog -->
+    <p-dialog header="Reject Invoice" [(visible)]="rejectDialog" [modal]="true" [style]="{ width: '25rem' }">
+        <div class="w-full flex flex-col justify-center p-4">
+            <span class="text-surface-500 dark:text-surface-400 block mb-8">Indicate remarks for invoice rejection</span>
+            <textarea rows="5" cols="30" pTextarea [(ngModel)]="invoiceRejectionRemarks"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 p-4">
+            <p-button label="Cancel" severity="secondary" (click)="rejectDialog = false" />
+            <p-button label="Save" [disabled]="invoiceRejectionRemarks===''"
+                      (onClick)="rejectInvoice(clientStage)" />
+        </div>
+    </p-dialog>
+
+    <ngx-spinner
+        bdColor="rgba(0, 0, 0, 0.8)"
+        size="medium"
+        color="#fff"
+        type="ball-clip-rotate"
+        [fullScreen]="true"
+        [name]="'spinner'">
+        <p style="color: white">Loading...</p>
+    </ngx-spinner>
+</div>

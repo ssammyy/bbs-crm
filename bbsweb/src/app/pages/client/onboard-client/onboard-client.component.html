@@ -1,0 +1,239 @@
+<div class="card mx-auto shadow-lg rounded-lg p-6">
+    <p-steps [model]="steps" [(activeIndex)]="activeIndex" [readonly]="true"></p-steps>
+
+    <div [ngSwitch]="activeIndex">
+        <div *ngSwitchCase="0" class="mt-8">
+            <div class="block md:flex">
+                <div class="w-full md:w-1/5 p-4">
+                    <h3 class="text-red-400">Personal Information</h3>
+                    <small style="color: var(--primary-color)">
+                        Enter client's personal details to proceed with the registration process.
+                    </small>
+                </div>
+                <div class="w-full md:w-4/5">
+                    <form [formGroup]="personalInfoForm" (ngSubmit)="nextStep()" class="p-6 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">First Name</label>
+                                <input type="text" pInputText formControlName="firstName"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Second Name</label>
+                                <input type="text" pInputText formControlName="secondName"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Surname</label>
+                                <input type="text" pInputText formControlName="surName"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Gender</label>
+                                <p-dropdown [options]="genders" formControlName="gender" placeholder="Select Gender"
+                                            class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Date of Birth</label>
+                                <p-calendar formControlName="dob" [showIcon]="true"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"></p-calendar>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">ID/passport Number</label>
+                                <input type="text" pInputText formControlName="idNumber"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                                <small class="text-gray-500">Optional</small>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Project Name</label>
+                                <input type="text" pInputText formControlName="projectName"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Email Address</label>
+                                <input type="email" pInputText formControlName="email"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Phone Number</label>
+                                <div class="flex mt-1">
+                                    <p-dropdown
+                                        [options]="countryCodes"
+                                        formControlName="countryCode"
+                                        optionLabel="label"
+                                        optionValue="value"
+                                        placeholder="Code"
+                                        class="w-30 rounded-l-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                                    ></p-dropdown>
+                                    <input
+                                        type="tel"
+                                        pInputText
+                                        formControlName="phoneNumber"
+                                        class="w-full rounded-r-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                                    />
+                                </div>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Preferred Contact Method</label>
+                                <p-dropdown [options]="contactMethods" formControlName="preferredContact"
+                                            placeholder="Select Contact Method" class="w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Client Source</label>
+                                <p-dropdown [options]="clientSource" formControlName="clientSource"
+                                            (onChange)="onClientSourceChange()" placeholder="Select source of client" class="w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1" *ngIf="personalInfoForm.get('clientSource')?.value === 'agent'">
+                                <label class="block text-sm font-medium dark:text-gray-300">Select Agent</label>
+                                <p-dropdown [options]="agents" formControlName="agentId"
+                                            placeholder="Select Agent" class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Location Type</label>
+                                <p-dropdown [options]="locationTypes" formControlName="locationType"
+                                            (onChange)="onLocationChange()" placeholder="Select Location Type"
+                                            class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1" *ngIf="personalInfoForm.get('locationType')?.value === 'KENYA'">
+                                <label class="block text-sm font-medium dark:text-gray-300">County</label>
+                                <p-dropdown [filter]="true" [options]="kenyanCounties" formControlName="county"
+                                            placeholder="Select County" class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1" *ngIf="personalInfoForm.get('locationType')?.value === 'INTERNATIONAL'">
+                                <label class="block text-sm font-medium dark:text-gray-300">Country</label>
+                                <p-dropdown [filter]="true" [options]="allCountries" formControlName="country"
+                                            placeholder="Select Country" class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Product Offering</label>
+                                <p-dropdown [options]="productOfferings" formControlName="productOffering"
+                                            (onChange)="onProductOfferingChange()" placeholder="Select Product Offering"
+                                            class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1" *ngIf="personalInfoForm.get('productOffering')?.value != 'JENGA_KWAKO'">
+                                <label class="block text-sm font-medium dark:text-gray-300">Product Tag</label>
+                                <p-dropdown [options]="productTags[personalInfoForm.get('productOffering')?.value] || []"
+                                            formControlName="productTag" placeholder="Select Product Tag"
+                                            class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1" *ngIf="personalInfoForm.get('productOffering')?.value === 'JENGA_KWAKO'">
+                                <label class="block text-sm font-medium dark:text-gray-300">Financial Institution</label>
+                                <p-dropdown [options]="lenders" formControlName="bankName"
+                                            placeholder="Select Institution" class="mt-1 block w-full"></p-dropdown>
+                            </div>
+                            <div class="col-span-1" *ngIf="personalInfoForm.get('productOffering')?.value === 'JENGA_KWAKO'">
+                                <label class="block text-sm font-medium dark:text-gray-300">Bank Branch</label>
+                                <input type="text" pInputText formControlName="bankBranch"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                            </div>
+                            <div class="col-span-1" *ngIf="personalInfoForm.get('productOffering')?.value === 'BUILDING_CONSULTANCY'">
+                                <label class="block text-sm font-medium dark:text-gray-300">Consultancy Services</label>
+                                <p-multiSelect [options]="consultancySubtags" formControlName="consultancySubtags"
+                                               placeholder="Select Consultancy Services" class="mt-1 block w-full"></p-multiSelect>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Follow-Up Date</label>
+                                <p-calendar
+                                    formControlName="followUpDate"
+                                    [showTime]="true"
+                                    [minDate]="minDate"
+                                    placeholder="Select follow-up date and time"
+                                    class="mt-1 block w-full rounded-md"
+                                ></p-calendar>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium dark:text-gray-300">Notes</label>
+                                <textarea
+                                    pInputTextarea
+                                    formControlName="notes"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                                    placeholder="Additional notes (e.g., what they said)"
+                                ></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end w-full">
+                            <p-button [outlined]="true" icon="pi pi-arrow-right" label="Next"
+                                      (onClick)="nextStep()"
+                                      [disabled]="personalInfoForm.invalid" [loading]="loading"
+                                      class="rounded-md shadow-sm w-full md:w-auto"></p-button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div *ngSwitchCase="1" class="mt-8">
+            <div class="block md:flex">
+                <div class="w-full md:w-1/5 p-4">
+                    <h3 class="text-red-400">Review</h3>
+                    <small style="color: var(--primary-color)">
+                        Review your provided information and submit the application.
+                    </small>
+                </div>
+                <div class="w-full md:w-4/5">
+                    <div>
+                        <div class="rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Personal Information</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">First Name:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.firstName || 'N/A' }}</span>
+                                </div>
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Second Name:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.secondName || 'N/A' }}</span>
+                                </div>
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Last Name:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.surName || 'N/A' }}</span>
+                                </div>
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Email:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.email || 'N/A' }}</span>
+                                </div>
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Phone Number:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.phoneNumber || 'N/A' }}</span>
+                                </div>
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Date of Birth:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.dob || 'N/A' }}</span>
+                                </div>
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Product Offering:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ getDisplayName(personalInfoForm.value?.productOffering) || 'N/A' }}</span>
+                                </div>
+                                <div>
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Product Tag:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ getDisplayName(personalInfoForm.value?.productTag) || 'N/A' }}</span>
+                                </div>
+<!--                                <div *ngIf="personalInfoForm.value?.clientSource === 'agent'">-->
+<!--                                    <strong class="block text-sm font-medium dark:text-gray-300">Agent:</strong>-->
+<!--                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ agents.find(agent => agent.value === personalInfoForm.value?.agentId)?.label || 'N/A' }}</span>-->
+<!--                                </div>-->
+                                <div *ngIf="personalInfoForm.value?.productOffering === 'JENGA_KWAKO'">
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Financial Institution:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.bankName || 'N/A' }}</span>
+                                </div>
+                                <div *ngIf="personalInfoForm.value?.productOffering === 'JENGA_KWAKO'">
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Bank Branch:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ personalInfoForm.value?.bankBranch || 'N/A' }}</span>
+                                </div>
+                                <div *ngIf="personalInfoForm.value?.productOffering === 'BUILDING_CONSULTANCY'">
+                                    <strong class="block text-sm font-medium dark:text-gray-300">Consultancy Services:</strong>
+                                    <span class="mt-1 block text-gray-900 dark:text-gray-100">{{ getDisplayName(personalInfoForm.value?.consultancySubtags) || 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between mt-4">
+                        <p-button icon="pi pi-arrow-left" [outlined]="true" label="Previous"
+                                  (click)="prevStep()"></p-button>
+                        <p-button icon="pi pi-check" [outlined]="true" label="Submit Application"
+                                  [loading]="loading" (click)="submitForm()"></p-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p-toast />
+</div>

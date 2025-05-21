@@ -1,0 +1,71 @@
+<div class="p-4 sm:p-6 min-h-screen ">
+    <div class="mx-auto max-w-7xl">
+        <!-- Search, Sort, and Filter Controls -->
+        <div *ngIf="!loading && receipts.length > 0" class="flex flex-col sm:flex-row gap-4 mb-6  p-4 rounded-lg shadow-sm">
+            <div class="flex-1">
+                <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="Search by invoice number, client name, or transaction ID" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div class="w-full sm:w-48">
+                <p-dropdown [(ngModel)]="sortOption" (ngModelChange)="onSortChange()" [options]="sortOptions" optionLabel="label" optionValue="value" placeholder="Sort by" class="w-full"></p-dropdown>
+            </div>
+            <div class="w-full sm:w-48">
+                <p-dropdown [(ngModel)]="filterOption" (ngModelChange)="onFilterChange()" [options]="filterOptions" optionLabel="label" optionValue="value" placeholder="Filter by" class="w-full"></p-dropdown>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="text-center p-4 sm:p-6  rounded-lg shadow-sm animate-pulse">
+            <p class="text-sm sm:text-base">Loading receipts, please wait...</p>
+            <i class="pi pi-spin pi-spinner text-blue-500 text-xl mt-2"></i>
+        </div>
+
+        <!-- Receipts List -->
+        <div *ngIf="!loading && filteredReceipts.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div *ngFor="let receipt of filteredReceipts" class="rounded-md shadow-md overflow-hidden mb-6  border-gray-200  ">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-semibold">{{ receipt.id }}</h3>
+                    </div>
+                    <div>
+                        <span class="text-sm">{{ receipt.createdAt | date:'mediumDate' }}</span>
+                    </div>
+                </div>
+                <div class="px-6 py-4 space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium">Invoice:</span>
+                        <span class="text-sm font-semibold">{{ receipt.invoiceNumber }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium">Client:</span>
+                        <span class="text-sm font-semibold">{{ receipt.clientName }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium">Payment Date:</span>
+                        <span class="text-sm font-semibold">{{ receipt.paymentDate | date:'mediumDate' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium">Amount Paid:</span>
+                        <span class="text-sm font-semibold">{{ receipt.amountPaid | currency:'KES' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium">Payment Method:</span>
+                        <span class="text-sm font-semibold">{{ receipt.paymentMethod }}</span>
+                    </div>
+                    <div *ngIf="receipt.transactionId" class="flex justify-between">
+                        <span class="text-sm font-medium">Transaction ID:</span>
+                        <span class="text-sm font-semibold">{{ receipt.transactionId }}</span>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                    <button pButton label="View Invoice" icon="pi pi-arrow-up-right" class=" p-button-info p-button-text" (click)="viewInvoice(receipt.invoiceId)"></button>
+                </div>
+            </div>
+            </div>
+        <!-- Empty State -->
+        <div *ngIf="!loading && receipts.length === 0" class="text-center p-4 sm:p-6  rounded-lg shadow-md">
+            <p class="text-sm sm:text-base">No receipts found for this client.</p>
+            <i class="pi pi-file-o text-3xl sm:text-4xl mt-4 text-gray-400"></i>
+            <p-button label="reload" text (onClick)="loadReceipts()"></p-button>
+        </div>
+    </div>
+</div>

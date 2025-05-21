@@ -1,0 +1,72 @@
+<div *ngSwitchCase="2" class="mt-8">
+    <div class="block md:flex">
+        <div class="w-full md:w-1/5 p-4">
+            <h3 class="text-red-400">
+                KYC Documents
+            </h3>
+            <small style="color: var(--primary-color)">
+                Upload your required documents for KYC verification. Ensure clarity and correct formats.
+            </small>
+        </div>
+        <div class="w-full md:w-4/5">
+            <div class=" p-0">
+                <h3 class="text-lg font-semibold">Upload Required Documents</h3>
+                <p>Ensure all documents are clear and in PDF/JPG/PNG format.</p>
+
+                <form class="flex flex-col md:flex-row gap-6 w-full py-2 md:py-6 rounded-lg ">
+                    <div class="flex-1 ">
+                        <div class="flex gap-6">
+                            <i *ngIf="files.id" class="pi pi-check-circle" style="color: darkgreen"></i>
+                            <label for="idFile"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">National
+                                ID</label>
+                        </div>
+                        <div class="mt-2">
+                            <input type="file" id="idFile" (change)="onFileSelected($event, 'id')"
+                                   class="block w-full text-sm text-gray-900 border rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <div class="flex gap-6">
+                            <i *ngIf="files.deed" class="pi pi-check-circle" style="color: darkgreen"></i>
+                            <label for="deedFile"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title
+                                Deed</label>
+                        </div>
+                        <div class="mt-2">
+                            <input type="file" id="deedFile" (change)="onFileSelected($event, 'deed')"
+                                   class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <div class="flex gap-6">
+                            <i *ngIf="files.tcc" class="pi pi-check-circle" style="color: darkgreen"></i>
+                            <label for="tccFile"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tax
+                                Compliance Certificate</label>
+                        </div>
+                        <div class="mt-2">
+                            <input type="file" id="tccFile" (change)="onFileSelected($event, 'tcc')"
+                                   class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end md:justify-start flex-1">
+
+                    </div>
+                </form>
+                <div class="flex justify-between mt-4">
+                    <p-button [outlined]="true" label="Previous" icon="pi pi-arrow-left"
+                              (click)="prevStep()"></p-button>
+                    <p-button [disabled]="!files.id || !files.deed || !files.tcc"
+                              icon="pi pi-upload"
+                              [loading]="loading"
+                              [outlined]="true" label="Upload"
+                              (click)="uploadFiles()"></p-button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,111 @@
+<div class="container mx-auto p-4">
+    <p-toast />
+    <div class="card grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="font-semibold text-xl p-4 flex flex-col md:col-span-1">
+            <h3 class="text-red-400">View Roles</h3>
+            <p-divider layout="horizontal" />
+            <small class="text-primary">
+                Roles are a collection of privileges grouped together.<br />
+                Use this screen to view and manage available roles on the system
+            </small>
+        </div>
+        <div class="md:col-span-3 p-4">
+            <p-table
+                [value]="roles"
+                [loading]="loading"
+                stripedRows
+                [paginator]="true"
+                [rows]="10"
+                responsiveLayout="scroll"
+                styleClass="p-datatable-modern"
+            >
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>Name</th>
+                        <th>Created On</th>
+                        <th>Created By</th>
+                        <th>Updated On</th>
+                        <th>Updated By</th>
+                        <th>Actions</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-role>
+                    <tr>
+                        <td>{{ role.name }}</td>
+                        <td>{{ role.createdOn | date:'short' }}</td>
+                        <td>{{ role.createdBy || 'System' }}</td>
+                        <td>{{ role.updatedOn | date:'short' }}</td>
+                        <td>{{ role.updatedBy || 'System' }}</td>
+                        <td class="flex gap-2">
+                            <button
+                                pButton
+                                icon="pi pi-eye"
+                                class="p-button-info p-button-sm p-button-rounded"
+                                (click)="viewRole(role)"
+                            ></button>
+                            <button
+                                pButton
+                                icon="pi pi-trash"
+                                class="p-button-danger p-button-sm p-button-rounded"
+                                (click)="deleteRole(role.id)"
+                            ></button>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+    </div>
+    <p-dialog
+        [header]="editMode ? 'Editing ' + selectedRole?.name + ' privileges' : 'Viewing ' + selectedRole?.name + ' privileges'"
+        [(visible)]="visible"
+        [style]="{ minWidth: '55rem', maxWidth: '55rem' }"
+        [modal]="true"
+        [responsive]="true"
+        styleClass="p-dialog-modern"
+    >
+        <div class="flex p-6 flex-col gap-4">
+            <div *ngIf="!editMode" class="flex gap-2 flex-wrap">
+                <p-chip *ngFor="let privilege of privileges" [label]="privilege.name" styleClass="p-chip-modern" />
+                <p-chip *ngIf="!privileges.length" label="No privileges assigned" styleClass="p-chip-warning" />
+            </div>
+            <div *ngIf="editMode" class="flex flex-col gap-2">
+                <label for="privileges" class="font-medium">Select Privileges</label>
+                <p-multiSelect
+                    id="privileges"
+                    [(ngModel)]="selectedPrivileges"
+                    [options]="allPrivileges"
+                    optionLabel="name"
+                    appendTo="body"
+                    placeholder="Select privileges"
+                    styleClass="w-full"
+                ></p-multiSelect>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button
+                    *ngIf="!editMode"
+                    pButton
+                    label="Edit"
+                    icon="pi pi-pencil"
+                    class="p-button-primary"
+                    (click)="toggleEditMode()"
+                ></button>
+                <button
+                    *ngIf="editMode"
+                    pButton
+                    label="Save"
+                    icon="pi pi-check"
+                    class="p-button-success"
+                    (click)="savePrivileges()"
+                ></button>
+                <button
+                    *ngIf="editMode"
+                    pButton
+                    label="Cancel"
+                    icon="pi pi-times"
+                    class="p-button-secondary"
+                    (click)="toggleEditMode()"
+                ></button>
+            </div>
+        </div>
+    </p-dialog>
+</div>
