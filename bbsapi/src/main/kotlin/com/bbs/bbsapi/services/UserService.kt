@@ -58,6 +58,7 @@ class UserService(
 
     fun findByUsername(username: String): User? {
         return userRepository.findByUsername(username)
+
     }
 
     fun getAllUsers(): List<UserDTO> {

@@ -9,6 +9,7 @@ import com.bbs.bbsapi.repos.UserRepository
 import com.bbs.bbsapi.security.JwtUtil
 import com.bbs.bbsapi.services.EmailService
 import com.bbs.bbsapi.services.UserService
+import org.apache.coyote.BadRequestException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -44,7 +45,7 @@ class AuthController(
         val username = loginRequest["username"] ?: return ResponseEntity.badRequest().body("Username is required")
         val password = loginRequest["password"] ?: return ResponseEntity.badRequest().body("Password is required")
 
-        val user = userService.findByUsername(username) ?: return ResponseEntity.status(401).body("User not found")
+        val user = userRepository.findByUsernameOrEmail(username, username) ?: throw BadRequestException("User not found")
         if (!userService.validatePassword(password, user.password)) {
             return ResponseEntity.status(401).body("Invalid credentials")
         }

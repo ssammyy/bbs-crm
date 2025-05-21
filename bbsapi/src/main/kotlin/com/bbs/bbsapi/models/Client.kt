@@ -2,6 +2,7 @@ package com.bbs.bbsapi.models
 
 import com.bbs.bbsapi.enums.*
 import com.fasterxml.jackson.annotation.JsonBackReference
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -38,8 +39,8 @@ data class Client(
     var country: String,
     var county: String?,
     var countryCode: String,
-    @Column(nullable = false, unique = true)
-    var idNumber: Long,
+    @Column(nullable = true)
+    var idNumber: Long? = null,
 
     @Enumerated(EnumType.STRING)
     var clientStage: ClientStage,
@@ -87,6 +88,7 @@ data class Client(
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "agent_id", referencedColumnName = "id")
+    @JsonIgnore
     var agent: User? = null
 ) : BaseEntity() {
     constructor() : this(
@@ -103,7 +105,7 @@ data class Client(
         country = "",
         county = null,
         countryCode = "",
-        idNumber = 0,
+        idNumber = null,
         clientStage = ClientStage.GENERATE_SITE_VISIT_INVOICE,
         nextStage = ClientStage.PENDING_SITE_VISIT,
         clientSource = "",

@@ -48,6 +48,14 @@ class ReceiptService(
             invoice.pendingBalance = false
         } else {
             invoice.pendingBalance = true
+            if (invoice.invoiceType === InvoiceType.SITE_VISIT && !client.siteVisitDone) {
+                clientService.changeClientStatus(
+                    ClientStage.PENDING_SITE_VISIT,
+                    client,
+                    ClientStage.REQUIREMENTS_PENDING_DIRECTOR_APPROVAL,
+                    "Client Paid for site visit"
+                )
+            }
         }
 
         if (invoice.parentInvoice != null) {

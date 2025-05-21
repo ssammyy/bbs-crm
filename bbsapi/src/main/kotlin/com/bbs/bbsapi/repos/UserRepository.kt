@@ -21,6 +21,10 @@ interface PrivilegeRepository : JpaRepository<Privilege, Long> {
 interface UserRepository : JpaRepository<User, Long> {
     fun findByUsername(username: String): User?
     fun findByEmail(email: String): User?
+    fun findByUsernameOrEmail(username: String, email: String): User?
+     fun countUserByRole_Name(s: String): Long
+     fun countUserByRoleNot(s: Role): Long
+     fun findByRole_Name(s: String): List<User>
 }
 
 @Repository

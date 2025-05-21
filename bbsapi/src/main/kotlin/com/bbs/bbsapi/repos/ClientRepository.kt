@@ -20,6 +20,8 @@ interface ClientRepo : JpaRepository<Client, Long> {
     fun countByClientSource(): List<Array<Any>>
     fun findByContactStatus(status: ContactStatus): List<Client>
     fun findByContactStatusNot(contactStatus: ContactStatus): MutableList<Client>
+    fun findByAgentId(agentId: Long): List<Client>
+    fun countByCreatedOnBetween(start: LocalDateTime?, end: LocalDateTime?): Long
 
 }
 

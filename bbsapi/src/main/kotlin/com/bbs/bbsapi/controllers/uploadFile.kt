@@ -117,7 +117,7 @@ class UploadFile(
                 versionNotes = versionNotes,
                 createdAt = LocalDateTime.now(),
                 updatedAt = LocalDateTime.now(),
-                client = Client(), // Empty client for user files
+                client = null,
                 preliminary = null,
                 user = user
             )

@@ -108,10 +108,7 @@ class ClientService(
         client?.location = clientDTO.locationType
         client?.followUpDate = clientDTO.followUpDate
         client?.contactStatus = clientDTO.contactStatus!!
-        client?.agent = clientDTO.agentId?.let {
-            userRepository.findById(it)
-                .orElseThrow { IllegalArgumentException("Agent with ID $it not found") }
-        }
+
         val updatedClient = client?.let { clientRepository.save(it) }
         return updatedClient
     }

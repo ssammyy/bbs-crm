@@ -1,5 +1,9 @@
 package com.bbs.bbsapi.models
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -12,6 +16,8 @@ data class Activity(
     val id: Long = 0,
     val clientId: Long, // Or whatever ID represents the client
     val description: String,
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
     val timestamp: LocalDateTime = LocalDateTime.now(),
     val user: String? = null // Optional: User who performed the action
 ){

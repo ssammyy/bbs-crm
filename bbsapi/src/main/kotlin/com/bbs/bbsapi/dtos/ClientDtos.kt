@@ -19,7 +19,7 @@ data class ClientDTO(
     val county: String? =null,
     val country: String? = null,
     val countryCode: String,
-    val idNumber: Long,
+    val idNumber: Long? = null,
     val clientSource: String,
     val projectName: String,
     val invoiceNumber: PdfInvoiceDTO? = null,
@@ -32,9 +32,6 @@ data class ClientDTO(
     val followUpDate: LocalDateTime,
     val contactStatus: ContactStatus? = null,
     val agentId: Long? = null
-
-
-
 
     )
 

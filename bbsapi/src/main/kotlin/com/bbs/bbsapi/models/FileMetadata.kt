@@ -23,7 +23,7 @@ data class FileMetadata(
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now(),
     @ManyToOne
-    val client: Client,
+    val client: Client? = null,
     @ManyToOne
     val preliminary: Preliminary? = null,
     @ManyToOne(fetch = FetchType.LAZY, optional = true)

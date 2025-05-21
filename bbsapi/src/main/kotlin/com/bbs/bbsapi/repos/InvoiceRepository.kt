@@ -7,6 +7,8 @@ import com.bbs.bbsapi.models.InvoiceItem
 import com.bbs.bbsapi.models.ProformaInvoice
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Repository
 interface InvoiceRepository : JpaRepository<Invoice, Long> {
@@ -20,6 +22,13 @@ interface InvoiceRepository : JpaRepository<Invoice, Long> {
     fun countByClearedFalse(): Long
     fun findByPreliminaryId(preliminaryId: Long): Invoice?
     fun findByParentInvoiceId(parentInvoiceId: Long): List<Invoice>
+    fun findByClientIdAndClearedTrue(clientId: Long): List<Invoice>
+    fun findByClientIdAndClearedFalseAndInvoiceTypeNot(clientId: Long, invoiceType: InvoiceType): List<Invoice>
+    fun countByClientIdAndClearedTrue(clientId: Long): Long
+    fun countByClientIdAndClearedFalse(clientId: Long): Long
+    fun findByClientIdIn(clientIdList: List<Long>): List<Invoice>
+    fun findByClearedTrueAndDateIssuedBetween(start: LocalDate?, end: LocalDate?): List<Invoice>
+    fun findByClientIdInAndClearedTrueAndDateIssuedBetween(clientIdList: List<Long>, start: LocalDate?, end: LocalDate?): List<Invoice>
 }
 
 @Repository

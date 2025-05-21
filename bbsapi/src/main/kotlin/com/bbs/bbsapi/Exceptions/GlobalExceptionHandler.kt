@@ -1,5 +1,6 @@
 package com.bbs.bbsapi.Exceptions
 
+import org.apache.coyote.BadRequestException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -28,6 +29,13 @@ class GlobalExceptionHandler {
         val errorResponse = ErrorResponse("Invalid argument", ex.message)
         println(ex.printStackTrace().toString())
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
+    }
+
+    @ExceptionHandler(BadRequestException::class)
+    fun handleUserNotFoundException(ex: BadRequestException): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse("User not found", ex.message)
+        println(ex.printStackTrace().toString())
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse) // Return 401 Unauthorized
     }
 
     @ExceptionHandler(Exception::class)

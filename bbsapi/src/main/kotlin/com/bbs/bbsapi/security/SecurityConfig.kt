@@ -28,7 +28,6 @@ class SecurityConfig(private val userDetailsService: CustomUserDetailsService, p
     fun corsFilter(): CorsFilter {
         val source = UrlBasedCorsConfigurationSource()
         val config = CorsConfiguration()
-
         config.allowedOrigins = listOf("http://localhost:4200", "http://localhost:3000") // Adjust to match your frontend URL
         config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
         config.addAllowedHeader("*")
@@ -54,7 +53,12 @@ class SecurityConfig(private val userDetailsService: CustomUserDetailsService, p
             .cors{}
             .csrf { it.disable() }
             .authorizeHttpRequests {
-                it.requestMatchers("/auth/register", "/auth/login","/api/portfolio-items/**", "/api/products/**").permitAll() // Public endpoints
+                it.requestMatchers(
+                    "/auth/register",
+                    "/auth/login",
+                    "/api/portfolio-items/**",
+                    "/api/products/**"
+                ).permitAll() // Public endpoints
                 it.anyRequest().authenticated()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
