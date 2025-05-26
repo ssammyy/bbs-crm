@@ -129,7 +129,6 @@ class UploadFile(
                 "version" to 1
             ))
         }
-
         return ResponseEntity.badRequest().body("Either clientId or userId must be provided")
     }
 

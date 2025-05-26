@@ -91,11 +91,19 @@
                                       size="small" outlined
                                       icon="pi pi-check-square" severity="info"
                                       (onClick)="approveInvoice(invoice)"></p-button>
+                            <p-button *ngIf="!invoice.invoiceReconciled && invoice.directorApproved && isClientRole"
+                                      label="Confirm Payment" size="small" outlined
+                                      icon="pi pi-check-circle" severity="success"
+                                      (onClick)="openPaymentDialog(invoice)"></p-button>
                         </div>
                     </div>
                     <p *ngIf="invoice.rejectionRemarks" class="text-red-600 text-xs sm:text-sm mt-2">
                         Rejection Remarks: <span class="font-medium">{{ invoice.rejectionRemarks }}</span>
                     </p>
+                    <br>
+                    <!-- Client Payment Confirmation Message -->
+                    <p-message *ngIf="invoice.clientConfirmedPayment && hasPrivilege(Permissions.RECONCILE_INVOICES)" severity="info" size="small">{{ invoice.clientPaymentConfirmation }}</p-message>
+
                     <!-- Balance Invoices -->
                     <div *ngIf="invoice.balanceInvoices?.length" class="mt-4 pl-4 border-l-2 border-gray-200">
                         <h4 class="text-sm font-semibold text-gray-600">Balance Invoices</h4>
@@ -226,5 +234,58 @@
                   [resizable]="true"
                   class="shadow-lg">
         </p-dialog>
+
+        <!-- Dialog for Payment Confirmation -->
+        <p-dialog header="Confirm Payment" [(visible)]="displayPaymentDialog" [modal]="true"
+                  [style]="{ width: '90vw', 'max-width': '30rem' }" [baseZIndex]="10000" [draggable]="false"
+                  [resizable]="false" class="shadow-lg">
+            <div class="p-4">
+                <!-- Invoice Details -->
+                <div class="mb-4">
+                    <h3 class="text-base sm:text-lg font-semibold mb-2">Invoice Details</h3>
+                    <div class="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                        <p>Invoice #:</p>
+                        <p class="font-medium">{{ selectedInvoice?.invoiceNumber }}</p>
+                        <p>Total Amount:</p>
+                        <p class="font-medium text-green-600">{{ selectedInvoice?.total | currency:'KES' }}</p>
+                        <p>Balance:</p>
+                        <p class="font-medium text-amber-600">{{ selectedInvoice?.balance | currency:'KES' }}</p>
+                    </div>
+                </div>
+
+                <!-- Payment Details Form -->
+                <div class="mb-4">
+                    <h3 class="text-base sm:text-lg font-semibold mb-2">Payment Details</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="paymentMethod" class="block text-xs sm:text-sm font-medium mb-1">Payment Method</label>
+                            <p-dropdown id="paymentMethod" [(ngModel)]="payment.paymentMethod"
+                                      [options]="paymentMethods" optionLabel="label" optionValue="value"
+                                      placeholder="Select Payment Method" class="w-full"></p-dropdown>
+                        </div>
+                        <div>
+                            <label for="amountPaid" class="block text-xs sm:text-sm font-medium mb-1">Amount Paid</label>
+                            <p-inputNumber id="amountPaid" [(ngModel)]="payment.amountPaid" mode="currency"
+                                         currency="KES" locale="en-KE" [max]="selectedInvoice?.balance"
+                                         class="w-full"></p-inputNumber>
+                        </div>
+                        <div>
+                            <label for="paymentReference" class="block text-xs sm:text-sm font-medium mb-1">Payment Reference (Optional)</label>
+                            <input pInputText id="paymentReference" [(ngModel)]="payment.reference"
+                                   class="w-full p-2 border rounded-md" placeholder="Enter payment reference" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-2">
+                    <p-button label="Cancel" severity="secondary" outlined (onClick)="displayPaymentDialog = false"
+                              class="w-full sm:w-auto"></p-button>
+                    <p-button label="Confirm Payment" icon="pi pi-check" severity="success"
+                              (onClick)="confirmPayment()" class="w-full sm:w-auto"></p-button>
+                </div>
+            </div>
+        </p-dialog>
     </div>
 </div>
+<p-toast/>

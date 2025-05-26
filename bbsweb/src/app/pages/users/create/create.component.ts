@@ -12,10 +12,11 @@ import { Toast } from 'primeng/toast';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ChipModule } from 'primeng/chip';
 import { Message } from 'primeng/message';
+import { InputNumber } from 'primeng/inputnumber';
 
 @Component({
     selector: 'app-create',
-    imports: [ReactiveFormsModule, InputText, NgIf, DropdownModule, ButtonDirective, Button, Toast, FileUploadModule, ChipModule, Message, NgForOf],
+    imports: [ReactiveFormsModule, InputText, NgIf, DropdownModule, ButtonDirective, Button, Toast, FileUploadModule, ChipModule, Message, NgForOf, InputNumber],
     templateUrl: './create.component.html',
     styleUrl: './create.component.scss'
 })
@@ -44,7 +45,7 @@ export class CreateComponent implements OnInit {
     // Required KYC documents for Agent
     requiredKycDocuments = [
         { label: 'Signed Agreement', fileType: 'SIGNED_AGREEMENT' },
-        { label: 'ID', fileType: 'ID' },
+        { label: 'ID', fileType: 'ID' }
     ];
 
     constructor(
@@ -67,7 +68,8 @@ export class CreateComponent implements OnInit {
             bankAccountHolderName: [''],
             nextOfKinIdNumber: [''],
             nextOfKinName: [''],
-            nextOfKinPhoneNumber: ['']
+            nextOfKinPhoneNumber: [''],
+            percentage: ['']
         });
     }
 

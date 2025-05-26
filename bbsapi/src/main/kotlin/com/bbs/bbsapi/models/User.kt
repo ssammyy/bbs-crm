@@ -1,6 +1,7 @@
 package com.bbs.bbsapi.models
 
 import jakarta.persistence.*
+import jdk.jfr.Percentage
 
 @Entity
 @Table(name = "users")
@@ -45,6 +46,9 @@ data class User(
     @Column
     var nextOfKinPhoneNumber: String? = null,
 
+    @Column
+    var commissionPercentage: Long? = null,
+
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     var role: Role? = null,
@@ -63,6 +67,7 @@ data class User(
         nextOfKinIdNumber = null,
         nextOfKinName = null,
         nextOfKinPhoneNumber = null,
-        role = Role()
+        role = Role(),
+        commissionPercentage = null,
     )
 }

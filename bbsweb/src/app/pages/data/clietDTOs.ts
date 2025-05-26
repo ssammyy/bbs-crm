@@ -43,6 +43,8 @@ export interface PreliminaryType {
 }
 
 export interface Invoice {
+    clientConfirmedPayment: boolean;
+    clientPaymentConfirmation: string;
     parentInvoiceId: number;
     balanceInvoices?: Invoice[];
     id: number;

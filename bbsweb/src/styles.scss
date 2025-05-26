@@ -127,3 +127,10 @@
 .custom-warn-chip{
     @apply p-2 dark:bg-amber-500 bg-red-200  rounded-md
 }
+
+
+.custom-panel{
+    background-color: var(--surface-overlay);
+    border-radius: var(--content-border-radius);
+    padding: 0.5rem 1.5rem;
+}

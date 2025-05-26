@@ -16,7 +16,7 @@ import { allCountries } from '../../data/all-countries';
 import { countryCodes } from '../../data/country-codes';
 import { InputTextarea } from 'primeng/inputtextarea';
 import { UserService } from '../../users/user.service';
-import { User } from '../../service/user.service';
+import { User, UserGlobalService } from '../../service/user.service';
 import { lenderInstitutions } from '../../data/lenders';
 
 @Component({
@@ -121,12 +121,13 @@ export class OnboardClientComponent implements OnInit {
     allCountries = allCountries;
     countryCodes: any[] = countryCodes;
     lenders = lenderInstitutions;
+    userRole!: string;
 
     constructor(
         private fb: FormBuilder,
         private clientService: ClientDetailsService,
         private messagesService: MessagesService,
-        private userService: UserService
+        private userService: UserService,
     ) {}
 
     ngOnInit() {
@@ -289,6 +290,8 @@ export class OnboardClientComponent implements OnInit {
             this.messagesService.showSuccess('Draft saved to local storage.');
         }
     }
+
+
 
     loadDraft() {
         const draft = localStorage.getItem('clientOnboardingDraft');

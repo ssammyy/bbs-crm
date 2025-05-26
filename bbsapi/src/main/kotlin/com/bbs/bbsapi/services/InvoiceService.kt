@@ -4,6 +4,7 @@ import com.bbs.bbsapi.controllers.InitiatePreliminaryRequest
 import com.bbs.bbsapi.entities.InvoiceResponse
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
 import com.bbs.bbsapi.entities.PdfInvoiceItemDTO
+import com.bbs.bbsapi.entities.PaymentConfirmationDTO
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
 import com.bbs.bbsapi.enums.PaymentMethod
@@ -480,5 +481,31 @@ class InvoiceService(
             receiptId = savedReceipt.id,
             invoiceId = invoice.id
         )
+    }
+
+    @Transactional
+    fun confirmPayment(invoiceId: Long, payment: PaymentConfirmationDTO): Invoice {
+        val invoice = invoiceRepository.findById(invoiceId)
+            .orElseThrow { IllegalArgumentException("Invoice not found: $invoiceId") }
+
+        if (payment.amountPaid <= 0) {
+            throw IllegalArgumentException("Amount paid must be greater than zero")
+        }
+
+        if (payment.amountPaid > invoice.balance) {
+            throw IllegalArgumentException("Amount paid (${payment.amountPaid}) exceeds remaining balance (${invoice.balance})")
+        }
+
+        // Create the confirmation message
+        val confirmationMessage = "Client confirmed payment of ${payment.amountPaid} via ${payment.paymentMethod}" +
+            if (payment.reference.isNotBlank()) " with reference ${payment.reference}" else ""
+
+        // Update the invoice
+        invoice.clientPaymentConfirmation = confirmationMessage
+        invoice.clientConfirmedPayment = true
+
+
+
+        return invoiceRepository.save(invoice)
     }
 }

@@ -177,6 +177,7 @@ class DashboardService(
         val noOfClients = clients.count()
         val clientIdList = clients.map { it.id }
         val clientInvoices = invoiceRepository.findByClientIdIn(clientIdList)
+        val user = userRepository.findById(agentId).get()
 
         val invoiceStats = InvoiceStatsDTO(
             totalRevenue = clientInvoices.sumOf { it.total },
@@ -193,6 +194,8 @@ class DashboardService(
                 user = it.user
             )
         }
+        val commissionPercentage = user.commissionPercentage
+        log.info("saved percent is $commissionPercentage %")
 
         // Revenue over time for agent (last 12 months)
         val now = LocalDateTime.now()
@@ -212,7 +215,8 @@ class DashboardService(
             clients = clients,
             invoiceStats = invoiceStats,
             recentActivities = recentActivities,
-            revenueOverTime = revenueOverTime
+            revenueOverTime = revenueOverTime,
+            commissionPercentage = commissionPercentage!!
         )
     }
 
@@ -305,7 +309,8 @@ data class AgentDTO(
     val clients: List<Client>,
     val invoiceStats: InvoiceStatsDTO,
     val recentActivities: List<ActivityDTO>,
-    val revenueOverTime: List<TimeSeriesDataDTO>
+    val revenueOverTime: List<TimeSeriesDataDTO>,
+    val commissionPercentage: Long
 )
 
 data class InvoiceStatsDTO(

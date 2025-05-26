@@ -76,7 +76,6 @@ export class UserGlobalService {
 
     hasPrivilege(privilege: string): boolean {
         const token = localStorage.getItem('auth_token');
-        console.log('privs ', this.getPrivileges(token!!));
         return this.getPrivileges(token!!).includes(privilege);
     }
     getPrivileges(token: string): string[] {

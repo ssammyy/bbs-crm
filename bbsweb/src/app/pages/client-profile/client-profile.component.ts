@@ -110,6 +110,7 @@ export class ClientProfileComponent implements OnInit {
     loading: boolean = false;
     selectedClient: Client | null = null;
     clientFiles: Files[] = [];
+    clientIDMock: number = 10
     activityFeedVisible: boolean = true;
     selectedDocument: Files | null = null;
     clientStage: string = '';

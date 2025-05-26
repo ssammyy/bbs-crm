@@ -88,5 +88,11 @@ data class Invoice(
 
     @OneToMany(mappedBy = "parentInvoice", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     @JsonManagedReference
-    val balanceInvoices: MutableList<Invoice> = mutableListOf()
+    val balanceInvoices: MutableList<Invoice> = mutableListOf(),
+
+    @Column(nullable = true)
+    var clientPaymentConfirmation: String? = null,
+
+    @Column(nullable = false)
+    var clientConfirmedPayment: Boolean = false,
 )

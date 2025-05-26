@@ -3,22 +3,23 @@ import { AgentDashboardStats, DashboardService, DashboardStats } from './dashboa
 import { TableModule } from 'primeng/table';
 import { Card } from 'primeng/card';
 import { UIChart } from 'primeng/chart';
-import { DatePipe, DecimalPipe, JsonPipe, NgClass, NgIf, TitleCasePipe } from '@angular/common';
+import { DatePipe, DecimalPipe, JsonPipe, NgClass, NgForOf, NgIf, TitleCasePipe } from '@angular/common';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Divider } from 'primeng/divider';
 import { Button } from 'primeng/button';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Panel } from 'primeng/panel';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { UserGlobalService } from '../service/user.service';
 import { Permissions } from '../data/permissions.enum';
 import { Tooltip } from 'primeng/tooltip';
+import { Client } from '../data/clietDTOs';
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [TableModule, Card, UIChart, JsonPipe, DecimalPipe, DatePipe, TitleCasePipe, ProgressSpinner, NgIf, Divider, Button, RouterLink, Panel, NgxSpinnerModule, NgClass, Tooltip],
+    imports: [TableModule, Card, UIChart, JsonPipe, DecimalPipe, DatePipe, TitleCasePipe, ProgressSpinner, NgIf, Divider, Button, RouterLink, Panel, NgxSpinnerModule, NgClass, Tooltip, NgForOf],
     templateUrl: './dashboard.component.html'
 })
 export class Dashboard {
@@ -34,6 +35,8 @@ export class Dashboard {
     totalClients: number = 0;
     loading: boolean = false;
     agentLoading: boolean = false;
+    userName: string = '';
+    greeting: string = '';
 
     clientSource = [
         { label: 'Social Media', value: 'socialMedia' },
@@ -158,18 +161,25 @@ export class Dashboard {
             }
         }
     };
+    userRole!: string;
 
     constructor(
         private dashboardService: DashboardService,
         private spinner: NgxSpinnerService,
-        private userService: UserGlobalService
+        private userService: UserGlobalService,
+        private router: Router,
     ) {}
 
     ngOnInit(): void {
+        this.getUserDetails();
         this.loadDashboardStats();
         if (this.hasPrivilege(Permissions.VIEW_AGENT_DASHBOARD)) {
             this.loadAgentDashboardStats();
         }
+    }
+
+    viewClient(client: Client): void {
+        this.router.navigate(['app/pages/profile', client.id], { state: { client } });
     }
 
     loadDashboardStats(): void {
@@ -191,6 +201,35 @@ export class Dashboard {
                 this.spinner.hide();
             }
         });
+    }
+    getUserDetails(): Promise<void> {
+        return new Promise((resolve) => {
+            this.userService.getDetails().subscribe({
+                next: (response) => {
+                    console.log('user role>>>> ', { response });
+                    this.userRole = response?.role?.name;
+                    const fullUsername = response?.username || '';
+                    this.userName = fullUsername.split('@')[0].charAt(0).toUpperCase() + fullUsername.split('@')[0].slice(1);
+                    this.updateGreeting();
+                    resolve();
+                },
+                error: (error) => {
+                    console.error('Error fetching user details:', error);
+                    resolve();
+                }
+            });
+        });
+    }
+
+    updateGreeting(): void {
+        const hour = new Date().getHours();
+        if (hour < 12) {
+            this.greeting = 'Good Morning';
+        } else if (hour < 18) {
+            this.greeting = 'Good Afternoon';
+        } else {
+            this.greeting = 'Good Evening';
+        }
     }
 
     loadAgentDashboardStats(): void {

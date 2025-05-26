@@ -29,7 +29,8 @@ data class UserDTO(
     val bankAccountNumber: String? = null,
     val bankBranch: String? = null,
     val bankAccountHolderName: String? = null,
-    val role: RoleDTO
+    val role: RoleDTO,
+    val percentage : Long? = null,
 )
 
 data class UserRegeDTO(
@@ -41,7 +42,8 @@ data class UserRegeDTO(
     val bankAccountNumber: String? = null,
     val bankBranch: String? = null,
     val bankAccountHolderName: String? = null,
-    val roleId: Long
+    val roleId: Long,
+    val percentage: Long? = null,
 )
 
 data class SetPasswordRequest(

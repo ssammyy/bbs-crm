@@ -46,7 +46,8 @@ class UserService(
                 bankAccountNumber = userDTO.bankAccountNumber,
                 bankBranch = userDTO.bankBranch,
                 bankAccountHolderName = userDTO.bankAccountHolderName,
-                role = role
+                role = role,
+                commissionPercentage = userDTO.percentage,
             )
             val savedUser = userRepository.save(user)
             generateRegisterToken(savedUser)

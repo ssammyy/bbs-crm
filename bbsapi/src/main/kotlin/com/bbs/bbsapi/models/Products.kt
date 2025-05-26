@@ -13,7 +13,7 @@ data class Product(
     @Column(name = "product_title", nullable = false)
     var productTitle: String? = null,
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     var description: String? = null,
 
     @Column(name = "file_type", nullable = false)
@@ -27,7 +27,15 @@ data class Product(
     var objectKey: String? = null,
 
     @Column(name = "created_at", nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name= "productVp", columnDefinition = "TEXT")
+    var productVp: String? = null,
+    @Column(name= "productHook", columnDefinition = "TEXT")
+    var productHook: String? = null,
+    @Column(name= "videoUrl", nullable = false)
+    var videoUrl: String? = null,
+
 )
 
 

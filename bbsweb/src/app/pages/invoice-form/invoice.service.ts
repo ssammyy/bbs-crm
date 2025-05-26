@@ -5,6 +5,12 @@ import { environment } from '../../../environments/environment';
 import { Client, Invoice } from '../data/clietDTOs';
 import { InvoiceType } from './data';
 
+export interface PaymentConfirmation {
+    paymentMethod: string;
+    amountPaid: number;
+    reference: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -79,5 +85,9 @@ export class InvoiceService {
 
     getBalanceInvoices(parentInvoiceId: number): Observable<Invoice[]> {
         return this.http.get<Invoice[]>(`${this.apiUrl}/api/invoices/balance/${parentInvoiceId}`);
+    }
+
+    confirmPayment(invoiceId: number, payment: PaymentConfirmation): Observable<any> {
+        return this.http.post(`${this.apiUrl}/api/invoices/${invoiceId}/confirm-payment`, payment);
     }
 }

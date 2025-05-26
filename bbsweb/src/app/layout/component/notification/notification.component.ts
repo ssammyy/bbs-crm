@@ -68,7 +68,7 @@ import { RippleModule } from 'primeng/ripple';
                                             {{ notification.message }}
                                         </p>
                                         <p class="text-xs text-400 m-0">
-                                            {{ notification.createdOn | date:'medium' }}
+                                            {{ notification.createdAt | date:'medium' }}
                                         </p>
                                     </div>
                                     <div
@@ -88,16 +88,16 @@ import { RippleModule } from 'primeng/ripple';
             .notification-panel {
                 width: 400px;
             }
-            
+
             .notification-list {
                 &::-webkit-scrollbar {
                     width: 6px;
                 }
-                
+
                 &::-webkit-scrollbar-track {
                     background: #f1f1f1;
                 }
-                
+
                 &::-webkit-scrollbar-thumb {
                     background: #888;
                     border-radius: 3px;

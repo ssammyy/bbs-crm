@@ -104,6 +104,7 @@
                                (ngModelChange)="updateItem(rowIndex)"
                                [ngModelOptions]="{standalone: true}"
                                class="w-32 text-right border-none focus:ring-0"
+                               min="0.01"
                                step="0.01" />
                     </td>
                     <td class="p-4 text-right">{{ item.totalPrice | number:'1.2-2' }}</td>

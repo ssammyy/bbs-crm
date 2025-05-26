@@ -15,7 +15,7 @@ class ProductService(
 ) {
     fun createProduct(dto: ProductDTO, file: MultipartFile): ProductResponseDTO {
         // Validate DTO and file
-        if (dto.productTitle.isBlank() || dto.description.isBlank()) {
+        if (dto.productTitle.isBlank() || dto.description.isBlank() || dto.videoUrl.isBlank()) {
             throw IllegalArgumentException("All fields are required")
         }
         val allowedTypes = listOf("image/png", "image/jpeg", "image/jpg", "video/mp4", "video/avi", "video/mpeg")
@@ -29,6 +29,9 @@ class ProductService(
         // Create and save Product
         val product = Product(
             productTitle = dto.productTitle,
+            productVp = dto.productVp,
+            productHook = dto.productHook,
+            videoUrl = dto.videoUrl,
             description = dto.description,
             fileType = if (file.contentType?.startsWith("image") == true) PortfolioFileType.IMAGE else PortfolioFileType.VIDEO,
             fileName = file.originalFilename ?: "unknown",
@@ -45,7 +48,10 @@ class ProductService(
             fileName = savedProduct.fileName,
             objectKey = savedProduct.objectKey,
             fileUrl = fileUrl,
-            createdAt = savedProduct.createdAt
+            createdAt = savedProduct.createdAt,
+            productVp = savedProduct.productVp,
+            productHook = savedProduct.productHook,
+            videoUrl = savedProduct.videoUrl
         )
     }
 
@@ -59,7 +65,10 @@ class ProductService(
                 fileName = product.fileName,
                 objectKey = product.objectKey,
                 fileUrl = digitalOceanService.getPublicFileUrl(product.objectKey.toString()),
-                createdAt = product.createdAt
+                createdAt = product.createdAt,
+                productVp = product.productVp,
+                productHook = product.productHook,
+                videoUrl = product.videoUrl
             )
         }
     }
@@ -75,7 +84,10 @@ class ProductService(
             fileName = product.fileName,
             objectKey = product.objectKey,
             fileUrl = digitalOceanService.getPublicFileUrl(product.objectKey.toString()),
-            createdAt = product.createdAt
+            createdAt = product.createdAt,
+            productVp = product.productVp,
+            productHook = product.productHook,
+            videoUrl = product.videoUrl
         )
     }
 
@@ -85,13 +97,16 @@ class ProductService(
             .orElseThrow { IllegalArgumentException("Product not found") }
 
         // Validate DTO
-        if (dto.productTitle.isBlank() || dto.description.isBlank()) {
+        if (dto.productTitle.isBlank() || dto.description.isBlank() || dto.videoUrl.isBlank()) {
             throw IllegalArgumentException("All fields are required")
         }
 
         // Update fields
         product.productTitle = dto.productTitle
         product.description = dto.description
+        product.productVp = dto.productVp
+        product.productHook = dto.productHook
+        product.videoUrl = dto.videoUrl
 
         // Update file if provided
         if (file != null) {
@@ -119,7 +134,10 @@ class ProductService(
                 fileName = savedProduct.fileName,
                 objectKey = savedProduct.objectKey,
                 fileUrl = fileUrl,
-                createdAt = savedProduct.createdAt
+                createdAt = savedProduct.createdAt,
+                productVp = savedProduct.productVp,
+                productHook = savedProduct.productHook,
+                videoUrl = savedProduct.videoUrl
             )
         }
 
@@ -133,7 +151,10 @@ class ProductService(
             fileName = savedProduct.fileName,
             objectKey = savedProduct.objectKey,
             fileUrl = digitalOceanService.getPublicFileUrl(savedProduct.objectKey.toString()),
-            createdAt = savedProduct.createdAt
+            createdAt = savedProduct.createdAt,
+            productVp = savedProduct.productVp,
+            productHook = savedProduct.productHook,
+            videoUrl = savedProduct.videoUrl
         )
     }
 

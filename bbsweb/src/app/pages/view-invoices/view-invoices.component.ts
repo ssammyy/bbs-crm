@@ -20,6 +20,7 @@ import { InputText } from 'primeng/inputtext';
 import { InvoiceType } from '../invoice-form/data';
 import { UserGlobalService } from '../service/user.service';
 import { Permissions } from '../data/permissions.enum';
+import { Toast } from 'primeng/toast';
 
 interface Preliminary {
     id: number;
@@ -48,7 +49,7 @@ interface SortOption {
 @Component({
     selector: 'app-view-invoices',
     standalone: true,
-    imports: [CommonModule, DataViewModule, ButtonModule, ChipModule, DialogModule, Panel, Message, InputNumber, DropdownModule, FormsModule, Calendar, InputText],
+    imports: [CommonModule, DataViewModule, ButtonModule, ChipModule, DialogModule, Panel, Message, InputNumber, DropdownModule, FormsModule, Calendar, InputText, Toast],
     templateUrl: './view-invoices.component.html',
     styleUrls: ['./view-invoices.component.scss']
 })
@@ -61,11 +62,22 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
     filteredInvoices: Invoice[] = [];
     displayReceiptDialog: boolean = false;
     displayInvoiceDialog: boolean = false;
+    displayPaymentDialog: boolean = false;
+    selectedInvoice: any = null;
+    payment: {
+        paymentMethod: string;
+        amountPaid: number;
+        reference: string;
+    } = {
+        paymentMethod: '',
+        amountPaid: 0,
+        reference: ''
+    };
     paymentMethods: PaymentMethod[] = [
-        { label: 'Cash', value: 'CASH' },
+        { label: 'M-PESA', value: 'M_PESA' },
         { label: 'Bank Transfer', value: 'BANK_TRANSFER' },
-        { label: 'M-Pesa', value: 'M_PESA' },
-        { label: 'Credit Card', value: 'CREDIT_CARD' }
+        { label: 'Cash', value: 'CASH' },
+        { label: 'Cheque', value: 'CHEQUE' }
     ];
     sortOptions: SortOption[] = [
         { label: 'Invoice Number (Asc)', value: 'invoiceNumber_asc' },
@@ -89,9 +101,9 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
     };
     loading: boolean = false;
     proformaInvoice!: ProformaInvoice;
-    selectedInvoice!: Invoice;
     balance!: number;
     fullAmountPaid = false;
+    isClientRole: boolean = false;
 
     constructor(
         private invoiceService: InvoiceService,
@@ -101,6 +113,8 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
     ) {}
 
     ngOnInit() {
+        this.getUserRole();
+        console.log('client >>>>>', this.client);
         this.loadInvoices();
     }
 
@@ -110,7 +124,19 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
         }
     }
 
+    getUserRole() {
+        this.globalUserDetails.getDetails().subscribe({
+            next: (response) => {
+                this.isClientRole = response?.role?.name === 'CLIENT';
+            },
+            error: (error) => {
+                console.error('Error fetching user role:', error);
+            }
+        });
+    }
+
     loadInvoices(): void {
+        console.log('getting invoices...');
         this.loading = true;
         forkJoin({
             invoices: this.invoiceService.getInvoicesByClient(this.client.id),
@@ -158,10 +184,18 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
     applySearchAndSort(): void {
         let result = [...this.invoices];
 
+        // Filter out unapproved invoices for clients
+        if (this.isClientRole) {
+            result = result.filter(invoice => invoice.directorApproved);
+        }
+
         // Apply search filter
         if (this.searchTerm.trim()) {
             const term = this.searchTerm.toLowerCase();
-            result = result.filter((invoice) => invoice.invoiceNumber.toLowerCase().includes(term) || invoice.preliminary?.preliminaryType.name.toLowerCase().includes(term));
+            result = result.filter((invoice) =>
+                invoice.invoiceNumber.toLowerCase().includes(term) ||
+                invoice.preliminary?.preliminaryType.name.toLowerCase().includes(term)
+            );
         }
 
         // Apply sort
@@ -354,10 +388,10 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
     }
 
     generateReceipt() {
-        if (!this.selectedInvoice || !this.receipt.paymentMethod || !this.receipt.amountPaid) {
-            this.messagesService.showContrast('Please fill in all required fields.');
-            return;
-        }
+        // if (!this.selectedInvoice || !this.receipt.paymentMethod || !this.receipt.amountPaid) {
+        //     this.messagesService.showContrast('Please fill in all required fields.');
+        //     return;
+        // }
         const receiptDTO = {
             invoiceId: this.selectedInvoice.id,
             paymentDate: this.receipt.paymentDate.toISOString().split('T')[0],
@@ -381,6 +415,42 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
             error: (error) => {
                 console.error(error);
                 this.messagesService.showError('Failed to generate receipt, try again later.');
+            }
+        });
+    }
+
+    openPaymentDialog(invoice: any): void {
+        this.selectedInvoice = invoice;
+        this.payment = {
+            paymentMethod: '',
+            amountPaid: 0,
+            reference: ''
+        };
+        this.displayPaymentDialog = true;
+    }
+
+    confirmPayment(): void {
+        if (!this.payment.paymentMethod || !this.payment.amountPaid) {
+            console.log('Payment method not implemented.');
+            this.messagesService.showContrast('Please fill in all required fields');
+            return;
+        }
+
+        if (this.payment.amountPaid > this.selectedInvoice.balance) {
+            console.log('Payment method not implemented 22.');
+            this.messagesService.showContrast('Amount paid cannot exceed the balance');
+            return;
+        }
+        console.log('sneding confirmation payment');
+        this.invoiceService.confirmPayment(this.selectedInvoice.id, this.payment).subscribe({
+            next: (response) => {
+                this.messagesService.showSuccess('Payment confirmed successfully');
+                this.displayPaymentDialog = false;
+                this.loadInvoices();
+            },
+            error: (error) => {
+                this.messagesService.showError('Failed to confirm payment');
+                console.error('Error confirming payment:', error);
             }
         });
     }

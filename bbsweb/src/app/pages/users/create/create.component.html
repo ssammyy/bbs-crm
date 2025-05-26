@@ -100,6 +100,11 @@
                                 <small *ngIf="userForm.controls['nextOfKinName'].invalid && userForm.controls['nextOfKinName'].touched" class="text-red-500">Next of Kin name is required</small>
                             </div>
                             <div class="col-12">
+                                <label class="block">Commission percentage</label>
+                                <p-inputNumber formControlName="percentage" suffix="%" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
+                                <small *ngIf="userForm.controls['bankName'].invalid && userForm.controls['percentage'].touched" class="text-red-500">Percentage is required</small>
+                            </div>
+                            <div class="col-12">
                                 <label class="block">Next of Kin Phone Number</label>
                                 <input type="tel" pInputText formControlName="nextOfKinPhoneNumber" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
                                 <small *ngIf="userForm.controls['nextOfKinPhoneNumber'].invalid && userForm.controls['nextOfKinPhoneNumber'].touched" class="text-red-500">Next of Kin phone number is required</small>
@@ -122,6 +127,11 @@
                                 <label class="block">Bank Name</label>
                                 <input type="text" pInputText formControlName="bankName" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
                                 <small *ngIf="userForm.controls['bankName'].invalid && userForm.controls['bankName'].touched" class="text-red-500">Bank name is required</small>
+                            </div>
+                            <div class="col-12">
+                                <label class="block">Commission percentage</label>
+                                <p-inputNumber formControlName="percentage" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
+                                <small *ngIf="userForm.controls['bankName'].invalid && userForm.controls['percentage'].touched" class="text-red-500">Percentage is required</small>
                             </div>
                             <div class="col-12">
                                 <label class="block">Account Number</label>

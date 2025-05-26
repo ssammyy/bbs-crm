@@ -194,6 +194,15 @@ export class InvoiceFormComponent implements OnInit {
 
     onSubmit(): void {
         this.loading = true;
+        
+        // Check for zero unit prices
+        const itemsWithZeroPrice = this.items.filter(item => item.unitPrice === 0);
+        if (itemsWithZeroPrice.length > 0) {
+            this.loading = false;
+            this.messagesServices.showError('Unit price cannot be zero. Please set a valid price for all items.');
+            return;
+        }
+
         if (this.invoiceForm.valid && this.items.length > 0 && this.client) {
             const invoiceData = {
                 invoiceNumber: this.invoiceNumber,

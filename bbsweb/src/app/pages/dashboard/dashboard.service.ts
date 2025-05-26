@@ -97,6 +97,7 @@ export interface AgentActivity {
 
 export interface AgentDashboardStats {
     numberOfClients: number;
+    commissionPercentage: number;
     clients: AgentClient[];
     invoiceStats: {
         totalRevenue: number;

@@ -12,5 +12,8 @@ data class ProductResponseDTO(
     @JsonProperty("fileName") val fileName: String? = null,
     @JsonProperty("objectKey") val objectKey: String? = null,
     @JsonProperty("fileUrl") val fileUrl: String? = null,
-    @JsonProperty("createdAt") val createdAt: LocalDateTime
+    @JsonProperty("createdAt") val createdAt: LocalDateTime,
+    @JsonProperty("productVp") val productVp: String? = null,
+    @JsonProperty("productHook") val productHook: String? = null,
+    @JsonProperty("videoUrl") val videoUrl: String? = null
 )

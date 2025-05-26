@@ -4,6 +4,7 @@ import com.bbs.bbsapi.entities.AcceptInvoiceRequest
 import com.bbs.bbsapi.entities.InvoiceResponse
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
 import com.bbs.bbsapi.entities.RejectInvoiceRequest
+import com.bbs.bbsapi.entities.PaymentConfirmationDTO
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
 import com.bbs.bbsapi.models.Client
@@ -108,5 +109,14 @@ class InvoiceController(
     @GetMapping("/balance/{parentInvoiceId}")
     fun getBalanceInvoices(@PathVariable parentInvoiceId: Long): ResponseEntity<List<Invoice>> {
         return ResponseEntity.ok(invoiceService.getBalanceInvoicesByParentId(parentInvoiceId))
+    }
+
+    @PostMapping("/{invoiceId}/confirm-payment")
+    fun confirmPayment(
+        @PathVariable invoiceId: Long,
+        @RequestBody payment: PaymentConfirmationDTO
+    ): ResponseEntity<Invoice> {
+        val updatedInvoice = invoiceService.confirmPayment(invoiceId, payment)
+        return ResponseEntity.ok(updatedInvoice)
     }
 }
