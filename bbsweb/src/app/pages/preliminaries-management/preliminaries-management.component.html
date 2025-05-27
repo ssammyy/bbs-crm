@@ -121,6 +121,9 @@
                         <span *ngIf="preliminary.invoiced" class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
                             Invoiced
                         </span>
+                        <span *ngIf="!preliminary.invoiced" class="bg-amber-200 text-blue-800  text-xs font-medium px-2 py-1 rounded-full">
+                            Not Invoiced
+                        </span>
                         <span *ngIf="preliminary.invoiceClearedFlag" class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
                             Invoice Cleared
                         </span>
@@ -168,8 +171,36 @@
             <p class="text-xs mt-1">Status: <span class="font-medium">{{ modalPreliminary?.status }}</span></p>
             <p *ngIf="modalPreliminary?.rejectionRemarks" class="text-xs mt-1">Rejection Remarks: <span class="font-medium">{{ modalPreliminary?.rejectionRemarks }}</span></p>
         </div>
+<!--        IF BOQ ONLY QS CAN SEE-->
+        <div *ngIf="hasPrivileges(Permissions.UPLOAD_BOQ) ">
+                qs view
+        </div>
 
-        <div *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.UPLOAD_TECHNICAL_WORKS)" class="space-y-4">
+
+        <div *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.UPLOAD_TECHNICAL_WORKS) && (modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION' && hasPrivileges(Permissions.UPLOAD_BOQ))" class="space-y-4">            <p class="text-sm">Upload documents for technical director approval</p>
+            <p-fileUpload
+                mode="basic"
+                [name]="modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ')"
+                [customUpload]="true"
+                (onSelect)="onFileSelect($event)"
+                chooseLabel="Select File"
+                class="w-full"
+                styleClass="p-button-outlined p-button-secondary rounded-lg"
+            ></p-fileUpload>
+            <div class="flex justify-end">
+                <p-button
+                    [disabled]="!uploadedFile"
+                    [loading]="loading"
+                    (onClick)="submitTechnicalWorks()"
+                    label="Submit"
+                    icon="pi pi-check"
+                    outlined
+                    severity="info"
+                    class="hover:text-blue-400"
+                ></p-button>
+            </div>
+        </div>
+        <div *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.UPLOAD_BOQ) && modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION' " class="space-y-4">
             <p class="text-sm">Upload documents for technical director approval</p>
             <p-fileUpload
                 mode="basic"
@@ -237,30 +268,8 @@
             </div>
         </div>
 
-        <div *ngIf="modalPreliminary?.status === 'PENDING_M_D_APPROVAL'" class="space-y-4">
+        <div *ngIf="modalPreliminary?.status === 'PENDING_M_D_APPROVAL' && hasPrivileges(Permissions.APPROVE_PRELIMINARY)" class="space-y-4">
 
-
-
-            <p class="text-sm">View uploaded documents for {{ modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ') }} and take action</p>
-            <div *ngIf="clientFiles.length > 0" class="space-y-2">
-                <div *ngFor="let doc of clientFiles" class="rounded-lg shadow-md p-4 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="flex-shrink-0">
-                            <!-- SVG for document icon will be inserted here -->
-                        </div>
-                        <a
-                            [href]="doc.fileUrl"
-                            target="_blank"
-                            pButton
-                            outlined
-                            severity="secondary"
-                            icon="pi pi-arrow-up-right"
-                            [label]="doc.fileName"
-                            class="text-blue-600 hover:text-blue-800 font-medium"
-                        ></a>
-                    </div>
-                </div>
-            </div>
             <div class="custom-warn-chip" *ngIf="!modalPreliminary?.invoiced">
                 <small>                This activity has not been invoiced yet.
                 </small>

@@ -1,11 +1,9 @@
 package com.bbs.bbsapi.services
 
 import com.bbs.bbsapi.controllers.UpdateClientCommitmentDTO
-import com.bbs.bbsapi.entities.ClientCommitmentDTO
 import com.bbs.bbsapi.enums.ContactStatus
 import com.bbs.bbsapi.models.Client
-import com.bbs.bbsapi.models.ClientCommitment
-import com.bbs.bbsapi.repos.ClientRepo
+import com.bbs.bbsapi.repos.ClientRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -15,12 +13,12 @@ import java.time.format.DateTimeFormatter
 class ClientCommitmentService(
     private val clientService: ClientService,
     private val userService: UserService,
-    private val clientRepo: ClientRepo
+    private val clientRepository: ClientRepository
 ) {
 
 
     fun getClientCommitmentsToFollowUp(currentDate: LocalDateTime): List<Client> {
-        return clientRepo.findByContactStatusNot( ContactStatus.ONBOARDED)
+        return clientRepository.findByContactStatusNot( ContactStatus.ONBOARDED)
     }
     @Transactional
     fun markAsContacted(clientCommitment: Client) {
@@ -28,12 +26,12 @@ class ClientCommitmentService(
         clientService.addClientActivity(clientCommitment, "$loggedInUser contacted client ${clientCommitment.firstName}" )
 
         clientCommitment.contactStatus = ContactStatus.CONTACTED
-        clientRepo.save(clientCommitment)
+        clientRepository.save(clientCommitment)
     }
 
     @Transactional
     fun updateContactStatus(clientCommitmentId: Long, newStatus: ContactStatus): Client? {
-        val clientCommitment = clientRepo.findById(clientCommitmentId)
+        val clientCommitment = clientRepository.findById(clientCommitmentId)
             .orElseThrow { IllegalArgumentException("Client commitment with ID $clientCommitmentId not found") }
         val loggedInUser = userService.getLoggedInUser().username
         if (newStatus == ContactStatus.ONBOARDED) {
@@ -42,11 +40,11 @@ class ClientCommitmentService(
         clientService.addClientActivity(clientCommitment, "$loggedInUser changed lead ${clientCommitment.firstName} ${clientCommitment.lastName}  status to $newStatus  " )
 
         clientCommitment.contactStatus = newStatus
-        return clientRepo.save(clientCommitment)
+        return clientRepository.save(clientCommitment)
     }
     @Transactional
     fun updateClientCommitment(clientCommitmentId: Long, updateDTO: UpdateClientCommitmentDTO): Client? {
-        val clientCommitment = clientRepo.findById(clientCommitmentId)
+        val clientCommitment = clientRepository.findById(clientCommitmentId)
             .orElseThrow { IllegalArgumentException("Client commitment with ID $clientCommitmentId not found") }
         val loggedInUser = userService.getLoggedInUser().username
         if (updateDTO.contactStatus == ContactStatus.ONBOARDED) {
@@ -59,7 +57,7 @@ class ClientCommitmentService(
         clientCommitment.contactStatus = updateDTO.contactStatus
         clientCommitment.notes = updateDTO.notes
 
-        return clientRepo.save(clientCommitment)
+        return clientRepository.save(clientCommitment)
 
     }
 }

@@ -30,22 +30,12 @@
                     </button>
                 </div>
 
-                <div  class="grid grid-cols-3 gap-4">
-                    <div class="mb-4" [ngClass]="activityFeedVisible ? 'col-span-2' : 'col-span-3'">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="mb-4" [ngClass]="activityFeedVisible ? 'lg:col-span-2' : 'lg:col-span-3'">
                         <!-- Stage 1: REQUIREMENTS_GATHERING -->
-                        <div *ngIf="clientStage === 'REQUIREMENTS_GATHERING' && userRole === 'SUPER_ADMIN'">
-                            <h3 class="text-xl font-semibold mb-2">Project Requirements Documents</h3>
-                            <p class="text-gray-600 mb-2">
-                                Upload documents related to the client's project requirements.
-                            </p>
-                            <input type="file" id="tccFile" (change)="onSelect($event)"
-                                   class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
-                            <br>
-
-                        </div>
 
                         <div
-                            *ngIf="clientStage === 'REQUIREMENTS_PENDING_DIRECTOR_APPROVAL' && userRole ==='SUPER_ADMIN'">
+                            *ngIf="clientStage === 'REQUIREMENTS_PENDING_DIRECTOR_APPROVAL' && hasPrivileges(Permissions.APPROVE_TECHNICAL_WORKS)">
                             <app-site-report-view [clientId]="selectedClient?.id"
                                                   (statusChanged)="handleEventEmit()"></app-site-report-view>
                         </div>
@@ -159,13 +149,14 @@
 
                     </div>
 
-                    <div *ngIf="activityFeedVisible && hasPrivileges(Permissions.VIEW_ACTIVITY_FEED)" class="mb-4 col-start-3 col-span-1">
+                    <div *ngIf="activityFeedVisible && hasPrivileges(Permissions.VIEW_ACTIVITY_FEED)" 
+                         class="mb-4 lg:col-start-3 lg:col-span-1 order-first lg:order-last">
                         <h3 class="text-xl font-semibold mb-2">Activity Feed</h3>
-                        <p-listbox [options]="activities" [listStyle]="{ 'max-height': '250px' }">
+                        <p-listbox [options]="activities" [listStyle]="{ 'max-height': '250px' }" class="w-full">
                             <ng-template let-activity pTemplate="item">
-                                <div>
-                                    <p class="font-semibold">{{ activity.description }}</p>
-                                    <span class="text-sm">{{ activity.timestamp | date }}</span>
+                                <div class="p-2">
+                                    <p class="font-semibold text-sm lg:text-base break-words">{{ activity.description }}</p>
+                                    <span class="text-xs lg:text-sm text-gray-500">{{ activity.timestamp | date }}</span>
                                 </div>
                             </ng-template>
                         </p-listbox>
@@ -292,6 +283,42 @@
                         </div>
 
                         <!-- KYC Documents Section -->
+                        <div class="section-card">
+                            <div class="section-header">
+                                <i class="pi pi-folder mr-2"></i>
+                                <h3 class="section-title">Other Uploaded Documents</h3>
+                            </div>
+                            <p-table [value]="clientFiles | nonKycDocument" [tableStyle]="{'min-width': '50rem'}">
+                                <ng-template pTemplate="header">
+                                    <tr>
+                                        <th>File Type</th>
+                                        <th>File Name</th>
+                                        <th>Version</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="body" let-file>
+                                    <tr>
+                                        <td>{{ file.specific?.replace('_', ' ') || file.fileType?.replace('_', ' ') }}</td>
+                                        <td>{{ file.fileName }}</td>
+                                        <td>{{ file.version || '1' }}</td>
+                                        <td>
+                                            <p-button icon="pi pi-eye" styleClass="p-button-text p-button-secondary"
+                                                      (onClick)="viewDocument(file.fileType)"></p-button>
+                                            <p-button *ngIf="userRole === 'SUPER_ADMIN'" icon="pi pi-plus"
+                                                      styleClass="p-button-text p-button-success"
+                                                      (onClick)="addDocumentVersion(file)"></p-button>
+                                        </td>
+                                    </tr>
+                                </ng-template>
+                                <ng-template pTemplate="emptymessage">
+                                    <tr>
+                                        <td colspan="4">No other documents uploaded.</td>
+                                    </tr>
+                                </ng-template>
+                            </p-table>
+                        </div>
+
                         <!-- KYC Documents Section -->
                         <div class="section-card">
                             <div class="section-header">
@@ -363,41 +390,6 @@
                             </div>
                         </div>
                         <!-- Other Uploaded Documents Section -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <i class="pi pi-folder mr-2"></i>
-                                <h3 class="section-title">Other Uploaded Documents</h3>
-                            </div>
-                            <p-table [value]="clientFiles | nonKycDocument" [tableStyle]="{'min-width': '50rem'}">
-                                <ng-template pTemplate="header">
-                                    <tr>
-                                        <th>File Type</th>
-                                        <th>File Name</th>
-                                        <th>Version</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </ng-template>
-                                <ng-template pTemplate="body" let-file>
-                                    <tr>
-                                        <td>{{ file.specific?.replace('_', ' ') || file.fileType?.replace('_', ' ') }}</td>
-                                        <td>{{ file.fileName }}</td>
-                                        <td>{{ file.version || '1' }}</td>
-                                        <td>
-                                            <p-button icon="pi pi-eye" styleClass="p-button-text p-button-secondary"
-                                                      (onClick)="viewDocument(file.fileType)"></p-button>
-                                            <p-button *ngIf="userRole === 'SUPER_ADMIN'" icon="pi pi-plus"
-                                                      styleClass="p-button-text p-button-success"
-                                                      (onClick)="addDocumentVersion(file)"></p-button>
-                                        </td>
-                                    </tr>
-                                </ng-template>
-                                <ng-template pTemplate="emptymessage">
-                                    <tr>
-                                        <td colspan="4">No other documents uploaded.</td>
-                                    </tr>
-                                </ng-template>
-                            </p-table>
-                        </div>
                     </form>
                 </div>
             </p-tabpanel>

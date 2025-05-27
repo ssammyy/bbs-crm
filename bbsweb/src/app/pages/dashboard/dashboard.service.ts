@@ -48,6 +48,8 @@ export interface DashboardStats {
         period: string;
         value: number;
     }[];
+    totalActiveClients: number;
+
 }
 
 export interface AgentClient {

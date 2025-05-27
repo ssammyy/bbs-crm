@@ -25,6 +25,8 @@ import { Router } from '@angular/router';
 import { kenyanCounties } from '../../data/kenyan-counties';
 import { allCountries } from '../../data/all-countries';
 import { countryCodes } from '../../data/country-codes';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
     selector: 'app-view-clients',
@@ -51,8 +53,10 @@ import { countryCodes } from '../../data/country-codes';
         Listbox,
         DatePipe,
         NgClass,
-        InvoiceFormComponent
+        InvoiceFormComponent,
+        ConfirmDialogModule
     ],
+    providers: [ConfirmationService],
     templateUrl: './view-clients.component.html',
     styleUrl: './view-clients.component.scss'
 })
@@ -99,7 +103,8 @@ export class ViewClientsComponent implements OnInit {
         private messagesService: MessagesService,
         private uploadService: UploadService,
         private router: Router,
-        private fb: FormBuilder
+        private fb: FormBuilder,
+        private confirmationService: ConfirmationService
     ) {}
 
     ngOnInit() {
@@ -177,7 +182,26 @@ export class ViewClientsComponent implements OnInit {
         }
     }
 
-    deleteClient(id: number) {}
+    deleteClient(id: number) {
+        this.confirmationService.confirm({
+            message: 'Are you sure you want to delete this client?',
+            header: 'Delete Confirmation',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                this.loading = true;
+                this.clientService.deleteClient(id).subscribe({
+                    next: () => {
+                        this.messagesService.showSuccess('Client deleted successfully');
+                        this.getActiveClients();
+                    },
+                    error: (error) => {
+                        this.messagesService.showError('Failed to delete client');
+                        this.loading = false;
+                    }
+                });
+            }
+        });
+    }
 
     getActiveClients(): void {
         this.loading = true;

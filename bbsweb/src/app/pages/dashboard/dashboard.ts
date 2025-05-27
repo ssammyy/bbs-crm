@@ -208,6 +208,7 @@ export class Dashboard {
                 next: (response) => {
                     console.log('user role>>>> ', { response });
                     this.userRole = response?.role?.name;
+                    this.userService.setRole(this.userRole)
                     const fullUsername = response?.username || '';
                     this.userName = fullUsername.split('@')[0].charAt(0).toUpperCase() + fullUsername.split('@')[0].slice(1);
                     this.updateGreeting();
@@ -370,5 +371,11 @@ export class Dashboard {
         return this.userService.hasPrivilege(privilege);
     }
 
+
+
     protected readonly Permissions = Permissions;
+
+    navigateTo(route: string) {
+        this.router.navigate([`app/pages/${route}`]);
+    }
 }

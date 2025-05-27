@@ -89,7 +89,10 @@ data class Client(
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "agent_id", referencedColumnName = "id")
     @JsonIgnore
-    var agent: User? = null
+    var agent: User? = null,
+
+    @Column(nullable = false)
+    var softDelete: Boolean = false
 ) : BaseEntity() {
     constructor() : this(
         id = 0,

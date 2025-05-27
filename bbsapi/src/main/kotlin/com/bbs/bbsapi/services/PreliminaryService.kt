@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 @Service
 @Slf4j
 class PreliminaryService(
-    private val clientRepository: ClientRepo,
+    private val clientRepository: ClientRepository,
     private val preliminaryRepository: PreliminaryRepository,
     private val preliminaryTypeRepository: PreliminaryTypeRepository,
     private val invoiceRepository: InvoiceRepository,

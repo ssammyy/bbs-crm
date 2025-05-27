@@ -2,10 +2,9 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.FileType
-import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.models.Preliminary
-import com.bbs.bbsapi.repos.ClientRepo
+import com.bbs.bbsapi.repos.ClientRepository
 import com.bbs.bbsapi.repos.FileRepository
 import com.bbs.bbsapi.repos.PreliminaryRepository
 import com.bbs.bbsapi.repos.UserRepository
@@ -24,12 +23,12 @@ import java.util.Base64
 @Controller
 @RequestMapping(value = ["/api/files"])
 class UploadFile(
-    private val clientRepository: ClientRepo,
+    private val clientRepository: ClientRepository,
     private val digitalOceanService: DigitalOceanService,
     private val fileRepository: FileRepository,
     private val clientService: ClientService,
     private val userRepository: UserRepository,
-    private val clientRepo: ClientRepo,
+    private val clientRepo: ClientRepository,
     private val preliminaryRepository: PreliminaryRepository
 ) {
     @PostMapping("/upload")

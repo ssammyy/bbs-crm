@@ -65,7 +65,13 @@
     >
         <div class="flex p-6 flex-col gap-4">
             <div *ngIf="!editMode" class="flex gap-2 flex-wrap">
-                <p-chip *ngFor="let privilege of privileges" [label]="privilege.name" styleClass="p-chip-modern" />
+                <p-chip 
+                    *ngFor="let privilege of privileges" 
+                    [label]="privilege.name" 
+                    styleClass="p-chip-modern"
+                    [removable]="true"
+                    (onRemove)="removePrivilege(privilege)"
+                />
                 <p-chip *ngIf="!privileges.length" label="No privileges assigned" styleClass="p-chip-warning" />
             </div>
             <div *ngIf="editMode" class="flex flex-col gap-2">
@@ -78,14 +84,17 @@
                     appendTo="body"
                     placeholder="Select privileges"
                     styleClass="w-full"
+                    [showToggleAll]="true"
+                    [filter]="true"
+                    [selectedItemsLabel]="'{0} privileges selected'"
                 ></p-multiSelect>
             </div>
             <div class="flex justify-end gap-2">
                 <button
                     *ngIf="!editMode"
                     pButton
-                    label="Edit"
-                    icon="pi pi-pencil"
+                    label="Add"
+                    icon="pi pi-plus"
                     class="p-button-primary"
                     (click)="toggleEditMode()"
                 ></button>

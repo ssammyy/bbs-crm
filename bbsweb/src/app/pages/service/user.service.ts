@@ -41,6 +41,7 @@ export class UserGlobalService {
 
     private userSubject = new BehaviorSubject<User | null>(null);
     user$ = this.userSubject.asObservable();
+    userRole!: string;
 
     constructor(private http: HttpClient) {}
 
@@ -53,6 +54,12 @@ export class UserGlobalService {
                  this.userSubject.next(null);
             }
         })
+    }
+    setRole(role: string) {
+        this.userRole = role
+    }
+    getRole(){
+        return this.userRole
     }
 
     getDetails(): Observable<any> {

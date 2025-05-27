@@ -12,42 +12,25 @@
 
         <!-- Top Section: Key Metrics -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
-                <div class="flex items-center p-3">
-                    <div class="p-2 rounded-full mr-3">
+            <p-card styleClass="rounded-lg border h-48 border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow duration-200" (click)="navigateTo('view-clients')">
+                <div class="flex flex-col items-center justify-center h-full p-3">
+                    <div class="p-2 rounded-full mb-3">
                         <i class="pi pi-users text-blue-600 dark:text-blue-400 text-2xl"></i>
                     </div>
-                    <div class="flex-grow">
-                        <h3 class="text-base font-medium dark:text-slate-200">Total Clients</h3>
-                        <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ totalClients }}</p>
-                    </div>
-                </div>
-                <p-divider layout="horizontal" styleClass="my-1 border-gray-200 dark:border-slate-700"></p-divider>
-                <div class="px-3 pb-2">
-                    <div class="flex justify-between items-center mb-1">
-                        <div class="flex items-center">
-                            <i class="pi pi-check-circle text-green-500 dark:text-green-400 mr-1"></i>
-                            <span class="text-sm font-medium dark:text-slate-300">Active</span>
-                        </div>
-                        <p class="text-lg font-bold text-green-600 dark:text-green-400">{{ totalClients }}</p>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center">
-                            <i class="pi pi-minus-circle text-amber-500 dark:text-amber-400 mr-1"></i>
-                            <span class="text-sm font-medium dark:text-slate-300">Inactive</span>
-                        </div>
-                        <p class="text-lg font-bold text-amber-600 dark:text-amber-400">{{ 0 }}</p>
+                    <div class="text-center">
+                        <h3 class="text-base font-medium dark:text-slate-200 mb-2">Total Clients</h3>
+                        <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ stats?.totalActiveClients }}</p>
                     </div>
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
-                <div class="flex items-center p-3">
-                    <div class="p-2 bg-green-100 dark:bg-green-500/20 rounded-full mr-3">
+            <p-card styleClass="rounded-lg border h-48 border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow duration-200">
+                <div class="flex flex-col items-center justify-center h-full p-3">
+                    <div class="p-2 bg-green-100 dark:bg-green-500/20 rounded-full mb-3">
                         <i class="pi pi-chart-line text-green-600 dark:text-green-400 text-2xl"></i>
                     </div>
-                    <div>
-                        <h3 class="text-base font-medium dark:text-slate-200">Total Revenue (Cleared)</h3>
+                    <div class="text-center">
+                        <h3 class="text-base font-medium dark:text-slate-200 mb-2">Total Revenue (Cleared)</h3>
                         <p class="text-xl font-bold text-green-600 dark:text-green-400">
                             KSH {{ stats?.invoiceStats?.totalRevenue | number: '1.2-2' }}
                         </p>
@@ -55,38 +38,38 @@
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
-                <div class="flex items-center p-3">
-                    <div class="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-full mr-3">
+            <p-card styleClass="rounded-lg border h-48 border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow duration-200" (click)="navigateTo('view-users')">
+                <div class="flex flex-col items-center justify-center h-full p-3">
+                    <div class="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-full mb-3">
                         <i class="pi pi-shield text-indigo-600 dark:text-indigo-400 text-2xl"></i>
                     </div>
-                    <div>
-                        <h3 class="text-base font-medium dark:text-slate-200">Total Agents</h3>
-                        <p class="text-xl font-bold text-indigo-600 dark:text-indigo-400">{{ stats?.totalAgents }}</p>
+                    <div class="text-center">
+                        <h3 class="text-base font-medium dark:text-slate-200 mb-2">Total Agents</h3>
+                        <p class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ stats?.totalAgents }}</p>
                     </div>
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
-                <div class="flex items-center p-3">
-                    <div class="p-2 bg-purple-100 dark:bg-purple-500/20 rounded-full mr-3">
+            <p-card styleClass="rounded-lg border h-48 border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow duration-200" (click)="navigateTo('view-leads')">
+                <div class="flex flex-col items-center justify-center h-full p-3">
+                    <div class="p-2 bg-purple-100 dark:bg-purple-500/20 rounded-full mb-3">
                         <i class="pi pi-briefcase text-purple-600 dark:text-purple-400 text-2xl"></i>
                     </div>
-                    <div>
-                        <h3 class="text-base font-medium dark:text-slate-200">Commitments</h3>
-                        <p class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ stats?.commitMentClients }}</p>
+                    <div class="text-center">
+                        <h3 class="text-base font-medium dark:text-slate-200 mb-2">Commitments</h3>
+                        <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">{{ stats?.commitMentClients }}</p>
                     </div>
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
-                <div class="flex items-center p-3">
-                    <div class="p-2 bg-teal-100 dark:bg-teal-500/20 rounded-full mr-3">
+            <p-card styleClass="rounded-lg border h-48 border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow duration-200" (click)="navigateTo('view-users')">
+                <div class="flex flex-col items-center justify-center h-full p-3">
+                    <div class="p-2 bg-teal-100 dark:bg-teal-500/20 rounded-full mb-3">
                         <i class="pi pi-users text-teal-600 dark:text-teal-400 text-2xl"></i>
                     </div>
-                    <div>
-                        <h3 class="text-base font-medium dark:text-slate-200">System Users</h3>
-                        <p class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ stats?.totalSystemUsers }}</p>
+                    <div class="text-center">
+                        <h3 class="text-base font-medium dark:text-slate-200 mb-2">System Users</h3>
+                        <p class="text-3xl font-bold text-teal-600 dark:text-teal-400">{{ stats?.totalSystemUsers }}</p>
                     </div>
                 </div>
             </p-card>
@@ -95,7 +78,7 @@
         <!-- Bottom Section: Detailed Cards -->
         <!-- Row 1: Invoice Statistics, Highest Revenue by Client, Super Admins -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
+            <p-card styleClass="rounded-lg border h-64 border-gray-200 dark:border-slate-700">
                 <ng-template pTemplate="header">
                     <div class="flex items-center p-2 rounded-t-lg border-b dark:border-slate-600">
                         <i class="pi pi-file-invoice-dollar mr-1 text-lg text-indigo-600 dark:text-indigo-400"></i>
@@ -114,20 +97,20 @@
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
+            <p-card styleClass="rounded-lg border h-64 border-gray-200 dark:border-slate-700">
                 <ng-template pTemplate="header">
                     <div class="flex items-center p-2 rounded-t-lg border-b dark:border-slate-600">
                         <i class="pi pi-star-fill mr-1 text-lg text-blue-600 dark:text-blue-400"></i>
                         <h3 class="text-base font-medium">Highest Revenue by Client</h3>
                     </div>
                 </ng-template>
-                <div class="text-center p-3">
-                    <p class="dark:text-slate-300 text-sm">Client: <span class="font-medium text-gray-800 dark:text-slate-100">{{ stats?.highestRevenueClient?.clientName }}</span></p>
-                    <p class="text-lg font-bold text-blue-600 dark:text-blue-400">KSH {{ stats?.highestRevenueClient?.totalRevenue | number: '1.2-2' }}</p>
+                <div class="flex flex-col items-center justify-center h-full p-3">
+                    <p class="dark:text-slate-300 text-sm mb-2">Client: <span class="font-medium text-gray-800 dark:text-slate-100">{{ stats?.highestRevenueClient?.clientName }}</span></p>
+                    <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">KSH {{ stats?.highestRevenueClient?.totalRevenue | number: '1.2-2' }}</p>
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
+            <p-card styleClass="rounded-lg border h-64 border-gray-200 dark:border-slate-700">
                 <ng-template pTemplate="header">
                     <div class="flex items-center p-2 rounded-t-lg border-b dark:border-slate-600">
                         <i class="pi pi-crown mr-1 text-lg text-amber-600 dark:text-amber-400"></i>
@@ -146,26 +129,26 @@
 
         <!-- Row 2: Revenue Over Time and Clients Over Time -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
+            <p-card styleClass="rounded-lg border h-96 border-gray-200 dark:border-slate-700">
                 <ng-template pTemplate="header">
                     <div class="flex items-center p-2 rounded-t-lg border-b dark:border-slate-600">
                         <i class="pi pi-chart-line mr-1 text-lg text-green-600 dark:text-green-400"></i>
                         <h3 class="text-base font-medium text-green-700 dark:text-green-300">Revenue Over Time</h3>
                     </div>
                 </ng-template>
-                <div class="p-3">
+                <div class="p-3 h-[calc(100%-3rem)]">
                     <p-chart type="line" [data]="revenueOverTimeChartData" [options]="timeSeriesChartOptions"></p-chart>
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
+            <p-card styleClass="rounded-lg border h-96 border-gray-200 dark:border-slate-700">
                 <ng-template pTemplate="header">
                     <div class="flex items-center p-2 rounded-t-lg border-b dark:border-slate-600">
                         <i class="pi pi-chart-line mr-1 text-lg text-pink-600 dark:text-pink-400"></i>
                         <h3 class="text-base font-medium text-pink-700 dark:text-pink-300">Clients Over Time</h3>
                     </div>
                 </ng-template>
-                <div class="p-3">
+                <div class="p-3 h-[calc(100%-3rem)]">
                     <p-chart type="line" [data]="clientsOverTimeChartData" [options]="clientsOverTimeChartOptions"></p-chart>
                 </div>
             </p-card>
@@ -173,51 +156,53 @@
 
         <!-- Row 3: Client Source Distribution and Recent Activities -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
+            <p-card styleClass="rounded-lg border h-96 border-gray-200 dark:border-slate-700">
                 <ng-template pTemplate="header">
                     <div class="flex items-center p-2 rounded-t-lg border-b dark:border-slate-600">
                         <i class="pi pi-chart-bar mr-1 text-lg text-teal-600 dark:text-teal-400"></i>
                         <h3 class="text-base font-medium text-teal-700 dark:text-teal-300">Client Source Distribution</h3>
                     </div>
                 </ng-template>
-                <div class="p-3">
+                <div class="p-3 h-[calc(100%-3rem)]">
                     <p-chart type="bar" [data]="clientSourceChartData" [options]="clientSourceChartOptions"></p-chart>
                 </div>
             </p-card>
 
-            <p-card styleClass="rounded-lg border border-gray-200 dark:border-slate-700">
+            <p-card styleClass="rounded-lg border  border-gray-200 dark:border-slate-700">
                 <ng-template pTemplate="header">
                     <div class="flex items-center p-2 rounded-t-lg border-b dark:border-slate-600">
                         <i class="pi pi-history mr-1 text-lg dark:text-gray-400"></i>
                         <h3 class="text-base font-medium dark:text-slate-300">Recent Activities</h3>
                     </div>
                 </ng-template>
-                <div class="p-3">
-                    <p-progressSpinner *ngIf="loading" styleClass="w-10 h-10 mx-auto" strokeWidth="3" animationDuration=".5s"></p-progressSpinner>
-                    <p-table *ngIf="!loading" [value]="stats?.recentActivities ?? []" [paginator]="true" [rows]="5"
-                             styleClass="p-datatable-striped p-datatable-gridlines" responsiveLayout="scroll" [tableStyle]="{'min-width': '40rem'}">
-                        <ng-template pTemplate="header">
-                            <tr class="bg-gray-50">
-                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300">Description</th>
-                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300">Client ID</th>
-                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300">Timestamp</th>
-                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300">User</th>
-                            </tr>
-                        </ng-template>
-                        <ng-template pTemplate="body" let-activity>
-                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
-                                <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.description }}</td>
-                                <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.clientId }}</td>
-                                <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.timestamp | date: 'medium' }}</td>
-                                <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.user || 'System' }}</td>
-                            </tr>
-                        </ng-template>
-                        <ng-template pTemplate="emptymessage">
-                            <tr>
-                                <td colspan="4" class="text-center p-3 text-gray-500 dark:text-gray-400">No recent activities found.</td>
-                            </tr>
-                        </ng-template>
-                    </p-table>
+                <div class="p-2  overflow-hidden">
+                    <p-progressSpinner *ngIf="loading" styleClass="w-8 h-8 mx-auto" strokeWidth="3" animationDuration=".5s"></p-progressSpinner>
+                    <div class="h-full overflow-auto">
+                        <p-table *ngIf="!loading" [value]="stats?.recentActivities ?? []" [paginator]="true" [rows]="5"
+                                 styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines" responsiveLayout="scroll" [tableStyle]="{'width': '100%'}">
+                            <ng-template pTemplate="header">
+                                <tr class="bg-gray-50 sticky top-0">
+                                    <th class="p-1 text-left text-xs font-medium dark:text-slate-300 w-1/2">Description</th>
+                                    <th class="p-1 text-left text-xs font-medium dark:text-slate-300 w-1/6">Client ID</th>
+                                    <th class="p-1 text-left text-xs font-medium dark:text-slate-300 w-1/6">Timestamp</th>
+                                    <th class="p-1 text-left text-xs font-medium dark:text-slate-300 w-1/6">User</th>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-activity>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                                    <td class="p-1 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300 text-xs truncate max-w-xs">{{ activity.description }}</td>
+                                    <td class="p-1 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300 text-xs">{{ activity.clientId }}</td>
+                                    <td class="p-1 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300 text-xs">{{ activity.timestamp | date: 'short' }}</td>
+                                    <td class="p-1 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300 text-xs">{{ activity.user || 'System' }}</td>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="emptymessage">
+                                <tr>
+                                    <td colspan="4" class="text-center p-2 text-xs text-gray-500 dark:text-gray-400">No recent activities found.</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </div>
                 </div>
             </p-card>
         </div>
@@ -323,22 +308,24 @@
                     <p-table [value]="stats?.recentActivities ?? []" [paginator]="true" [rows]="5"
                              styleClass="p-datatable-striped p-datatable-gridlines" responsiveLayout="scroll" [tableStyle]="{'min-width': '40rem'}">
                         <ng-template pTemplate="header">
-                            <tr class="bg-gray-50">
-                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300">Description</th>
-                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300">Timestamp</th>
-                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300">User</th>
+                            <tr class="bg-gray-50 sticky top-0">
+                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300 w-1/2">Description</th>
+                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300 w-1/6">Client ID</th>
+                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300 w-1/6">Timestamp</th>
+                                <th class="p-2 text-left text-sm font-medium dark:text-slate-300 w-1/6">User</th>
                             </tr>
                         </ng-template>
                         <ng-template pTemplate="body" let-activity>
                             <tr class="hover:bg-gray-50 dark:hover:bg-slate-700">
-                                <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.description }}</td>
+                                <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300 truncate max-w-xs">{{ activity.description }}</td>
+                                <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.clientId }}</td>
                                 <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.timestamp | date: 'medium' }}</td>
                                 <td class="p-2 border-b border-gray-200 dark:border-slate-700 dark:text-slate-300">{{ activity.user || 'System' }}</td>
                             </tr>
                         </ng-template>
                         <ng-template pTemplate="emptymessage">
                             <tr>
-                                <td colspan="3" class="text-center p-3 text-gray-500 dark:text-gray-400">No recent activities found.</td>
+                                <td colspan="4" class="text-center p-3 text-gray-500 dark:text-gray-400">No recent activities found.</td>
                             </tr>
                         </ng-template>
                     </p-table>

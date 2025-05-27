@@ -13,10 +13,11 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import kotlin.math.log
 
 @Service
 class ClientService(
-    private val clientRepository: ClientRepo,
+    private val clientRepository: ClientRepository,
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val roleRepository: RoleRepository,
@@ -82,7 +83,7 @@ class ClientService(
     }
 
     fun getAllClients(): List<Client> {
-        return clientRepository.findAll()
+        return clientRepository.findAllBySoftDeleteFalse()
     }
 
     fun updateClient(clientDTO: ClientDTO): Client? {
@@ -158,15 +159,24 @@ class ClientService(
     }
 
     fun getClientByEmail(email: String): Client? {
-        val client = clientRepository.findByEmail(email) ?: throw NullPointerException("Client not found")
+        val client = clientRepository.findByEmailAndSoftDeleteFalse(email) ?: throw NullPointerException("Client not found")
         return client
     }
 
     fun getLeads(): List<Client> {
-        return clientRepository.findByContactStatusNot(ContactStatus.ONBOARDED)
+        return clientRepository.findByContactStatusNotAndSoftDeleteFalse(ContactStatus.ONBOARDED)
     }
 
     fun getOnBoardedClients(): List<Client> {
-        return clientRepository.findByContactStatus(ContactStatus.ONBOARDED)
+        return clientRepository.findByContactStatusAndSoftDeleteFalse(ContactStatus.ONBOARDED)
+    }
+
+    @Transactional
+    fun softDeleteClient(id: Long): Client {
+        println()
+        val client = getClientById(id)
+        client.softDelete = true
+        addClientActivity(client, "Client soft deleted from the system")
+        return clientRepository.save(client)
     }
 }

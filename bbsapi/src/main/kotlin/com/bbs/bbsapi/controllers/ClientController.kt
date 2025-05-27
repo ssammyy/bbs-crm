@@ -5,14 +5,14 @@ import com.bbs.bbsapi.entities.ClientDTO
 import com.bbs.bbsapi.entities.UpdateStageRequest
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.models.Activity
-import com.bbs.bbsapi.repos.ClientRepo
+import com.bbs.bbsapi.repos.ClientRepository
 import com.bbs.bbsapi.services.ClientService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/clients")
-class ClientController(private val clientService: ClientService, private val clientRepo: ClientRepo) {
+class ClientController(private val clientService: ClientService, private val clientRepository: ClientRepository) {
 
     @PostMapping("/register")
     fun createClient(@RequestBody clientDTO: ClientDTO): ResponseEntity<Client> {
@@ -71,6 +71,12 @@ class ClientController(private val clientService: ClientService, private val cli
             ClientStage.valueOf(request.newStage),
             request.message
         )
+        return ResponseEntity.ok(client)
+    }
+
+    @DeleteMapping("/{id}")
+    fun softDeleteClient(@PathVariable id: Long): ResponseEntity<Client> {
+        val client = clientService.softDeleteClient(id)
         return ResponseEntity.ok(client)
     }
 }

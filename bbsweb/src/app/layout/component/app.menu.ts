@@ -23,6 +23,7 @@ export class AppMenu {
     clientId!: number;
     model: MenuItem[] = [];
     userEmail: string = '';
+    userRole!: string;
 
     constructor(private userService: UserGlobalService) {}
 
@@ -172,7 +173,7 @@ export class AppMenu {
                               }
                           ]
                         : []),
-                    ...(this.userService.hasPrivilege(Permissions.VIEW_CLIENT_PROFILE)?[
+                    ...(this.userService.hasPrivilege(Permissions.VIEW_CLIENT_PROFILE) && this.userRole==='CLIENT'?[
                         {
                             label: 'My Profile',
                             icon: 'pi pi-fw pi-user',
@@ -187,9 +188,12 @@ export class AppMenu {
     async getClient(): Promise<void> {
         try {
             const result = await firstValueFrom(this.userService.getClientDetails(this.userEmail));
+            this.userRole = this.userService.getRole();
             this.clientId = result.id;
         } catch (error) {
             console.error('Error fetching client details', error);
         }
     }
+
+
 }

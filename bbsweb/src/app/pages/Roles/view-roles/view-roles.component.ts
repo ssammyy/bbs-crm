@@ -71,16 +71,24 @@ export class ViewRolesComponent implements OnInit {
 
     viewRole(role: Role) {
         this.selectedRole = role;
-        this.selectedPrivileges = [...(role.privileges || [])];
         this.privileges = role.privileges || [];
+        this.selectedPrivileges = this.privileges.map(p => 
+            this.allPrivileges.find(ap => ap.id === p.id) || p
+        );
         this.editMode = false;
         this.visible = true;
     }
 
     toggleEditMode() {
         this.editMode = !this.editMode;
-        if (!this.editMode) {
-            this.selectedPrivileges = [...(this.selectedRole?.privileges || [])];
+        if (this.editMode) {
+            this.selectedPrivileges = this.privileges.map(p => 
+                this.allPrivileges.find(ap => ap.id === p.id) || p
+            );
+        } else {
+            this.selectedPrivileges = this.privileges.map(p => 
+                this.allPrivileges.find(ap => ap.id === p.id) || p
+            );
         }
     }
 
@@ -94,6 +102,9 @@ export class ViewRolesComponent implements OnInit {
                 next: (data) => {
                     this.selectedRole = data;
                     this.privileges = data.privileges || [];
+                    this.selectedPrivileges = this.privileges.map(p => 
+                        this.allPrivileges.find(ap => ap.id === p.id) || p
+                    );
                     this.editMode = false;
                     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Privileges updated' });
                     this.getRoles();
@@ -115,5 +126,35 @@ export class ViewRolesComponent implements OnInit {
                 this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete role' });
             }
         });
+    }
+
+    removePrivilege(privilege: Privilege) {
+        if (this.selectedRole) {
+            const updatedPrivileges = this.privileges.filter(p => p.id !== privilege.id);
+            const updatedRole = {
+                ...this.selectedRole,
+                privilegeIds: updatedPrivileges.map(p => p.id)
+            };
+            
+            this.rolesService.updateRole(this.selectedRole.id, updatedRole).subscribe({
+                next: (data) => {
+                    this.selectedRole = data;
+                    this.privileges = data.privileges || [];
+                    this.messageService.add({ 
+                        severity: 'success', 
+                        summary: 'Success', 
+                        detail: `Privilege ${privilege.name} removed successfully` 
+                    });
+                    this.getRoles();
+                },
+                error: (error) => {
+                    this.messageService.add({ 
+                        severity: 'error', 
+                        summary: 'Error', 
+                        detail: 'Failed to remove privilege' 
+                    });
+                }
+            });
+        }
     }
 }

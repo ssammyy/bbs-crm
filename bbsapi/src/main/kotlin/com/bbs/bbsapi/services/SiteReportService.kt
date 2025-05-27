@@ -3,24 +3,19 @@ package com.bbs.bbsapi.services
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.ReportStatus
 import com.bbs.bbsapi.models.SiteReport
-import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.AuditLog
-import com.bbs.bbsapi.repos.ClientRepo
+import com.bbs.bbsapi.repos.ClientRepository
 import com.bbs.bbsapi.repos.SiteReportRepository
 import com.bbs.bbsapi.repos.AuditLogRepository
-import com.bbs.bbsapi.security.CustomUserDetails
 import org.springframework.stereotype.Service
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
 import java.security.Principal
 
 @Service
 class SiteReportService(
     private val siteReportRepository: SiteReportRepository,
-    private val clientRepository: ClientRepo,
+    private val clientRepository: ClientRepository,
     private val clientService: ClientService,
     private val userService: UserService,
     private val digitalOceanService: DigitalOceanService,

@@ -94,25 +94,96 @@ class DataInitializer(
             "MANAGE_PRELIMINARY",
             "APPROVE_TECHNICAL_WORKS",
             "VIEW_CLIENT_PROFILE",
-            "VIEW_AGENT_DASHBOARD"
+            "VIEW_AGENT_DASHBOARD",
+            "APPROVE_PRELIMINARY",
+            "UPLOAD_BOQ"
         ).map { privilegeRepository.findByName(it).orElseGet { privilegeRepository.save(Privilege(name = it)) } }
             .toSet()
 
         val roles = mapOf(
             "SUPER_ADMIN" to privileges,
-            "SALES_DIRECTOR" to privileges.filter { it.name in listOf("VIEW_REPORTS", "MANAGE_PROJECTS") }.toSet(),
-            "SALES_REP" to privileges.filter {
+            "SALES_DIRECTOR" to privileges.filter {
                 it.name in listOf(
-                    "EDIT_PROFILE",
+                    "MANAGE_RECEIPTS",
+                    "MANAGE_PROJECTS",
+                    "VIEW_RECEIPTS",
+                    "VIEW_INVOICES",
+                    "MANAGE_CLIENT",
+                    "VIEW_MAIN_DASHBOARD",
+                    "VIEW_CLIENT_PROFILE",
+                    "VIEW_REPORTS",
+                    "VIEW_ACTIVITY_FEED",
+                    "MANAGE_CLIENT_DETAILS",
                     "VIEW_CLIENTS",
+                    "VIEW_SALES_DASHBOARD",
+                    "MANAGE_INVOICES",
+                    "VIEW_LEADS",
                     "VIEW_PRELIMINARY",
-                    "CREATE_PRELIMINARY"
+                    "MANAGE_CLIENT_ACTIVITY"
                 )
             }.toSet(),
-            "TECHNICAL_DIRECTOR" to privileges.filter { it.name in listOf("MANAGE_PROJECTS") }.toSet(),
-            "ARCHITECT" to privileges.filter { it.name in listOf("UPLOAD_DOCUMENTS", "VIEW_PRELIMINARY") }.toSet(),
-            "CLIENT" to emptySet<Privilege>(),
-            "AGENT" to privileges.filter { it.name in listOf("VIEW_PROGRESS") }.toSet(),
+            "SALES_REP" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_PRELIMINARY",
+                    "MANAGE_CLIENTS",
+                    "VIEW_MAIN_DASHBOARD",
+                    "CREATE_PRELIMINARY",
+                    "MANAGE_CLIENT_DETAILS",
+                    "VIEW_CLIENTS",
+                    "ONBOARD_CLIENT",
+                    "CREATE_INVOICES",
+                    "MANAGE_INVOICES",
+                    "VIEW_LEADS",
+                    "VIEW_PRELIMINARY",
+                    "EDIT_PROFILE",
+                    "MANAGE_CLIENT_ACTIVITY"
+                )
+            }.toSet(),
+            "TECHNICAL_DIRECTOR" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_PROJECTS",
+                    "MANAGE_PRELIMINARY",
+                    "VIEW_TECHNICAL_WORKS",
+                    "MANAGE_CLIENTS",
+                    "VIEW_MAIN_DASHBOARD",
+                    "VIEW_CLIENT_PROFILE",
+                    "VIEW_ACTIVITY_FEED",
+                    "VIEW_CLIENTS",
+                    "MANAGE_INVOICES",
+                    "APPROVE_TECHNICAL_WORKS",
+                    "VIEW_PRELIMINARY",
+                    "MANAGE_CLIENT_ACTIVITY"
+                )
+            }.toSet(),
+            "ARCHITECT" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_PROJECTS",
+                    "MANAGE_PRELIMINARY",
+                    "VIEW_TECHNICAL_WORKS",
+                    "MANAGE_CLIENTS",
+                    "VIEW_MAIN_DASHBOARD",
+                    "VIEW_CLIENT_PROFILE",
+                    "VIEW_ACTIVITY_FEED",
+                    "VIEW_CLIENTS",
+                    "MANAGE_INVOICES",
+                    "APPROVE_TECHNICAL_WORKS",
+                    "VIEW_PRELIMINARY",
+                    "MANAGE_CLIENT_ACTIVITY"
+                )
+            }.toSet(),
+            "CLIENT" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_RECEIPTS",
+                    "VIEW_CLIENT_DASHBOARD",
+                    "MANAGE_CLIENT_DETAILS",
+                    "VIEW_INVOICES",
+                    "VIEW_CLIENT_PROFILE",
+                    "MANAGE_INVOICES",
+                    "VIEW_ACTIVITY_FEED",
+                    "MANAGE_CLIENT_ACTIVITY"
+                ).toSet()
+            },
+            "AGENT" to privileges.filter { it.name in listOf("MANAGE_RECEIPTS", "VIEW_PROGRESS", "CREATE_INVOICES", "VIEW_AGENT_DASHBOARD") }.toSet(),
         )
 
         roles.forEach { (roleName, rolePrivileges) ->

@@ -4,7 +4,7 @@ import com.bbs.bbsapi.enums.FileType
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.models.Preliminary
-import com.bbs.bbsapi.repos.ClientRepo
+import com.bbs.bbsapi.repos.ClientRepository
 import com.bbs.bbsapi.repos.FileRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -33,7 +33,7 @@ class DigitalOceanService(
     private val fileMetadataRepository: FileRepository,
     private val fileRepository: FileRepository,
     private val clientService: ClientService,
-    private val clientRepo: ClientRepo
+    private val clientRepository: ClientRepository
 ) {
     private val logger = LoggerFactory.getLogger(DigitalOceanService::class.java)
 

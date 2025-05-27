@@ -48,5 +48,7 @@ export class ClientDetailsService {
         return this.http.post<Client>(`${this.apiUrl}/api/clients/${clientId}/update-stage`, { currentStage, newStage, message });
     }
 
-
+    deleteClient(id: number): Observable<Client> {
+        return this.http.delete<Client>(`${this.apiUrl}/api/clients/${id}`);
+    }
 }

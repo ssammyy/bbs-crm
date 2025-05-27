@@ -14,14 +14,14 @@ import java.time.YearMonth
 
 @Service
 class DashboardService(
-    private val clientRepository: ClientRepo,
+    private val clientRepository: ClientRepository,
     private val invoiceRepository: InvoiceRepository,
     private val activityRepository: ActivityRepository,
     private val fileMetadataRepository: FileRepository,
     private val clientCommitmentRepository: ClientCommitmentRepository,
     private val userService: UserService,
     private val userRepository: UserRepository,
-    private val clientRepo: ClientRepo,
+    private val clientRepo: ClientRepository,
     private val clientService: ClientService,
     private val roleRepository: RoleRepository
 ) {
@@ -48,7 +48,7 @@ class DashboardService(
         val isClient = authentication.authorities.any { it.authority == "VIEW_CLIENT_PROFILE" }
 
         val clientUserName = if (isClient) authentication.name else null
-        val clientId = clientUserName?.let { clientRepository.findByEmail(it)?.id }
+        val clientId = clientUserName?.let { clientRepository.findByEmailAndSoftDeleteFalse(it)?.id }
 
         if (isClient && clientId != null) {
             log.info("getting dashboard stats for clientId=$clientId")
@@ -57,7 +57,7 @@ class DashboardService(
 
         // Admin Dashboard Logic
         val clientStageDistribution = ClientStage.values().associateWith { stage ->
-            clientRepository.countByClientStage(stage)
+            clientRepository.countByClientStageAndSoftDeleteFalse(stage)
         }.mapKeys { it.key.name }
 
         val rawSourceCounts = clientRepository.countByClientSource()
@@ -142,7 +142,7 @@ class DashboardService(
             val yearMonth = YearMonth.now().minusMonths(i.toLong())
             val start = yearMonth.atDay(1).atStartOfDay()
             val end = yearMonth.atEndOfMonth().atTime(23, 59, 59)
-            val count = clientRepository.countByCreatedOnBetween(start, end)
+            val count = clientRepository.countByCreatedOnBetweenAndSoftDeleteFalse(start, end)
             TimeSeriesDataDTO(
                 period = yearMonth.toString(),
                 value = count.toDouble()
@@ -168,12 +168,13 @@ class DashboardService(
             totalSystemUsers = totalSystemUsers,
             superAdmins = superAdmins,
             revenueOverTime = revenueOverTime,
-            clientsOverTime = clientsOverTime
+            clientsOverTime = clientsOverTime,
+            totalActiveClients = clientService.getOnBoardedClients().count().toLong()
         )
     }
 
     private fun getAgentDashboardStats(agentId: Long): AgentDTO {
-        val clients = clientRepository.findByAgentId(agentId)
+        val clients = clientRepository.findByAgentIdAndSoftDeleteFalse(agentId)
         val noOfClients = clients.count()
         val clientIdList = clients.map { it.id }
         val clientInvoices = invoiceRepository.findByClientIdIn(clientIdList)
@@ -278,7 +279,8 @@ class DashboardService(
                 totalSystemUsers = 0,
                 superAdmins = emptyList(),
                 revenueOverTime = emptyList(),
-                clientsOverTime = emptyList()
+                clientsOverTime = emptyList(),
+                totalActiveClients = 0
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -301,7 +303,8 @@ data class DashboardDTO(
     val totalSystemUsers: Long,
     val superAdmins: List<SuperAdminDTO>,
     val revenueOverTime: List<TimeSeriesDataDTO>,
-    val clientsOverTime: List<TimeSeriesDataDTO>
+    val clientsOverTime: List<TimeSeriesDataDTO>,
+    val totalActiveClients: Long,
 )
 
 data class AgentDTO(
