@@ -502,10 +502,10 @@
     </div>
 </div>
 
-<div *ngIf="(loading && !hasPrivilege(Permissions.VIEW_AGENT_DASHBOARD)) || (agentLoading && hasPrivilege(Permissions.VIEW_AGENT_DASHBOARD))"
-     class="fixed inset-0 bg-gray-300 dark:bg-black bg-opacity-50 dark:bg-opacity-60 z-50 flex items-center justify-center backdrop-blur-sm">
-    <p-progressSpinner ariaLabel="Loading Data" styleClass="w-10 h-10 md:w-12 md:h-12" strokeWidth="3" animationDuration=".8s"></p-progressSpinner>
-</div>
+<!--<div *ngIf="(loading && !hasPrivilege(Permissions.VIEW_AGENT_DASHBOARD)) || (agentLoading && hasPrivilege(Permissions.VIEW_AGENT_DASHBOARD))"-->
+<!--     class="fixed inset-0 bg-gray-300 dark:bg-black bg-opacity-50 dark:bg-opacity-60 z-50 flex items-center justify-center backdrop-blur-sm">-->
+<!--    <p-progressSpinner ariaLabel="Loading Data" styleClass="w-10 h-10 md:w-12 md:h-12" strokeWidth="3" animationDuration=".8s"></p-progressSpinner>-->
+<!--</div>-->
 
 <ngx-spinner
     bdColor="rgba(0, 0, 0, 0.88)"
@@ -524,5 +524,5 @@
     type="ball-pulse-sync"
     [fullScreen]="true"
     [name]="'agentSpinner'">
-    <p style="color: #E0E0E0; font-size: 1rem; margin-top: 8px; text-shadow: 0 0 3px black;">Loading Agent Data...</p>
+    <p style="color: #E0E0E0; font-size: 1rem; margin-top: 8px; text-shadow: 0 0 3px black;">Loading Data...</p>
 </ngx-spinner>

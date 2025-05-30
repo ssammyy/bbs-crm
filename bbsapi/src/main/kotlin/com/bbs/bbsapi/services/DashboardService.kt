@@ -217,7 +217,7 @@ class DashboardService(
             invoiceStats = invoiceStats,
             recentActivities = recentActivities,
             revenueOverTime = revenueOverTime,
-            commissionPercentage = commissionPercentage!!
+            commissionPercentage = commissionPercentage ?: 0L
         )
     }
 

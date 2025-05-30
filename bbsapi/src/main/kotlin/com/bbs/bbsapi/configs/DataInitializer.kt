@@ -150,7 +150,6 @@ class DataInitializer(
                     "VIEW_ACTIVITY_FEED",
                     "VIEW_CLIENTS",
                     "MANAGE_INVOICES",
-                    "APPROVE_TECHNICAL_WORKS",
                     "VIEW_PRELIMINARY",
                     "MANAGE_CLIENT_ACTIVITY"
                 )
@@ -183,7 +182,38 @@ class DataInitializer(
                     "MANAGE_CLIENT_ACTIVITY"
                 ).toSet()
             },
-            "AGENT" to privileges.filter { it.name in listOf("MANAGE_RECEIPTS", "VIEW_PROGRESS", "CREATE_INVOICES", "VIEW_AGENT_DASHBOARD") }.toSet(),
+            "AGENT" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_RECEIPTS",
+                    "VIEW_PROGRESS",
+                    "CREATE_INVOICES",
+                    "VIEW_AGENT_DASHBOARD"
+                )
+            }.toSet(),
+            "QUALITY_SURVEYOR" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_RECEIPTS",
+                    "VIEW_PROGRESS",
+                    "CREATE_INVOICES",
+                    "VIEW_AGENT_DASHBOARD"
+                )
+            }.toSet(),
+            "MANAGING_DIRECTOR" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_PROJECTS",
+                    "MANAGE_PRELIMINARY",
+                    "VIEW_TECHNICAL_WORKS",
+                    "MANAGE_CLIENTS",
+                    "VIEW_MAIN_DASHBOARD",
+                    "VIEW_CLIENT_PROFILE",
+                    "VIEW_ACTIVITY_FEED",
+                    "VIEW_CLIENTS",
+                    "MANAGE_INVOICES",
+                    "APPROVE_TECHNICAL_WORKS",
+                    "VIEW_PRELIMINARY",
+                    "MANAGE_CLIENT_ACTIVITY"
+                )
+            }
         )
 
         roles.forEach { (roleName, rolePrivileges) ->
