@@ -179,7 +179,14 @@ export class AppMenu {
                             icon: 'pi pi-fw pi-user',
                             routerLink: [`pages/profile/${this.clientId}`]
                         }
-                    ]:[])
+                    ]:[]),
+                    ...(this.userService.hasPrivilege(Permissions.MANAGE_LICENCES)?[
+                        {
+                            label: 'Licences',
+                            icon: 'pi pi-fw pi-id-card',
+                            routerLink: ['pages/licences']
+                        }
+                    ]:[]),
                 ]
             }
         ];

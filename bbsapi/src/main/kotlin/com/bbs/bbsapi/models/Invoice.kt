@@ -25,6 +25,8 @@ data class Invoice(
 
     @Column(nullable = false)
     val clientName: String = "",
+    @Column(nullable = false)
+    var governmentApprovalType: String = "",
 
     @Column(nullable = false)
     val clientPhone: String = "",

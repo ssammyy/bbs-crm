@@ -17,18 +17,72 @@ import { Chip } from 'primeng/chip';
 import { Panel } from 'primeng/panel';
 import { Dialog } from 'primeng/dialog';
 import { FileUpload } from 'primeng/fileupload';
-import { UploadService } from '../service/upload.service';
+import { UploadService, LicenseFile } from '../service/upload.service';
 import { AccordionModule } from 'primeng/accordion';
 import { Router } from '@angular/router';
 import { UserGlobalService } from '../service/user.service';
 import { Checkbox } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Permissions } from '../data/permissions.enum';
+import { KYC_DOCUMENTS, KycDocument } from '../site-report-form/kyc-documents';
+import { ClientDetailsService } from '../client/client.service';
+import { switchMap } from 'rxjs/operators';
+import { UserService } from '../users/user.service';
+import { User } from '../service/user.service';
+import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { FileUploadModule } from 'primeng/fileupload';
+import { ChipModule } from 'primeng/chip';
+import { DividerModule } from 'primeng/divider';
+import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
+import { DialogModule } from 'primeng/dialog';
+import { PanelModule } from 'primeng/panel';
+import { ToastModule } from 'primeng/toast';
+import { NgxSpinnerModule } from 'ngx-spinner';
+import { TooltipModule } from 'primeng/tooltip';
+import { NonKycDocumentPipe } from '../site-report-form/non-kyc-document.pipe';
 
 @Component({
     selector: 'app-preliminary-management',
     templateUrl: './preliminaries-management.component.html',
-    imports: [Toast, ConfirmDialogModule, Message, DropdownModule, FormsModule, NgIf, Button, InputText, AccordionModule, Textarea, Chip, NgForOf, Panel, Dialog, FileUpload, ButtonDirective, NgClass, Checkbox],
+    styleUrls: ['./preliminaries-management.component.scss'],
+    imports: [
+        Toast,
+        ConfirmDialogModule,
+        Message,
+        DropdownModule,
+        FormsModule,
+        NgIf,
+        Button,
+        InputText,
+        AccordionModule,
+        Textarea,
+        Chip,
+        NgForOf,
+        Panel,
+        Dialog,
+        FileUpload,
+        ButtonDirective,
+        NgClass,
+        Checkbox,
+        CommonModule,
+        ButtonModule,
+        CardModule,
+        FileUploadModule,
+        ChipModule,
+        DividerModule,
+        MessagesModule,
+        MessageModule,
+        DialogModule,
+        PanelModule,
+        ToastModule,
+        ConfirmDialogModule,
+        NgxSpinnerModule,
+        TooltipModule,
+        NonKycDocumentPipe
+    ],
     providers: [MessageService, ConfirmationService]
 })
 export class PreliminaryManagementComponent implements OnInit, OnChanges {
@@ -49,10 +103,20 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
     modalPreliminary: any | null = null;
     displayDialog = false;
     clientFiles: Files[] = [];
+    clientKycFiles: Files[] = [];
     userRole!: string;
     displayRejectDialog: boolean = false;
     rejectRemarks: string = '';
     rejectApprovalStage: string = '';
+
+    kycDocuments: KycDocument[] = KYC_DOCUMENTS;
+    selectedDocument: Files | null = null;
+
+    selectedEngineer: User | null = null;
+    selectedArchitect: User | null = null;
+    selectedLicense: LicenseFile | null = null;
+    licenseFiles: LicenseFile[] = [];
+    users: User[] = [];
 
     constructor(
         private http: HttpClient,
@@ -62,13 +126,20 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
         private uploadService: UploadService,
         private router: Router,
         private userGlobalService: UserGlobalService,
-        private confirmationService: ConfirmationService
+        private confirmationService: ConfirmationService,
+        private clientService: ClientDetailsService,
+        private userService: UserService
     ) {}
 
     ngOnInit() {
         this.loadPreliminaryTypes();
         this.loadPreliminaries();
         this.getUserDetails();
+        if (this.client) {
+            this.getClientFiles(this.client.id);
+        }
+        this.loadLicenseFiles();
+        this.loadUsers();
     }
     ngOnChanges(changes: SimpleChanges): void {
         console.log('reloading changes ');
@@ -79,18 +150,17 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
 
     loadPreliminaryTypes(): void {
         this.preliminaryService.getPreliminaryTypes().subscribe({
-            next: response => {
+            next: (response) => {
                 this.preliminaryTypes = response;
             },
-            error: error => {
+            error: (error) => {
                 console.log(error);
                 this.messageService.add({
                     severity: 'error',
-                    summary: error.error.details,
-                })
-
+                    summary: error.error.details
+                });
             }
-        })
+        });
     }
 
     toggleAddPreliminaryForm(): void {
@@ -111,7 +181,7 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
         }
     }
     hasPrivileges(privilege: string): boolean {
-        return this.userGlobalService.hasPrivilege(privilege)
+        return this.userGlobalService.hasPrivilege(privilege);
     }
 
     initiateActivity(): void {
@@ -123,9 +193,10 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
                 status: 'INITIATED',
                 invoiced: false,
                 invoiceClearedFlag: false,
-                rejectionRemarks: ""
+                rejectionRemarks: '',
+                clientInvoicedForApproval: false
             };
-            console.log("selectedPreliminaryType>>>>> ", this.selectedPreliminaryType);
+            console.log('selectedPreliminaryType>>>>> ', this.selectedPreliminaryType);
 
             this.preliminaryService.initiatePreliminary(this.selectedPreliminaryType, this.client.id).subscribe({
                 next: (resp) => {
@@ -135,11 +206,11 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
                     this.messagesService.showSuccess('Preliminary added successfully.');
                 },
                 error: (err) => {
-                    console.log('errror prelims >>>',  err.error.details );
+                    console.log('errror prelims >>>', err.error.details);
                     this.loading = false;
                     this.messageService.add({
                         severity: 'warn',
-                        summary: err.error.details,
+                        summary: err.error.details
                     });
                 },
                 complete: () => {}
@@ -156,8 +227,8 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
                 console.log(err);
                 this.messageService.add({
                     severity: 'error',
-                    summary: err.error.details,
-                })
+                    summary: err.error.details
+                });
             }
         });
     }
@@ -192,6 +263,7 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
     getUserDetails() {
         this.userGlobalService.getDetails().subscribe({
             next: (response) => {
+                console.log('role>>>>>>>++ ', response?.role?.name);
                 this.userRole = response?.role?.name;
             }
         });
@@ -213,7 +285,7 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
 
     uploadDocument(preliminary: Preliminary) {
         if (!this.uploadedFile) return;
-        this.uploadService.upload(this.client.id, 'PRELIMINARY', this.uploadedFile, preliminary.id).subscribe({
+        this.uploadService.upload('PRELIMINARY', this.uploadedFile, this.client.id, preliminary.id).subscribe({
             next: (resp) => {
                 this.messageService.add({ severity: 'success', summary: 'Document Uploaded successfully.' });
             },
@@ -254,11 +326,37 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
     }
 
     acceptTechnicalWorks(type: string): void {
-        this.loading = true;
+        if (type === 'SUBMITTED_TO_COUNTY') {
+            this.confirmationService.confirm({
+                message: 'Please confirm that all required documents are available and ready for submission to the county.',
+                header: 'Confirm Document Availability',
+                icon: 'pi pi-exclamation-triangle',
+                acceptLabel: 'Yes, Documents Submitted',
+                rejectLabel: 'No, Cancel',
+                accept: () => {
+                    this.loading = true;
+                    this.preliminaryService.approveTechnicalWorks(this.modalPreliminary, type).subscribe({
+                        next: () => {
+                            this.loading = false;
+                            this.displayDialog = false;
+                            this.loadPreliminaries();
+                            this.messagesService.showSuccess('Documents submitted to county successfully.');
+                        },
+                        error: (err) => {
+                            this.loading = false;
+                            this.messageService.add({ severity: 'error', summary: err.message || 'An error occurred' });
+                        }
+                    });
+                }
+            });
+            return;
+        }
+
         if (type === 'MANAGING_DIRECTOR' && !this.modalPreliminary.invoiceClearedFlag) {
             this.confirm();
             return;
         }
+
         this.preliminaryService.approveTechnicalWorks(this.modalPreliminary, type).subscribe({
             next: () => {
                 this.loading = false;
@@ -314,7 +412,7 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
                 size: 'small'
             },
             accept: () => {
-                this.preliminaryService.approveTechnicalWorks(this.modalPreliminary, "MANAGING_DIRECTOR").subscribe({
+                this.preliminaryService.approveTechnicalWorks(this.modalPreliminary, 'MANAGING_DIRECTOR').subscribe({
                     next: () => {
                         this.loading = false;
                         this.displayDialog = false;
@@ -351,7 +449,6 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
             });
         }
     }
-
     navigateToInvoiceForm(): void {
         this.router.navigate(['/app/pages/create-invoice'], {
             state: {
@@ -364,6 +461,197 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
             }
         });
         this.displayDialog = false;
+    }
+
+    navigateToInvoiceFormCountyApproval(prelimType: string): void {
+        // Find the county invoice file
+        console.log('county prelim type ', prelimType);
+        this.router.navigate(['/app/pages/create-invoice'], {
+            state: {
+                client: this.client,
+                invoiceType: 'COUNTY_INVOICE',
+                countyApprovalType: prelimType
+            }
+        });
+    }
+
+    getClientFiles(clientId: number): void {
+        this.clientService.getClientFiles(clientId).subscribe({
+            next: (files: Files[]) => {
+                this.clientKycFiles = files;
+            },
+            error: (error) => {
+                console.error('Error fetching files:', error);
+            }
+        });
+    }
+
+    onKycFileSelect(event: any, fileType: string): void {
+        const file: File = event.files[0];
+        this.uploadedFile = file;
+        this.selectedDocument = { fileType, fileName: file.name, fileUrl: '' }; // Temporary object to track selection
+    }
+
+    onUpload(fileType: string) {
+        this.loading = true;
+        if (!this.uploadedFile) {
+            this.messagesService.showError('No file selected for upload.');
+            this.loading = false;
+            return;
+        }
+        this.uploadService
+            .upload(fileType, this.uploadedFile, this.client.id, this.modalPreliminary.id)
+            .pipe(
+                switchMap(() => {
+                    this.loading = false;
+                    this.loadPreliminaries();
+                    if (fileType=="COUNTY_INVOICE") {
+                        this.displayDialog = false;
+                    }
+                    this.messagesService.showSuccess('Invoices uploaded successfully.');
+                    // Reset selection
+                    this.uploadedFile = null;
+                    this.selectedDocument = null;
+                    return this.clientService.getClientFiles(this.client.id);
+                })
+            )
+            .subscribe({
+                next: (files: Files[]) => {
+                    this.clientKycFiles = files;
+                },
+                error: (err) => {
+                    this.loading = false;
+                    console.error('Something went wrong:', err);
+                    this.messagesService.showError('Error uploading document.');
+                }
+            });
+    }
+
+    isKycDocumentUploaded(fileType: string): boolean {
+        return this.clientKycFiles.some((file) => file.fileType === fileType);
+    }
+
+    areAllKycDocumentsUploaded(): boolean {
+        return this.kycDocuments.every((doc) => this.isKycDocumentUploaded(doc.fileType));
+    }
+
+    viewDocument(fileType: string) {
+        const doc = this.clientKycFiles.find((f) => f.fileType === fileType);
+        if (doc) {
+            window.open(doc.fileUrl, '_blank');
+        } else {
+            this.messagesService.showError('Document not found.');
+        }
+    }
+
+    loadLicenseFiles() {
+        this.uploadService.getLicenseFiles().subscribe({
+            next: (files: LicenseFile[]) => {
+                this.licenseFiles = files;
+            },
+            error: (error) => {
+                console.error('Error loading license files:', error);
+                this.messagesService.showError('Error loading license files');
+            }
+        });
+    }
+
+    getFilteredUsers(role: string): User[] {
+        return this.users.filter((user) => user.role.name === role);
+    }
+
+    onLicenseFileSelect(event: any, fileType: string): void {
+        const file: File = event.files[0];
+        this.uploadedFile = file;
+        this.selectedLicense = {
+            id: 0,
+            fileType,
+            fileName: file.name,
+            fileUrl: '',
+            version: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+    }
+
+    onLicenseUpload(fileType: string) {
+        if (!this.uploadedFile) {
+            return;
+        }
+
+        this.loading = true;
+        let userId: number | undefined;
+
+        if (fileType === 'STRUCTURAL_ENGINEER_LICENSE' && this.selectedEngineer) {
+            userId = this.selectedEngineer.id;
+        } else if (fileType === 'ARCHITECT_LICENSE' && this.selectedArchitect) {
+            userId = this.selectedArchitect.id;
+        }
+
+        this.uploadService.upload(fileType, this.uploadedFile, this.clientId, undefined, userId).subscribe({
+            next: (response: any) => {
+                this.loading = false;
+                this.uploadedFile = null;
+                this.selectedLicense = null;
+                this.loadLicenseFiles();
+                this.messagesService.showSuccess('License uploaded successfully');
+            },
+            error: (error: Error) => {
+                this.loading = false;
+                this.messagesService.showError('Failed to upload license');
+            }
+        });
+    }
+
+    isLicenseUploaded(fileType: string, userId?: number): boolean {
+        if (fileType === 'NCA_CONTRACTOR_LICENSE') {
+            return this.licenseFiles.some((doc) => doc.fileType === fileType);
+        }
+        return this.licenseFiles.some((doc) => doc.fileType === fileType && doc.userId === userId);
+    }
+
+    viewLicense(fileType: string, userId?: number) {
+        if (fileType === 'NCA_CONTRACTOR_LICENSE') {
+            const ncaDoc = this.licenseFiles.find((doc) => doc.fileType === fileType);
+            if (ncaDoc) {
+                window.open(ncaDoc.fileUrl, '_blank');
+            }
+        } else {
+            const doc = this.licenseFiles.find((doc) => doc.fileType === fileType && doc.userId === userId);
+            if (doc) {
+                window.open(doc.fileUrl, '_blank');
+            }
+        }
+    }
+
+    isAtLeastOneLicenseUploaded(): boolean {
+        return (
+            this.isLicenseUploaded('NCA_CONTRACTOR_LICENSE') ||
+            (this.selectedEngineer !== null && this.isLicenseUploaded('STRUCTURAL_ENGINEER_LICENSE', this.selectedEngineer.id)) ||
+            (this.selectedArchitect !== null && this.isLicenseUploaded('ARCHITECT_LICENSE', this.selectedArchitect.id))
+        );
+    }
+
+    loadUsers() {
+        this.userService.getUsers().subscribe({
+            next: (users: User[]) => {
+                this.users = users;
+            },
+            error: (error: Error) => {
+                console.error('Error loading users:', error);
+                this.messagesService.showError('Error loading users');
+            }
+        });
+    }
+
+    isCountyInvoiceUploaded(): boolean {
+        return this.modalPreliminary?.files?.some((file: Files) => file.fileType === 'COUNTY_INVOICE') ?? false;
+    }
+
+    onCountyInvoiceSelect(event: any): void {
+        const file: File = event.files[0];
+        this.uploadedFile = file;
+        this.selectedDocument = { fileType: 'COUNTY_INVOICE', fileName: file.name, fileUrl: '' };
     }
 
     protected readonly Permissions = Permissions;

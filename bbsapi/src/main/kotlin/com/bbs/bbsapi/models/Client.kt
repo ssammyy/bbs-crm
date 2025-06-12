@@ -82,7 +82,7 @@ data class Client(
     @Column(nullable = false)
     var contactStatus: ContactStatus = ContactStatus.LEAD,
 
-    @OneToOne(mappedBy = "client")
+    @OneToOne(mappedBy = "client", fetch = FetchType.LAZY)
     @JsonBackReference
     val siteReport: SiteReport? = null,
 

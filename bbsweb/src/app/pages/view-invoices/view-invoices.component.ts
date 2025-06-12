@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, SimpleChanges, OnChanges, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { DataViewModule } from 'primeng/dataview';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -186,16 +186,13 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
 
         // Filter out unapproved invoices for clients
         if (this.isClientRole) {
-            result = result.filter(invoice => invoice.directorApproved);
+            result = result.filter((invoice) => invoice.directorApproved);
         }
 
         // Apply search filter
         if (this.searchTerm.trim()) {
             const term = this.searchTerm.toLowerCase();
-            result = result.filter((invoice) =>
-                invoice.invoiceNumber.toLowerCase().includes(term) ||
-                invoice.preliminary?.preliminaryType.name.toLowerCase().includes(term)
-            );
+            result = result.filter((invoice) => invoice.invoiceNumber.toLowerCase().includes(term) || invoice.preliminary?.preliminaryType.name.toLowerCase().includes(term));
         }
 
         // Apply sort
@@ -280,9 +277,8 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
         this.calculateBalance();
         this.displayReceiptDialog = true;
     }
-
-    viewInvoicePdf(type: string): void {
-        this.invoiceService.getInvoicePdfNew(this.client.id, type).subscribe({
+    viewInvoicePdf(type: string, invoiceApprovalType?: string): void {
+        this.invoiceService.getInvoicePdfNew(this.client.id, type, type === 'COUNTY_INVOICE' ? invoiceApprovalType : undefined).subscribe({
             next: (result: Blob) => {
                 const blob = new Blob([result], { type: 'application/pdf' });
                 const pdfUrl = window.URL.createObjectURL(blob);
@@ -300,6 +296,7 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
             }
         });
     }
+
 
     viewInvoicePdfById(invoiceId: number): void {
         this.invoiceService.getInvoicePdfById(invoiceId).subscribe({
@@ -322,6 +319,7 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
     }
 
     viewPreliminaryInvoice(preliminaryId: number | undefined): void {
+        console.log('inaingia hapa preliminary id ', preliminaryId);
         if (!preliminaryId) return;
         this.invoiceService.getPreliminaryInvoicePdf(this.client.id, preliminaryId).subscribe({
             next: (result: Blob) => {
@@ -346,19 +344,36 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
 
     approveInvoice(invoice: Invoice): void {
         this.loading = true;
-        this.invoiceService.approvePreliminaryInvoice(this.client.id, invoice.preliminary?.id).subscribe({
-            next: (result) => {
-                if (result) {
+
+        if (invoice.invoiceType == InvoiceType.COUNTY_INVOICE.toString()) {
+            console.log('Invoice Type is in COUNTY_INVOICE ', { invoice });
+            this.invoiceService.approveCountyInvoice(this.client.id, invoice.governmentApprovalType!!).subscribe({
+                next: (result: any) => {
                     this.loading = false;
                     this.messagesService.showSuccess('Invoice approved successfully.');
                     this.loadInvoices();
+                },
+                error: (error: any) => {
+                    this.loading = false;
+                    this.messagesService.showError('Failed to approve invoice. Please try again later.');
+
                 }
-            },
-            error: (error) => {
-                this.loading = false;
-                this.messagesService.showError('Failed to approve invoice. Please try again later.');
-            }
-        });
+            });
+        } else {
+            this.invoiceService.approvePreliminaryInvoice(this.client.id, invoice.preliminary?.id).subscribe({
+                next: (result) => {
+                    if (result) {
+                        this.loading = false;
+                        this.messagesService.showSuccess('Invoice approved successfully.');
+                        this.loadInvoices();
+                    }
+                },
+                error: (error) => {
+                    this.loading = false;
+                    this.messagesService.showError('Failed to approve invoice. Please try again later.');
+                }
+            });
+        }
     }
 
     hasBalanceInvoices(invoice: Invoice): boolean | undefined {

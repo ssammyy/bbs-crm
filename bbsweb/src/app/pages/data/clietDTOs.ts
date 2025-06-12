@@ -65,6 +65,7 @@ export interface Invoice {
     rejectionRemarks?: string;
     cleared: boolean;
     preliminary?: Preliminary;
+    governmentApprovalType?: string;
 }
 
 export interface InvoiceItem {
@@ -106,6 +107,7 @@ export interface Preliminary {
     preliminaryType: PreliminaryType;
     status: string;
     invoiced: boolean;
+    clientInvoicedForApproval: boolean;
     invoiceClearedFlag: boolean;
     rejectionRemarks: string;
 

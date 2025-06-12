@@ -4,20 +4,14 @@ import com.bbs.bbsapi.entities.PrivilegeDTO
 import com.bbs.bbsapi.entities.RoleDTO
 import com.bbs.bbsapi.entities.UserDTO
 import com.bbs.bbsapi.entities.UserRegeDTO
-import com.bbs.bbsapi.models.Role
-import com.bbs.bbsapi.models.User
-import com.bbs.bbsapi.models.VerificationToken
-import com.bbs.bbsapi.repos.RoleRepository
-import com.bbs.bbsapi.repos.TokenRepository
-import com.bbs.bbsapi.repos.UserRepository
+import com.bbs.bbsapi.models.*
+import com.bbs.bbsapi.repositories.*
 import com.bbs.bbsapi.security.CustomUserDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.security.authentication.BadCredentialsException
+import org.slf4j.LoggerFactory
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -30,17 +24,41 @@ class UserService(
     private val passwordEncoder: PasswordEncoder,
     private val roleRepository: RoleRepository,
     private val tokenRepository: TokenRepository,
-    private val emailService: EmailService
+    private val emailService: EmailService,
+    private val pendingAgentApprovalRepository: PendingAgentApprovalRepository
 ) {
+    val logger = LoggerFactory.getLogger(UserService::class.java)
+
     @Transactional
-    fun registerUser(userDTO: UserRegeDTO): User {
+    fun registerUser(userDTO: UserRegeDTO): Any {
         try {
-            val role: Role? = roleRepository.findById(userDTO.roleId).orElse(null)
+            logger.info("Registering user: of role id:  ${userDTO.roleId}")
+            val role = roleRepository.findById(userDTO.roleId).orElseThrow { IllegalArgumentException("Role could not be found") }
+        logger.info("Registering user ${userDTO.username} to ${role?.name}")
+            // Check if this is an agent registration
+            if (role?.name == "AGENT") {
+                // Create pending approval
+                val pendingApproval = PendingAgentApproval(
+                    username = userDTO.username,
+                    email = userDTO.email,
+                    phonenumber = userDTO.phoneNumber,
+                    paymentMethod = userDTO.paymentMethod,
+                    bankName = userDTO.bankName,
+                    bankAccountNumber = userDTO.bankAccountNumber,
+                    bankBranch = userDTO.bankBranch,
+                    bankAccountHolderName = userDTO.bankAccountHolderName,
+                    role = role,
+                    commissionPercentage = userDTO.percentage
+                )
+                return pendingAgentApprovalRepository.save(pendingApproval)
+            }
+
+            // For non-agent users, proceed with normal registration
             val user = User(
                 username = userDTO.username,
                 email = userDTO.email,
                 password = passwordEncoder.encode("password"),
-                phonenumber = userDTO.phonenumber,
+                phonenumber = userDTO.phoneNumber,
                 paymentMethod = userDTO.paymentMethod,
                 bankName = userDTO.bankName,
                 bankAccountNumber = userDTO.bankAccountNumber,
@@ -53,8 +71,67 @@ class UserService(
             generateRegisterToken(savedUser)
             return savedUser
         } catch (e: Exception) {
-            throw Exception("Error registering user", e)
+            throw Exception( e.message )
         }
+    }
+
+    @Transactional
+    fun approveAgent(approvalId: Long): User {
+        val approval = pendingAgentApprovalRepository.findById(approvalId)
+            .orElseThrow { IllegalArgumentException("Pending approval not found") }
+
+        if (approval.status != ApprovalStatus.PENDING) {
+            throw IllegalStateException("This approval has already been processed")
+        }
+
+        // Create the actual user
+        val user = User(
+            username = approval.username!!,
+            email = approval.email!!,
+            password = passwordEncoder.encode("password"),
+            phonenumber = approval.phonenumber!!,
+            paymentMethod = approval.paymentMethod,
+            bankName = approval.bankName,
+            bankAccountNumber = approval.bankAccountNumber,
+            bankBranch = approval.bankBranch,
+            bankAccountHolderName = approval.bankAccountHolderName,
+            role = approval.role,
+            commissionPercentage = approval.commissionPercentage,
+            nextOfKinIdNumber = approval.nextOfKinIdNumber,
+            nextOfKinName = approval.nextOfKinName,
+            nextOfKinPhoneNumber = approval.nextOfKinPhoneNumber
+        )
+
+        val savedUser = userRepository.save(user)
+        generateRegisterToken(savedUser)
+
+        // Update approval status
+        approval.status = ApprovalStatus.APPROVED
+        approval.approvedAt = LocalDateTime.now()
+        approval.approvedBy = getLoggedInUser().username
+        pendingAgentApprovalRepository.save(approval)
+
+        return savedUser
+    }
+
+    @Transactional
+    fun rejectAgent(approvalId: Long, reason: String) {
+        val approval = pendingAgentApprovalRepository.findById(approvalId)
+            .orElseThrow { IllegalArgumentException("Pending approval not found") }
+
+        if (approval.status != ApprovalStatus.PENDING) {
+            throw IllegalStateException("This approval has already been processed")
+        }
+
+        approval.status = ApprovalStatus.REJECTED
+        approval.rejectionReason = reason
+        approval.approvedAt = LocalDateTime.now()
+        approval.approvedBy = getLoggedInUser().username
+        pendingAgentApprovalRepository.save(approval)
+    }
+
+    fun getPendingAgentApprovals(): List<PendingAgentApproval> {
+        return pendingAgentApprovalRepository.findByStatus(ApprovalStatus.PENDING)
     }
 
     fun findByUsername(username: String): User? {
@@ -150,7 +227,7 @@ class UserService(
 
         // Send email
         CoroutineScope(Dispatchers.IO).launch {
-            emailService.sendConfirmationEmail(savedUser.email, token)
+            emailService.sendConfirmationEmail(savedUser.email, token, savedUser)
         }
     }
 

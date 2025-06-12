@@ -2,10 +2,9 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.entities.SetPasswordRequest
 import com.bbs.bbsapi.entities.UserRegeDTO
-import com.bbs.bbsapi.models.User
 import com.bbs.bbsapi.models.VerificationToken
-import com.bbs.bbsapi.repos.TokenRepository
-import com.bbs.bbsapi.repos.UserRepository
+import com.bbs.bbsapi.repositories.TokenRepository
+import com.bbs.bbsapi.repositories.UserRepository
 import com.bbs.bbsapi.security.JwtUtil
 import com.bbs.bbsapi.services.EmailService
 import com.bbs.bbsapi.services.UserService

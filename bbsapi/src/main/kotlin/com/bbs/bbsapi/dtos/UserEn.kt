@@ -36,7 +36,7 @@ data class UserDTO(
 data class UserRegeDTO(
     val username: String,
     val email: String,
-    val phonenumber: String,
+    val phoneNumber: String,
     val paymentMethod: String? = null,
     val bankName: String? = null,
     val bankAccountNumber: String? = null,

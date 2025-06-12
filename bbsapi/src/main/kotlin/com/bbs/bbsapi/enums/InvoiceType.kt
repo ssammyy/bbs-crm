@@ -7,4 +7,5 @@ enum class InvoiceType {
     BOQ,
     OPEN,
     PRELIMINARY,
+    COUNTY_INVOICE
 }

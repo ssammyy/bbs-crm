@@ -4,7 +4,7 @@ import com.bbs.bbsapi.entities.PortfolioItemDTO
 import com.bbs.bbsapi.entities.PortfolioItemResponseDTO
 import com.bbs.bbsapi.models.PortfolioFileType
 import com.bbs.bbsapi.models.PortfolioItem
-import com.bbs.bbsapi.repos.PortfolioItemRepository
+import com.bbs.bbsapi.repositories.PortfolioItemRepository
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 

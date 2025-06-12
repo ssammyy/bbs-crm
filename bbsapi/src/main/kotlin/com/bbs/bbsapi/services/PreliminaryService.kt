@@ -5,11 +5,17 @@ import com.bbs.bbsapi.controllers.InitiatePreliminaryRequest
 import com.bbs.bbsapi.enums.ApprovalStage
 import com.bbs.bbsapi.enums.ApprovalStatus
 import com.bbs.bbsapi.enums.PreliminaryStatus
+import com.bbs.bbsapi.enums.RoleEnum
 import com.bbs.bbsapi.models.*
-import com.bbs.bbsapi.repos.*
+import com.bbs.bbsapi.repositories.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import lombok.extern.slf4j.Slf4j
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -22,13 +28,24 @@ class PreliminaryService(
     private val invoiceRepository: InvoiceRepository,
     private val proformaInvoiceRepository: ProformaInvoiceRepository,
     private val approvalRepository: ApprovalRepository,
-    private val userService: UserService
+    private val userService: UserService,
+    private val fileRepository: FileRepository,
+    private val emailService: EmailService,
+    private val invoiceService: InvoiceService,
+    private val digitalOceanService: DigitalOceanService,
+    private val clientService: ClientService,
+    private val userRepository: UserRepository,
 ) {
+    val log = LoggerFactory.getLogger(PreliminaryService::class.java)
 
-    fun initiatePreliminary(clientId: Long, request: InitiatePreliminaryRequest, invoice: Invoice? = null): Preliminary {
+    fun initiatePreliminary(
+        clientId: Long,
+        request: InitiatePreliminaryRequest,
+        invoice: Invoice? = null
+    ): Preliminary {
         val client = clientRepository.findById(clientId).orElseThrow { IllegalArgumentException("Client not found") }
         val alreadyExists = preliminaryRepository.findByClientIdAndPreliminaryType_Id(clientId, request.preliminaryType)
-        if (alreadyExists !=null) {
+        if (alreadyExists != null) {
             throw IllegalStateException("A preliminary of that type already exists for this context.")
         }
 
@@ -44,8 +61,32 @@ class PreliminaryService(
             invoice = invoice,
             rejectionRemarks = null
         )
+//        if preliminary type = x, then roleName =Y, else roleName = U
+        val role = if (preliminaryType.name ==="BOQ_PREPARATION" ) RoleEnum.QUALITY_SURVEYOR.toString() else RoleEnum.ARCHITECT.toString()
+
+//        send email to either QS/Architect
+        CoroutineScope(Dispatchers.IO).launch {
+            emailService.sendEmail(
+                "samuikumbu@gmail.com",
+                "${preliminary.preliminaryType?.name} PENDING YOUR APPROVAL",
+                "Dear user, \nA ${preliminary.preliminaryType?.name} preliminary for ${preliminary.client?.firstName} client has been initialised, pending your action",
+                userRepository.findFirstByRole_Name(role).get()
+
+//                attachment = attachment
+            )
+        }
+
         return preliminaryRepository.save(preliminary)
     }
+
+    /**
+     * If preliminary requires government approval, then it should follow a flow after MD has approved
+     * First check whether all documents are uploaded, if not request for all document upload, including valid practicing licences for architects and engineers and valid NCA Licences
+     * documents are then submitted to the county government.
+     * the county government issues an invoice which should then be uploaded to the system,
+     *
+     *
+     */
 
     fun approvePreliminary(preliminaryId: Long, request: ApprovalRequest): Approval {
         val preliminary = preliminaryRepository.findById(preliminaryId)
@@ -63,12 +104,15 @@ class PreliminaryService(
         val savedApproval = approvalRepository.save(approval)
 
         if (request.status == "APPROVED") {
-            val approvals = approvalRepository.findByPreliminaryId(preliminaryId)
             val hasTechnicalDirectorApproval = request.approvalStage == ApprovalStage.TECHNICAL_DIRECTOR
             val hasMDApproval = request.approvalStage == ApprovalStage.MANAGING_DIRECTOR
+            val pendingGovApprovals = preliminary.preliminaryType?.requiresGovernmentApproval
+            log.info("pending goovernment approval $pendingGovApprovals ")
+
 
             preliminary.status = when {
-                hasMDApproval -> PreliminaryStatus.COMPLETE
+                pendingGovApprovals == true && hasMDApproval -> PreliminaryStatus.PENDING_SUBMISSION_OF_FILES_TO_COUNTY
+                hasMDApproval && !pendingGovApprovals!! -> PreliminaryStatus.COMPLETE
                 hasTechnicalDirectorApproval -> PreliminaryStatus.PENDING_M_D_APPROVAL
                 else -> PreliminaryStatus.COMPLETE
             }
@@ -123,6 +167,32 @@ class PreliminaryService(
     }
 
     fun submitTechnicalPreliminary(clientId: Long, preliminary: Preliminary): ResponseEntity<Preliminary> {
+//        val attachments = digitalOceanService.getPreliminaryFiles(clientService.getClientById(clientId), preliminary)
+//        val attachment = EmailService.EmailAttachment(
+//            fileName = "site_visit_invoice.pdf",
+//            content = attachments,
+//            contentType = "application/pdf"
+//        )
+//       send email to TD
+
+        CoroutineScope(Dispatchers.IO).launch {
+            emailService.sendEmail(
+                "samuikumbu@gmail.com",
+                "${preliminary.preliminaryType?.name} PENDING YOUR APPROVAL",
+                "Dear user, \nFind the document attached below and log in to the system to action on ${preliminary.preliminaryType?.name} for ${preliminary.client?.firstName} client. ",
+                userRepository.findFirstByRole_Name(RoleEnum.TECHNICAL_DIRECTOR.toString()).get()
+
+//                attachment = attachment
+            )
+        }
+        val authentication = SecurityContextHolder.getContext().authentication
+
+
+        clientService.addClientActivity(
+            clientService.getClientById(clientId),
+            "${authentication.name} uploaded their ${preliminary.preliminaryType?.name} work for ${preliminary.client?.firstName}",
+        )
+
         val prelim = preliminaryRepository.findById(preliminary.id)
             .orElseThrow { IllegalArgumentException("Preliminary not found") }
         prelim.status = PreliminaryStatus.PENDING_T_D_APPROVAL
@@ -137,20 +207,88 @@ class PreliminaryService(
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice)
     }
 
+
+
+    fun approveCountyInvoice(clientId: Long, type: String): ResponseEntity<Invoice> {
+        val preliminary= preliminaryRepository.findByClientIdAndPreliminaryType_Name(clientId, type);
+        preliminary?.status = PreliminaryStatus.PENDING_APPROVAL_BY_COUNTY
+        preliminaryRepository.save(preliminary!!)
+        val invoice = invoiceRepository.findByClientIdAndGovernmentApprovalType(clientId, type)
+        invoice?.directorApproved = true
+        invoiceRepository.save(invoice!!)
+        return ResponseEntity.status(HttpStatus.CREATED).body(invoice)
+    }
+
     fun getPreliminaryById(preliminaryId: Long): Preliminary {
         return preliminaryRepository.findById(preliminaryId)
             .orElseThrow { IllegalArgumentException("Preliminary not found") }
     }
 
     fun approvePreliminaryStage(preliminary: Preliminary, approvalStage: ApprovalStage): Preliminary {
+
+        val authentication = SecurityContextHolder.getContext().authentication
+
+        preliminary?.client?.let {
+            clientService.addClientActivity(
+                it,
+                "${authentication.name} approved ${preliminary.preliminaryType?.name} work for ${preliminary.client?.firstName}",
+            )
+        }
         if (approvalStage == ApprovalStage.TECHNICAL_DIRECTOR) {
+//            send email to MD
+//            val invoicePdf = getInvoicePdf(client.id, InvoiceType.SITE_VISIT)
+
+
+            CoroutineScope(Dispatchers.IO).launch {
+                emailService.sendEmail(
+                    "samuikumbu@gmail.com",
+                    "${preliminary.preliminaryType?.name} PENDING YOUR APPROVAL",
+                    "Dear user, \nFind the document attached below and log in to the system to action on ${preliminary.preliminaryType?.name} for ${preliminary.client?.firstName} client. ",
+                    userRepository.findFirstByRole_Name(RoleEnum.MANAGING_DIRECTOR.toString()).get()
+//                    attachment = attachment
+                )
+            }
             preliminary.status = PreliminaryStatus.PENDING_M_D_APPROVAL
             preliminary.rejectionRemarks = null
-        } else {
-            preliminary.status = PreliminaryStatus.COMPLETE
+        }else if(approvalStage == ApprovalStage.SUBMITTED_TO_COUNTY) {
+            preliminary.status = PreliminaryStatus.PENDING_COUNTY_FEE_PAYMENT
+            CoroutineScope(Dispatchers.IO).launch {
+                emailService.sendEmail(
+                    "samuikumbu@gmail.com",
+                    " ${preliminary.preliminaryType?.name} PENDING COUNTY APPROVAL",
+                    "Dear ${preliminary.client?.firstName}, \nYour documents have been submitted to the county government for approval, in case of any changes, we will keep you posted. \n Regards ",
+                    userRepository.findByEmail(preliminary.client?.email!!)
+//                    attachment = attachment
+                )
+            }
+
+        }else {
+            val pendingGovApprovals = preliminary.preliminaryType?.requiresGovernmentApproval
+
+            val file = fileRepository.findByClientAndPreliminary(preliminary.client!!, preliminary)
+            for (fi in file) {
+                fi.approved = true
+                fileRepository.save(fi)
+            }
+            preliminary.status = when{
+                pendingGovApprovals == true -> PreliminaryStatus.PENDING_SUBMISSION_OF_FILES_TO_COUNTY
+                else -> PreliminaryStatus.COMPLETE
+            }
             preliminary.rejectionRemarks = null
+            CoroutineScope(Dispatchers.IO).launch {
+                emailService.sendEmail(
+                    "samuikumbu@gmail.com",
+                    "YOUR ${preliminary.preliminaryType?.name} DOCUMENT IS READY",
+                    "Dear ${preliminary.client?.firstName}, \nFind the document attached below for your review. \n Regards ",
+                    userRepository.findByEmail(preliminary.client?.email!!)
+//                    attachment = attachment
+                )
+            }
         }
-        return preliminaryRepository.save(preliminary)
+        val savedPreliminary = preliminaryRepository.save(preliminary)
+
+        return savedPreliminary
+
     }
 
     fun updatePreliminaryStatus(preliminaryId: Long, status: PreliminaryStatus) {

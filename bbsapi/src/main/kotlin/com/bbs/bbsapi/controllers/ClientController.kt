@@ -1,11 +1,12 @@
 package com.bbs.bbsapi.controllers
 
+import com.bbs.bbsapi.dtos.ClientDetailsDTO
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.entities.ClientDTO
 import com.bbs.bbsapi.entities.UpdateStageRequest
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.models.Activity
-import com.bbs.bbsapi.repos.ClientRepository
+import com.bbs.bbsapi.repositories.ClientRepository
 import com.bbs.bbsapi.services.ClientService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -55,8 +56,11 @@ class ClientController(private val clientService: ClientService, private val cli
     }
 
     @GetMapping("/{clientEmail}/details")
-    fun getClientActivities(@PathVariable clientEmail: String): ResponseEntity<Client> {
-        return ResponseEntity.ok(clientService.getClientByEmail(clientEmail)!!)
+    fun getClientDetails(@PathVariable clientEmail: String): ResponseEntity<ClientDetailsDTO> {
+        println("client email: $clientEmail")
+        val clientDetails = clientService.getClientByEmail(clientEmail)
+            ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(clientDetails)
     }
 
     @PostMapping("/{id}/update-stage")

@@ -5,7 +5,7 @@ import com.bbs.bbsapi.enums.ContactStatus
 import com.bbs.bbsapi.enums.FileType
 import com.bbs.bbsapi.enums.InvoiceType
 import com.bbs.bbsapi.models.Client
-import com.bbs.bbsapi.repos.*
+import com.bbs.bbsapi.repositories.*
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service

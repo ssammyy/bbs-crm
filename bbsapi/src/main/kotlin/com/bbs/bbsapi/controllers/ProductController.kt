@@ -1,7 +1,7 @@
 package com.bbs.bbsapi.controllers
 
+import com.bbs.bbsapi.dtos.ProductResponseDTO
 import com.bbs.bbsapi.entities.ProductDTO
-import com.bbs.bbsapi.entities.ProductResponseDTO
 import com.bbs.bbsapi.services.ProductService
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -16,10 +16,10 @@ class ProductController(
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun createProduct(
         @RequestPart("data") productDTO: ProductDTO,
-        @RequestPart("file") file: MultipartFile
+        @RequestPart("files") files: List<MultipartFile>
     ): ResponseEntity<ProductResponseDTO> {
         try {
-            val product = productService.createProduct(productDTO, file)
+            val product = productService.createProduct(productDTO, files)
             return ResponseEntity.ok(product)
         } catch (e: IllegalArgumentException) {
             return ResponseEntity.badRequest().body(null)

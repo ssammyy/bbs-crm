@@ -38,7 +38,7 @@ export class ClientDetailsService {
     }
 
     getClientFiles(clientId: number): Observable<Files[]> {
-        return this.http.get<Files[]>(`${environment.apiUrl}/api/files/${clientId}`);
+        return this.http.get<Files[]>(`${environment.apiUrl}/api/files/${clientId}/client-files`);
     }
     getClientActivities(clientId: number): Observable<Activity[]> {
         return this.http.get<Activity[]>(`${environment.apiUrl}/api/clients/${clientId}/activities`);

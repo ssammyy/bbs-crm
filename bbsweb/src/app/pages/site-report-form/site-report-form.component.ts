@@ -149,7 +149,7 @@ export class SiteReportFormComponent implements OnInit {
             if (doc.fileUrl) continue;
 
             try {
-                const response: any = await this.uploadService.upload(clientId, fileType, doc.file).toPromise();
+                const response: any = await this.uploadService.upload( fileType, doc.file, clientId).toPromise();
                 this.selectedDocuments[fileType].fileUrl = response.fileUrl || response.message;
                 this.messageService.add({
                     severity: 'success',

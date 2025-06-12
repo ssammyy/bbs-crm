@@ -1,0 +1,39 @@
+<div class="custom-card p-4">
+  <ng-container *ngIf="loading">
+    <div class="checklist-loading">
+      <i class="pi pi-spin pi-spinner"></i> Loading checklist...
+    </div>
+  </ng-container>
+  <ng-container *ngIf="error">
+    <div class="checklist-error">
+      <i class="pi pi-exclamation-triangle text-red-500"></i> {{ error }}
+    </div>
+  </ng-container>
+  <ng-container *ngIf="!loading && !error && checklist">
+    <div class="checklist-header mb-4">
+      <h3 class="text-lg font-bold mb-1">Process Milestone Checklist</h3>
+      <div class="text-xs text-gray-500 mb-1">
+        <span *ngIf="checklist.clientName"><b>Client:</b> {{ checklist.clientName }}</span><br>
+        <span *ngIf="checklist.siteLocation"><b>Site:</b> {{ checklist.siteLocation }}</span>
+      </div>
+      <div class="progress-bar-container mb-2">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" [style.width]="progressPercent">
+          </div>
+        </div>
+        <div class="text-xs text-gray-400 mt-1 text-right">
+          {{ completedMilestonesCount }} / {{ totalMilestonesCount }} completed
+        </div>
+      </div>
+    </div>
+    <ul class="milestone-list">
+      <li *ngFor="let item of checklist.milestones" class="milestone-item flex items-center gap-2 mb-2">
+        <span class="icon-box" [ngClass]="{'completed': item.completed}">
+          <i *ngIf="item.completed" class="pi pi-check-circle text-green-500"></i>
+          <i *ngIf="!item.completed" class="pi pi-circle-off text-gray-300"></i>
+        </span>
+        <span [ngClass]="{'line-through text-gray-400': item.completed}">{{ item.name }}</span>
+      </li>
+    </ul>
+  </ng-container>
+</div>

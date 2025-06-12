@@ -2,12 +2,13 @@ package com.bbs.bbsapi.controllers
 
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.FileType
+import com.bbs.bbsapi.enums.PreliminaryStatus
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.models.Preliminary
-import com.bbs.bbsapi.repos.ClientRepository
-import com.bbs.bbsapi.repos.FileRepository
-import com.bbs.bbsapi.repos.PreliminaryRepository
-import com.bbs.bbsapi.repos.UserRepository
+import com.bbs.bbsapi.repositories.ClientRepository
+import com.bbs.bbsapi.repositories.FileRepository
+import com.bbs.bbsapi.repositories.PreliminaryRepository
+import com.bbs.bbsapi.repositories.UserRepository
 import com.bbs.bbsapi.services.ClientService
 import com.bbs.bbsapi.services.DigitalOceanService
 import org.apache.coyote.BadRequestException
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
@@ -32,6 +34,7 @@ class UploadFile(
     private val preliminaryRepository: PreliminaryRepository
 ) {
     @PostMapping("/upload")
+    @Transactional
     fun uploadFile(
         @RequestParam(required = false) clientId: Long?,
         @RequestParam(required = false) userId: Long?,
@@ -54,6 +57,12 @@ class UploadFile(
                 preliminary = preliminaryRepository.findById(preliminaryId).orElseThrow { IllegalArgumentException("Preliminary not found") }
             }
 
+            if(fileTypeEnum=== FileType.COUNTY_INVOICE){
+
+                preliminary?.status= PreliminaryStatus.PENDING_CLIENT_FACILITATION_PAYMENT
+                preliminary?.let { preliminaryRepository.save(it) }
+            }
+
             // Upload file to storage
             val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
 
@@ -69,22 +78,17 @@ class UploadFile(
                 objectKey = objectKey,
                 version = version,
                 versionNotes = versionNotes,
+                approved = fileTypeEnum != FileType.PRELIMINARY,
                 createdAt = LocalDateTime.now(),
                 updatedAt = LocalDateTime.now(),
                 client = client,
                 preliminary = preliminary,
                 user = null
             )
+
             fileRepository.save(fileMetadata)
 
-            if (fileTypeEnum == FileType.REQUIREMENTS) {
-                clientService.changeClientStatus(
-                    ClientStage.PROFORMA_INVOICE_GENERATION,
-                    client,
-                    ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL,
-                    "Requirement documents uploaded"
-                )
-            }
+
 
             return ResponseEntity.ok(mapOf(
                 "message" to "File uploaded successfully",
@@ -168,7 +172,7 @@ class UploadFile(
         return ResponseEntity.ok("File deleted successfully")
     }
 
-    @GetMapping("/{clientId}")
+    @GetMapping("/{clientId}/client-files")
     fun getFiles(@PathVariable clientId: Long): ResponseEntity<List<Map<String, Any?>>> {
         val client = clientRepository.findById(clientId)
             .orElseThrow { RuntimeException("Client with ID $clientId not found") }
@@ -188,5 +192,33 @@ class UploadFile(
         
         val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
         return digitalOceanService.updateMetadata(client, file, fileType,  fileId, versionNotes)
+    }
+
+    @GetMapping("/licenses")
+    fun getLicenseFiles(): ResponseEntity<List<Map<String, Any?>>> {
+        val licenseTypes = listOf(
+            FileType.STRUCTURAL_ENGINEER_LICENSE,
+            FileType.ARCHITECT_LICENSE,
+            FileType.NCA_CONTRACTOR_LICENSE
+        )
+
+        val files = fileRepository.findByFileTypeIn(licenseTypes)
+            .map { file ->
+                mapOf(
+                    "id" to file.id,
+                    "fileType" to file.fileType.name,
+                    "fileName" to file.fileName,
+                    "fileUrl" to file.fileUrl,
+                    "version" to file.version,
+                    "createdAt" to file.createdAt,
+                    "updatedAt" to file.updatedAt,
+                    "userId" to file.user?.id,
+                    "username" to file.user?.username,
+                    "userEmail" to file.user?.email,
+                    "userRole" to file.user?.role?.name
+                )
+            }
+
+        return ResponseEntity.ok(files)
     }
 }

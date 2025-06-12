@@ -1,162 +1,284 @@
-<div class="card mx-auto shadow-lg rounded-lg p-6">
-    <div class="block md:flex">
-        <div class="w-full md:w-1/5 p-4">
-            <h3 class="text-red-400">
-                Create User
-            </h3>
-            <small style="color: var(--primary-color)">
-                Create and assign roles to users. Upon creation, users will receive an email to reset their passwords.
-            </small>
-        </div>
-        <div class="w-full md:w-4/5">
-            <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
-                <div class="grid gap-4 p-fluid">
-                    <div class="col-12">
-                        <label class="block">Username</label>
-                        <input type="text" pInputText formControlName="username" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                        <small *ngIf="userForm.controls['username'].invalid && userForm.controls['username'].touched" class="text-red-500">Username is required</small>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="block">Email</label>
-                        <input type="email" pInputText formControlName="email" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                        <small *ngIf="userForm.controls['email'].invalid && userForm.controls['email'].touched" class="text-red-500">Enter a valid email</small>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="block">Phone Number</label>
-                        <input type="tel" pInputText formControlName="phoneNumber" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                    </div>
-
-                    <div class="col-12">
-                        <label class="block">Gender</label>
-                        <p-dropdown formControlName="gender" [options]="genders" placeholder="Select Gender" class="w-full"></p-dropdown>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="block">Role</label>
-                        <p-dropdown formControlName="role" [options]="roles" optionLabel="name" optionValue="id" placeholder="Select Role" class="w-full"></p-dropdown>
-                    </div>
-
-                    <!-- KYC Documents for Agent -->
-                    <div *ngIf="isAgentSelected()" class="col-12">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Agent KYC Documents</h3>
-                        <p-message *ngIf="missingDocuments.length > 0" severity="error">
-                            Please select all required KYC documents: {{ missingDocuments.join(', ') }}
-                        </p-message>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div *ngFor="let doc of requiredKycDocuments" class="field">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ doc.label }}</label>
-                                <div class="flex items-center space-x-3">
-                                    <p-fileUpload
-                                        mode="basic"
-                                        [name]="doc.fileType"
-                                        [customUpload]="true"
-                                        (onSelect)="onSelect($event, doc.fileType)"
-                                        chooseLabel="Select File"
-                                        [disabled]="isDocumentSelected(doc.fileType)"
-                                        class="w-full"
-                                        styleClass="p-button-outlined p-button-secondary rounded-lg"
-                                    ></p-fileUpload>
-                                    <p-chip
-                                        *ngIf="isDocumentSelected(doc.fileType)"
-                                        [label]="selectedDocuments[doc.fileType]?.fileUrl ? 'Uploaded' : 'Selected'"
-                                        [styleClass]="selectedDocuments[doc.fileType]?.fileUrl ? 'bg-green-100 text-green-800 px-3 py-1 rounded-full' : 'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full'"
-                                    ></p-chip>
-                                    <a
-                                        *ngIf="isDocumentSelected(doc.fileType) && selectedDocuments[doc.fileType]?.fileUrl"
-                                        [href]="selectedDocuments[doc.fileType]?.fileUrl"
-                                        target="_blank"
-                                        class="text-blue-600 hover:underline"
-                                    >
-                                        Preview
-                                    </a>
-                                    <p-button
-                                        *ngIf="isDocumentSelected(doc.fileType)"
-                                        icon="pi pi-times"
-                                        styleClass="p-button-text p-button-danger"
-                                        (onClick)="removeDocument(doc.fileType)"
-                                    ></p-button>
-                                </div>
-                                <small *ngIf="isDocumentSelected(doc.fileType) && !selectedDocuments[doc.fileType]?.fileUrl" class="text-gray-500 text-xs mt-1">
-                                    This file will be uploaded after user registration.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Next of Kin Details for Agent -->
-                    <div *ngIf="isAgentSelected()" class="col-12">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Next of Kin Details</h3>
-                        <div class="grid gap-4">
-                            <div class="col-12">
-                                <label class="block">Next of Kin ID Number</label>
-                                <input type="text" pInputText formControlName="nextOfKinIdNumber" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['nextOfKinIdNumber'].invalid && userForm.controls['nextOfKinIdNumber'].touched" class="text-red-500">Next of Kin ID number is required</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="block">Next of Kin Name</label>
-                                <input type="text" pInputText formControlName="nextOfKinName" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['nextOfKinName'].invalid && userForm.controls['nextOfKinName'].touched" class="text-red-500">Next of Kin name is required</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="block">Commission percentage</label>
-                                <p-inputNumber formControlName="percentage" suffix="%" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['bankName'].invalid && userForm.controls['percentage'].touched" class="text-red-500">Percentage is required</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="block">Next of Kin Phone Number</label>
-                                <input type="tel" pInputText formControlName="nextOfKinPhoneNumber" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['nextOfKinPhoneNumber'].invalid && userForm.controls['nextOfKinPhoneNumber'].touched" class="text-red-500">Next of Kin phone number is required</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Payment Method for Agent -->
-                    <div *ngIf="isAgentSelected()" class="col-12">
-                        <label class="block">Payment Method</label>
-                        <p-dropdown formControlName="paymentMethod" [options]="paymentMethods" placeholder="Select Payment Method" class="w-full"></p-dropdown>
-                        <small *ngIf="userForm.controls['paymentMethod'].invalid && userForm.controls['paymentMethod'].touched" class="text-red-500">Payment method is required</small>
-                    </div>
-
-                    <!-- Bank Details if Payment Method is Bank -->
-                    <div *ngIf="isAgentSelected() && userForm.get('paymentMethod')?.value === 'Bank'" class="col-12">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Bank Details</h3>
-                        <div class="grid gap-4">
-                            <div class="col-12">
-                                <label class="block">Bank Name</label>
-                                <input type="text" pInputText formControlName="bankName" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['bankName'].invalid && userForm.controls['bankName'].touched" class="text-red-500">Bank name is required</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="block">Commission percentage</label>
-                                <p-inputNumber formControlName="percentage" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['bankName'].invalid && userForm.controls['percentage'].touched" class="text-red-500">Percentage is required</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="block">Account Number</label>
-                                <input type="text" pInputText formControlName="bankAccountNumber" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['bankAccountNumber'].invalid && userForm.controls['bankAccountNumber'].touched" class="text-red-500">Account number is required</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="block">Branch</label>
-                                <input type="text" pInputText formControlName="bankBranch" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['bankBranch'].invalid && userForm.controls['bankBranch'].touched" class="text-red-500">Branch is required</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="block">Account Holder Name</label>
-                                <input type="text" pInputText formControlName="bankAccountHolderName" class="w-full p-2 border rounded-md focus:ring focus:ring-green-300" />
-                                <small *ngIf="userForm.controls['bankAccountHolderName'].invalid && userForm.controls['bankAccountHolderName'].touched" class="text-red-500">Account holder name is required</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4 flex">
-                    <p-button [loading]="loading" [outlined]="true" icon="pi pi-user-plus" label="Create User" type="submit" [disabled]="userForm.invalid" class="w-full md:w-auto"/>
-                </div>
-            </form>
-        </div>
-        <p-toast />
-    </div>
+<div *ngIf="loading" class="w-full flex items-center justify-center p-8">
+    <p-progress-spinner strokeWidth="8" fill="transparent" animationDuration=".5s" [style]="{ width: '50px', height: '50px' }" />
 </div>
+
+<div *ngIf="!loading" class="p-4 custom-card">
+    <div class="mb-4">
+        <p class="font-bold">Create User</p>
+        <p class="text-gray-600">Create and assign roles to users. Upon creation, users will receive an email to reset their passwords.</p>
+    </div>
+
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="mb-4 flex flex-col gap-4">
+        <!-- Basic Information -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Username</label>
+                <input 
+                    type="text" 
+                    pInputText 
+                    formControlName="username"
+                    class="w-full"
+                />
+                <small *ngIf="userForm.controls['username'].invalid && userForm.controls['username'].touched"
+                    class="text-red-500 text-xs">Username is required</small>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Email</label>
+                <input 
+                    type="email" 
+                    pInputText 
+                    formControlName="email"
+                    class="w-full"
+                />
+                <small *ngIf="userForm.controls['email'].invalid && userForm.controls['email'].touched"
+                    class="text-red-500 text-xs">Enter a valid email</small>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Phone Number</label>
+                <input 
+                    type="tel" 
+                    pInputText 
+                    formControlName="phoneNumber"
+                    class="w-full"
+                    pattern="^(?:254|\+254|0)?([7-9]{1}[0-9]{8})$"
+                    placeholder="e.g., 0712345678"
+                />
+                <small *ngIf="userForm.controls['phoneNumber'].invalid && userForm.controls['phoneNumber'].touched" 
+                    class="text-red-500 text-xs">
+                    {{ userForm.controls['phoneNumber'].errors?.['required'] ? 'Phone number is required' : 
+                       userForm.controls['phoneNumber'].errors?.['pattern'] ? 'Please enter a valid Kenyan phone number (e.g., 0712345678)' : '' }}
+                </small>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Gender</label>
+                <p-dropdown 
+                    formControlName="gender" 
+                    [options]="genders"
+                    placeholder="Select Gender" 
+                    class="w-full"
+                ></p-dropdown>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Role</label>
+                <p-dropdown 
+                    formControlName="roleId" 
+                    [options]="roles" 
+                    optionLabel="name" 
+                    optionValue="id"
+                    placeholder="Select Role" 
+                    class="w-full"
+                ></p-dropdown>
+            </div>
+        </div>
+
+        <!-- KYC Documents Section -->
+        <div *ngIf="isAgentSelected()" class="flex flex-col gap-4">
+            <h3 class="font-medium">Agent KYC Documents</h3>
+            <p-message *ngIf="missingDocuments.length > 0" severity="error" styleClass="text-sm">
+                Please select all required KYC documents: {{ missingDocuments.join(', ') }}
+            </p-message>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div *ngFor="let doc of requiredKycDocuments" class="flex flex-col gap-2">
+                    <label class="font-medium">{{ doc.label }}</label>
+                    <div class="flex items-center gap-2">
+                        <p-fileUpload
+                            mode="basic"
+                            [name]="doc.fileType"
+                            [customUpload]="true"
+                            (onSelect)="onSelect($event, doc.fileType)"
+                            chooseLabel="Select File"
+                            [disabled]="isDocumentSelected(doc.fileType)"
+                            class="w-full"
+                            styleClass="p-button-outlined p-button-secondary"
+                        ></p-fileUpload>
+                        <div class="flex items-center gap-2">
+                            <p-chip
+                                *ngIf="isDocumentSelected(doc.fileType)"
+                                [label]="selectedDocuments[doc.fileType]?.fileUrl ? 'Uploaded' : 'Selected'"
+                                [styleClass]="selectedDocuments[doc.fileType]?.fileUrl ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                                class="px-2 py-1 text-xs rounded-full"
+                            ></p-chip>
+                            <a
+                                *ngIf="isDocumentSelected(doc.fileType) && selectedDocuments[doc.fileType]?.fileUrl"
+                                [href]="selectedDocuments[doc.fileType]?.fileUrl"
+                                target="_blank"
+                                class="text-blue-600 hover:underline text-xs"
+                            >
+                                <i class="pi pi-eye mr-1"></i>Preview
+                            </a>
+                            <p-button
+                                *ngIf="isDocumentSelected(doc.fileType)"
+                                icon="pi pi-times"
+                                styleClass="p-button-text p-button-danger"
+                                (onClick)="removeDocument(doc.fileType)"
+                            ></p-button>
+                        </div>
+                    </div>
+                    <small *ngIf="isDocumentSelected(doc.fileType) && !selectedDocuments[doc.fileType]?.fileUrl"
+                        class="text-gray-500 text-xs">
+                        This file will be uploaded after user registration.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next of Kin Section -->
+        <div *ngIf="isAgentSelected()" class="flex flex-col gap-4">
+            <h3 class="font-medium">Next of Kin Details</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="font-medium">Next of Kin ID Number</label>
+                    <input 
+                        type="text" 
+                        pInputText 
+                        formControlName="nextOfKinIdNumber"
+                        class="w-full"
+                    />
+                    <small *ngIf="userForm.controls['nextOfKinIdNumber'].invalid && userForm.controls['nextOfKinIdNumber'].touched"
+                        class="text-red-500 text-xs">Next of Kin ID number is required</small>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="font-medium">Next of Kin Name</label>
+                    <input 
+                        type="text" 
+                        pInputText 
+                        formControlName="nextOfKinName"
+                        class="w-full"
+                    />
+                    <small *ngIf="userForm.controls['nextOfKinName'].invalid && userForm.controls['nextOfKinName'].touched"
+                        class="text-red-500 text-xs">Next of Kin name is required</small>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="font-medium">Commission Percentage</label>
+                    <p-inputNumber 
+                        formControlName="percentage" 
+                        suffix="%"
+                        class="w-full"
+                    />
+                    <small *ngIf="userForm.controls['percentage'].invalid && userForm.controls['percentage'].touched"
+                        class="text-red-500 text-xs">Percentage is required</small>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="font-medium">Next of Kin Phone Number</label>
+                    <input 
+                        type="tel" 
+                        pInputText 
+                        formControlName="nextOfKinPhoneNumber"
+                        class="w-full"
+                        pattern="^(?:254|\+254|0)?([7-9]{1}[0-9]{8})$"
+                        placeholder="e.g., 0712345678"
+                    />
+                    <small *ngIf="userForm.controls['nextOfKinPhoneNumber'].invalid && userForm.controls['nextOfKinPhoneNumber'].touched" 
+                        class="text-red-500 text-xs">
+                        {{ userForm.controls['nextOfKinPhoneNumber'].errors?.['required'] ? 'Next of Kin phone number is required' : 
+                           userForm.controls['nextOfKinPhoneNumber'].errors?.['pattern'] ? 'Please enter a valid Kenyan phone number (e.g., 0712345678)' : '' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Section -->
+        <div *ngIf="isAgentSelected()" class="flex flex-col gap-4">
+            <h3 class="font-medium">Payment Details</h3>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="font-medium">Payment Method</label>
+                    <p-dropdown 
+                        formControlName="paymentMethod" 
+                        [options]="paymentMethods"
+                        placeholder="Select Payment Method" 
+                        class="w-full"
+                    ></p-dropdown>
+                    <small *ngIf="userForm.controls['paymentMethod'].invalid && userForm.controls['paymentMethod'].touched"
+                        class="text-red-500 text-xs">Payment method is required</small>
+                </div>
+
+                <!-- Bank Details -->
+                <div *ngIf="userForm.get('paymentMethod')?.value === 'Bank'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-2">
+                        <label class="font-medium">Bank Name</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            formControlName="bankName"
+                            class="w-full"
+                        />
+                        <small *ngIf="userForm.controls['bankName'].invalid && userForm.controls['bankName'].touched"
+                            class="text-red-500 text-xs">Bank name is required</small>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="font-medium">Account Number</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            formControlName="bankAccountNumber"
+                            class="w-full"
+                        />
+                        <small *ngIf="userForm.controls['bankAccountNumber'].invalid && userForm.controls['bankAccountNumber'].touched"
+                            class="text-red-500 text-xs">Account number is required</small>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="font-medium">Branch</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            formControlName="bankBranch"
+                            class="w-full"
+                        />
+                        <small *ngIf="userForm.controls['bankBranch'].invalid && userForm.controls['bankBranch'].touched"
+                            class="text-red-500 text-xs">Branch is required</small>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="font-medium">Account Holder Name</label>
+                        <input 
+                            type="text" 
+                            pInputText 
+                            formControlName="bankAccountHolderName"
+                            class="w-full"
+                        />
+                        <small *ngIf="userForm.controls['bankAccountHolderName'].invalid && userForm.controls['bankAccountHolderName'].touched"
+                            class="text-red-500 text-xs">Account holder name is required</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <p-button 
+                [loading]="loading" 
+                [outlined]="true"
+                [icon]="isAgentSelected() ? 'pi pi-send' : 'pi pi-user-plus'"
+                [label]="isAgentSelected() ? 'Submit for Approval' : 'Create User'"
+                type="submit"
+                [disabled]="isAgentSelected() ? 
+                    (userForm.invalid || 
+                    !userForm.get('nextOfKinIdNumber')?.valid || 
+                    !userForm.get('nextOfKinName')?.valid || 
+                    !userForm.get('percentage')?.valid || 
+                    !userForm.get('nextOfKinPhoneNumber')?.valid || 
+                    !userForm.get('paymentMethod')?.valid || 
+                    (userForm.get('paymentMethod')?.value === 'Bank' && 
+                        (!userForm.get('bankName')?.valid || 
+                        !userForm.get('bankAccountNumber')?.valid || 
+                        !userForm.get('bankBranch')?.valid || 
+                        !userForm.get('bankAccountHolderName')?.valid)) ||
+                    missingDocuments.length > 0) : 
+                    userForm.invalid"
+                class="w-full sm:w-auto"
+            ></p-button>
+        </div>
+    </form>
+</div>
+
+<p-toast />

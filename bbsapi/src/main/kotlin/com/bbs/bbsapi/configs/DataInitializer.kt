@@ -4,10 +4,10 @@ import com.bbs.bbsapi.models.PreliminaryType
 import com.bbs.bbsapi.models.Privilege
 import com.bbs.bbsapi.models.Role
 import com.bbs.bbsapi.models.User
-import com.bbs.bbsapi.repos.PreliminaryTypeRepository
-import com.bbs.bbsapi.repos.PrivilegeRepository
-import com.bbs.bbsapi.repos.RoleRepository
-import com.bbs.bbsapi.repos.UserRepository
+import com.bbs.bbsapi.repositories.PreliminaryTypeRepository
+import com.bbs.bbsapi.repositories.PrivilegeRepository
+import com.bbs.bbsapi.repositories.RoleRepository
+import com.bbs.bbsapi.repositories.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -96,7 +96,8 @@ class DataInitializer(
             "VIEW_CLIENT_PROFILE",
             "VIEW_AGENT_DASHBOARD",
             "APPROVE_PRELIMINARY",
-            "UPLOAD_BOQ"
+            "UPLOAD_BOQ",
+            "MANAGE_LICENCES"
         ).map { privilegeRepository.findByName(it).orElseGet { privilegeRepository.save(Privilege(name = it)) } }
             .toSet()
 
@@ -155,6 +156,22 @@ class DataInitializer(
                 )
             }.toSet(),
             "ARCHITECT" to privileges.filter {
+                it.name in listOf(
+                    "MANAGE_PROJECTS",
+                    "MANAGE_PRELIMINARY",
+                    "VIEW_TECHNICAL_WORKS",
+                    "MANAGE_CLIENTS",
+                    "VIEW_MAIN_DASHBOARD",
+                    "VIEW_CLIENT_PROFILE",
+                    "VIEW_ACTIVITY_FEED",
+                    "VIEW_CLIENTS",
+                    "MANAGE_INVOICES",
+                    "APPROVE_TECHNICAL_WORKS",
+                    "VIEW_PRELIMINARY",
+                    "MANAGE_CLIENT_ACTIVITY"
+                )
+            }.toSet(),
+            "STRUCTURAL_ENGINEER" to privileges.filter {
                 it.name in listOf(
                     "MANAGE_PROJECTS",
                     "MANAGE_PRELIMINARY",
@@ -239,6 +256,7 @@ class DataInitializer(
             ),
             PreliminaryType(
                 name = "ARCHITECTURAL_DRAWINGS",
+                requiresGovernmentApproval = true,
                 description = "Detailed technical drawings including floor plans, elevations, and sections"
             ),
             PreliminaryType(
@@ -251,6 +269,7 @@ class DataInitializer(
             ),
             PreliminaryType(
                 name = "STRUCTURAL_DESIGNS",
+                requiresGovernmentApproval = true,
                 description = "Engineering drawings for the structural framework"
             ),
             PreliminaryType(

@@ -1,0 +1,49 @@
+ALTER TABLE preliminary
+    DROP COLUMN status;
+
+ALTER TABLE preliminary
+    add column status ENUM (
+        'INITIATED', 'PENDING_T_D_APPROVAL', 'PENDING_M_D_APPROVAL', 'COMPLETE', ' PENDING_SUBMISSION_OF_FILES_TO_COUNTY', 'PENDING_APPROVAL_BY_COUNTY',
+            'PENDING_COUNTY_FEE_PAYMENT', 'PENDING_CLIENT_FACILITATION_PAYMENT', 'COUNTY_APPROVED_DOCUMENTS', 'COUNTY_REJECTED_DOCUMENTS'
+        ) NOT NULL;
+
+commit;
+
+
+ALTER TABLE preliminary MODIFY COLUMN status VARCHAR(50);
+
+
+
+
+ALTER TABLE files
+    MODIFY COLUMN file_type ENUM (
+        'ID',
+        'TITLE_DEED',
+        'KRA_PIN',
+        'REQUIREMENTS',
+        'SITE_VISIT_REPORT',
+        'ARCHITECTURAL_SKETCHES',
+        'WORKING_DRAWINGS',
+        'LAND_RATES',
+        'DEED_PLAN',
+        'SURVEY_MAP',
+        'SIGNED_AGREEMENT',
+        'PRELIMINARY',
+        'STRUCTURAL_ENGINEER_LICENSE',
+        'ARCHITECT_LICENSE',
+        'NCA_CONTRACTOR_LICENSE'
+        ) NOT NULL;
+
+
+
+ALTER TABLE     invoices
+    DROP COLUMN invoice_type;
+ALTER TABLE invoices
+    ADD COLUMN invoice_type ENUM(
+        'BOQ',
+        'OPEN',
+        'PRELIMINARY',
+        'BALANCE',
+        'COUNTY_INVOICE'
+        ) NOT NULL;
+COMMIT;

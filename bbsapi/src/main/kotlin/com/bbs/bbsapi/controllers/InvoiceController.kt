@@ -1,16 +1,10 @@
 package com.bbs.bbsapi.controllers
 
-import com.bbs.bbsapi.entities.AcceptInvoiceRequest
-import com.bbs.bbsapi.entities.InvoiceResponse
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
-import com.bbs.bbsapi.entities.RejectInvoiceRequest
 import com.bbs.bbsapi.entities.PaymentConfirmationDTO
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
-import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.Invoice
-import com.bbs.bbsapi.models.PreliminaryType
-import com.bbs.bbsapi.repos.PreliminaryTypeRepository
 import com.bbs.bbsapi.services.InvoiceService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -38,8 +32,8 @@ class InvoiceController(
     }
 
     @GetMapping("/{clientId}/{invoiceType}/pdf")
-    fun getInvoicePdf(@PathVariable clientId: Long, @PathVariable invoiceType: InvoiceType): ResponseEntity<ByteArray> {
-        val pdfBytes = invoiceService.getInvoicePdf(clientId, invoiceType)
+    fun getInvoicePdf(@PathVariable clientId: Long, @PathVariable invoiceType: InvoiceType, @RequestParam(required = false) govApprovalType: String?): ResponseEntity<ByteArray> {
+        val pdfBytes = invoiceService.getInvoicePdf(clientId, invoiceType, govApprovalType)
         return ResponseEntity.ok()
             .header("Content-Type", "application/pdf")
             .header("Content-Disposition", "attachment; filename=invoice-$clientId.pdf")

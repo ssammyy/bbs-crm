@@ -11,19 +11,19 @@ data class Notification(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    var user: User,
+    var user: User? = null,
 
     @Column(nullable = false)
-    var title: String,
+    var title: String? = null,
 
-    @Column(nullable = false)
-    var message: String,
+    @Column(nullable = false, columnDefinition = "TEXT")
+    var message: String? = null,
 
     @Column(nullable = false)
     var isRead: Boolean = false,
 
     @Column(nullable = false)
-    var type: String, // e.g., "SYSTEM", "INVOICE", "APPROVAL", etc.
+    var type: String? = null, // e.g., "SYSTEM", "INVOICE", "APPROVAL", etc.
 
     @Column
     var relatedEntityId: Long? = null, // ID of the related entity (e.g., invoice ID, approval ID)

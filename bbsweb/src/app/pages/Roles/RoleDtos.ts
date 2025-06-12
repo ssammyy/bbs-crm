@@ -11,4 +11,8 @@ export interface Role {
     id: number;
     name: string;
     privileges: Privilege[];
+    createdOn: string;
+    createdBy: string;
+    updatedOn: string;
+    updatedBy: string;
 }

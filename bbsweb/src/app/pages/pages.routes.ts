@@ -11,6 +11,7 @@ import { ClientProfileComponent } from './client-profile/client-profile.componen
 import { CommitmentClientViewComponent } from './client/commitment-client-view/commitment-client-view.component';
 import { ClientCommitmentComponent } from './client/client-commitment/client-commitment.component';
 import { InvoiceFormComponent } from './invoice-form/invoice-form.component';
+import { LicencesComponent } from './licences/licences.component';
 
 export default [
     // { path: '**', redirectTo: '/notfound' },
@@ -26,6 +27,7 @@ export default [
     { path: 'commit-client', component: ClientCommitmentComponent },
     { path: 'view-leads', component: CommitmentClientViewComponent },
     { path: 'create-invoice', component: InvoiceFormComponent },
+    { path: 'licences', component: LicencesComponent },
 
 
 

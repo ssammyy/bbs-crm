@@ -1,0 +1,17 @@
+.p-datatable-sm {
+    font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+    .p-datatable {
+        .p-datatable-thead > tr > th,
+        .p-datatable-tbody > tr > td {
+            padding: 0.5rem;
+        }
+    }
+
+    .p-button-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

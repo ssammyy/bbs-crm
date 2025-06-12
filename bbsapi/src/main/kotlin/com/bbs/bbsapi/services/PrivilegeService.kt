@@ -2,7 +2,7 @@ package com.bbs.bbsapi.services
 
 import com.bbs.bbsapi.entities.PrivilegeDTO
 import com.bbs.bbsapi.models.Privilege
-import com.bbs.bbsapi.repos.PrivilegeRepository
+import com.bbs.bbsapi.repositories.PrivilegeRepository
 import org.springframework.stereotype.Service
 
 @Service

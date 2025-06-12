@@ -6,11 +6,10 @@ import { Divider } from 'primeng/divider';
 import { PrimeTemplate } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { Toast } from 'primeng/toast';
-import { Activity, Client } from '../../data/clietDTOs';
+import { Activity, Client, Files } from '../../data/clietDTOs';
 import { ClientDetailsService } from '../client.service';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
-import { Files } from '../../data/clietDTOs';
 import { DropdownModule } from 'primeng/dropdown';
 import { Calendar } from 'primeng/calendar';
 import { UploadService } from '../../service/upload.service';
@@ -27,41 +26,21 @@ import { allCountries } from '../../data/all-countries';
 import { countryCodes } from '../../data/country-codes';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { SortEvent } from 'primeng/api';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-view-clients',
-    imports: [
-        ButtonDirective,
-        Divider,
-        PrimeTemplate,
-        TableModule,
-        Toast,
-        Button,
-        Dialog,
-        NgIf,
-        ReactiveFormsModule,
-        NgForOf,
-        InputText,
-        DropdownModule,
-        Calendar,
-        Tab,
-        TabList,
-        TabPanels,
-        TabPanel,
-        Tabs,
-        Tag,
-        Listbox,
-        DatePipe,
-        NgClass,
-        InvoiceFormComponent,
-        ConfirmDialogModule
-    ],
+    imports: [ButtonDirective, Divider, PrimeTemplate, TableModule, Toast, ReactiveFormsModule, DropdownModule, ConfirmDialogModule, InputTextModule, FormsModule, NgIf, ProgressSpinner],
     providers: [ConfirmationService],
     templateUrl: './view-clients.component.html',
     styleUrl: './view-clients.component.scss'
 })
 export class ViewClientsComponent implements OnInit {
     clients: Client[] = [];
+    filteredClients: Client[] = [];
+    searchQuery: string = '';
     loading = false;
     visible = false;
     personalInfoForm!: FormGroup;
@@ -72,7 +51,6 @@ export class ViewClientsComponent implements OnInit {
     clientFiles: Files[] = [];
     selectedDocument: Files | null = null;
     clientStage: string = '';
-
     displayEditDialog: boolean = false;
     newFile: File | null = null;
     clientId: number = 0;
@@ -118,7 +96,6 @@ export class ViewClientsComponent implements OnInit {
             gender: ['', Validators.required],
             countryCode: ['+254'],
             phoneNumber: ['', Validators.required],
-            // locationType: ['', Validators.required],
             location: ['', Validators.required],
             preferredContact: ['', Validators.required],
             idNumber: ['', Validators.required],
@@ -127,19 +104,6 @@ export class ViewClientsComponent implements OnInit {
             dob: ['']
         });
     }
-
-    // viewClient(client: Client): void {
-    //     this.visible = true;
-    //     this.selectedClient = client;
-    //     this.personalInfoForm.patchValue(client);
-    //     this.clientId = client.id;
-    //     this.clientStage = client.clientStage;
-    //     (this.idNumber = client.idNumber);
-    //     this.getClientFiles(client.id);
-    //     this.displayClientDialog = true;
-    //     this.getClientActivities(client.id);
-    //     this.editMode = false;
-    // }
 
     viewClient(client: Client): void {
         this.router.navigate(['app/pages/profile', client.id], { state: { client } });
@@ -161,7 +125,6 @@ export class ViewClientsComponent implements OnInit {
                     this.loading = false;
                     this.getActiveClients();
                     this.editMode = false;
-                    // this.visible = false;
                 },
                 error: (error) => {
                     this.loading = false;
@@ -172,9 +135,6 @@ export class ViewClientsComponent implements OnInit {
     }
 
     onLocationTypeChange(event: any) {
-        // You may need to add additional logic here,
-        // like clearing the country or county field when the location type changes.
-        // example:
         if (event.value === 'INTERNATIONAL') {
             this.personalInfoForm.get('county')?.setValue(null);
         } else {
@@ -204,15 +164,18 @@ export class ViewClientsComponent implements OnInit {
     }
 
     getActiveClients(): void {
-        this.loading = true;
+        this.loadingData = true;
         this.clientService.getActiveClients().subscribe({
             next: (clients: Client[]) => {
-                this.loading = false;
                 this.clients = clients;
+                this.filteredClients = [...clients];
+                this.loadingData = false;
+
             },
             error: (err) => {
-                this.loading = false;
+                this.loadingData = false;
                 this.clients = [];
+                this.filteredClients = [];
                 console.log('Error getting clients ', err);
             }
         });
@@ -254,25 +217,26 @@ export class ViewClientsComponent implements OnInit {
             });
         }
     }
+
     uploadedFile: any;
+    loadingData = false;
 
     onUpload() {
         this.loading = true;
         this.uploadService
-            .upload(this.idNumber, 'REQUIREMENTS', this.uploadedFile)
+            .upload( 'REQUIREMENTS', this.uploadedFile, this.idNumber)
             .pipe(
                 switchMap(() => {
                     this.loading = false;
                     this.messagesService.showSuccess('Document uploaded successfully.');
-                    return this.clientService.getAllClients(); // wait for this to complete
+                    return this.clientService.getAllClients();
                 })
             )
             .subscribe({
                 next: (clients: Client[]) => {
                     this.clients = clients;
-
+                    this.filteredClients = [...clients];
                     this.selectedClient = this.clients.find((client: Client) => client.id === this.selectedClient?.id) ?? null;
-
                     if (this.selectedClient) {
                         console.log('client reloaded >>> ', this.selectedClient.clientStage);
                         this.viewClient(this.selectedClient);
@@ -296,5 +260,41 @@ export class ViewClientsComponent implements OnInit {
                 this.activities = response;
             }
         });
+    }
+
+    onSearch() {
+        if (!this.searchQuery.trim()) {
+            this.filteredClients = [...this.clients];
+            return;
+        }
+        const query = this.searchQuery.toLowerCase().trim();
+        this.filteredClients = this.clients.filter(
+            (client) =>
+                (client.firstName?.toLowerCase() + ' ' + client.lastName?.toLowerCase()).includes(query) ||
+                client.phoneNumber?.toLowerCase().includes(query) ||
+                (client.location || 'KENYA').toLowerCase().includes(query) ||
+                (client.clientStage || 'REGISTRATION').toLowerCase().includes(query) ||
+                (client.email || 'System').toLowerCase().includes(query)
+        );
+    }
+
+    onSort(event: SortEvent) {
+        const field = event.field;
+        const order = event.order || 1;
+        this.filteredClients.sort((a, b) => {
+            const valA = this.getFieldValue(a, <string>field);
+            const valB = this.getFieldValue(b, <string>field);
+            if (valA < valB) return -1 * order;
+            if (valA > valB) return 1 * order;
+            return 0;
+        });
+    }
+
+    private getFieldValue(client: Client, field: string): string {
+        if (field === 'firstName') {
+            return `${client.firstName || ''} ${client.lastName || ''}`.toLowerCase().trim();
+        }
+        const value = client[field as keyof Client];
+        return (value !== undefined && value !== null ? value.toString() : '').toLowerCase();
     }
 }

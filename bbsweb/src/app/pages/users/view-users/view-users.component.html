@@ -1,24 +1,49 @@
-<div>
-    <div>
-        <p-toast />
-        <div class="card grid grid-cols-1 md:grid-cols-4">
-            <div class="font-semibold text-xl p-4 flex flex-col md:col-span-1">
-                <h3 class="text-red-400">
-                    View Users
-                </h3>
-                <p-divider layout="horizontal" />
-                <small style="color: var(--primary-color)">
-                    Privileges are actions that a user can perform on the system, view and delete privileges from here.
-                </small>
+<div *ngIf="loadingUsers" class="w-full flex items-center justify-center p-8">
+    <p-progress-spinner strokeWidth="8" fill="transparent" animationDuration=".5s" [style]="{ width: '50px', height: '50px' }" />
+</div>
+
+<div *ngIf="!loadingUsers" class="p-4 custom-card">
+    <div class="mb-4">
+        <p class="font-bold">View Users</p>
+        <p class="text-gray-600">View and manage user profiles and their roles.</p>
+    </div>
+
+    <div class="mb-4 flex flex-col sm:flex-row gap-4">
+        <span class="p-input-icon-left w-full sm:w-auto flex gap-4 items-center flex-grow">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search users..." class="w-full" />
+        </span>
             </div>
-            <div class="md:col-span-3 md:mt-12 p-4">
-                <p-table [value]="users" [loading]="loading" stripedRows [paginator]="true" [rows]="10" responsiveLayout="scroll">
+
+    <p-table
+        [value]="filteredUsers"
+        [tableStyle]="{'min-width': '50rem'}"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 20]"
+        [scrollable]="true"
+        [styleClass]="'p-datatable-sm p-datatable-striped'"
+        [responsiveLayout]="'scroll'"
+        (onSort)="onSort($event)"
+    >
                     <ng-template pTemplate="header">
                         <tr>
-                            <th>User Name</th>
-                            <th>Email</th>
-                            <th>Phone Number</th>
-                            <th>Role</th>
+                <th pSortableColumn="username">
+                    User Name
+                    <p-sortIcon field="username"></p-sortIcon>
+                </th>
+                <th pSortableColumn="email">
+                    Email
+                    <p-sortIcon field="email"></p-sortIcon>
+                </th>
+                <th pSortableColumn="phonenumber">
+                    Phone Number
+                    <p-sortIcon field="phonenumber"></p-sortIcon>
+                </th>
+                <th pSortableColumn="role.name">
+                    Role
+                    <p-sortIcon field="role.name"></p-sortIcon>
+                </th>
                             <th>Actions</th>
                         </tr>
                     </ng-template>
@@ -27,20 +52,29 @@
                             <td>{{ user.username }}</td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.phonenumber }}</td>
-                            <td>{{ user.role.name || 'System' }}</td>
-                            <td class="flex gap-4">
-                                <button pButton icon="pi pi-pencil" class="p-button-info p-button-sm" (click)="editUser(user)">
-                                </button>
-                                <button pButton icon="pi pi-trash" class="p-button-danger p-button-sm" (click)="confirm2($event, user)">
-                                </button>
+                <td>{{ user.role?.name || 'System' }}</td>
+                <td class="flex gap-2">
+                    <button
+                        pButton
+                        type="button"
+                        label="Edit"
+                        class="p-button-sm"
+                        (click)="editUser(user)"
+                    ></button>
+                    <button
+                        pButton
+                        type="button"
+                        label="Delete"
+                        class="p-button-sm p-button-danger"
+                        (click)="confirm2($event, user)"
+                    ></button>
                             </td>
                         </tr>
                     </ng-template>
                 </p-table>
             </div>
-        </div>
-    </div>
-    <p-dialog header="Edit User Details" [modal]="true" [(visible)]="visible" [style]="{ width: '90%', maxWidth: '50rem' }">
+
+<p-dialog header="Edit User Details" [modal]="true" [(visible)]="visible" [style]="{ width: '90%', maxWidth: '50rem', padding: '8px' }">
         <span class="p-text-secondary">Update user information</span>
         <form [formGroup]="editUserForm">
             <div class="flex flex-col gap-6 mt-4">
@@ -61,7 +95,7 @@
                     </div>
                     <div class="flex flex-col grow basis-0 gap-2">
                         <label class="block">Role</label>
-                        <p-dropdown formControlName="role" appendTo="body" [options]="roles"  optionLabel="name" placeholder="Select Role" class="w-full"></p-dropdown>
+                    <p-dropdown formControlName="role" appendTo="body" [options]="roles" optionLabel="name" placeholder="Select Role" class="w-full"></p-dropdown>
                     </div>
                 </div>
             </div>
@@ -72,4 +106,4 @@
         </form>
     </p-dialog>
     <p-confirm-popup></p-confirm-popup>
-</div>
+<p-toast />

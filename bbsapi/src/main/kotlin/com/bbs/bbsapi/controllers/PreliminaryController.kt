@@ -5,7 +5,7 @@ import com.bbs.bbsapi.entities.PdfInvoiceDTO
 import com.bbs.bbsapi.enums.ApprovalStage
 import com.bbs.bbsapi.enums.PreliminaryStatus
 import com.bbs.bbsapi.models.*
-import com.bbs.bbsapi.repos.PreliminaryTypeRepository
+import com.bbs.bbsapi.repositories.PreliminaryTypeRepository
 import com.bbs.bbsapi.services.ClientService
 import com.bbs.bbsapi.services.DigitalOceanService
 import com.bbs.bbsapi.services.InvoiceService
@@ -87,6 +87,15 @@ class PreliminaryController(
     ): ResponseEntity<Invoice> {
         return preliminaryService.approvePreliminaryInvoice(clientId, preliminaryId)
     }
+    @PostMapping("/{clientId}/approve-county-invoice/{invoiceType}")
+    fun approveCountyInvoice(
+        @PathVariable clientId: Long,
+        @PathVariable invoiceType: String,
+    ): ResponseEntity<Invoice> {
+        return preliminaryService.approveCountyInvoice(clientId, invoiceType)
+    }
+
+
 
     @GetMapping("/files/{clientId}/{preliminaryId}")
     fun getFiles(

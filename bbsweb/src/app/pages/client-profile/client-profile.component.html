@@ -1,10 +1,27 @@
 <div>
-    <p-tabs [(value)]="activeTab" (valueChange)="onTabChange($event)">
-        <p-tablist>
-            <p-tab value="0" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)">Activity</p-tab>
-            <p-tab  value="1" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)">Details</p-tab>
-            <p-tab value="2" *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)">Invoices</p-tab>
-            <p-tab value="3" *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)">Receipts</p-tab>
+    <div *ngIf="loadingData" class="w-full flex items-center justify-center p-8">
+        <p-progress-spinner  strokeWidth="8" fill="transparent" animationDuration=".5s" [style]="{ width: '50px', height: '50px' }" />
+
+    </div>
+
+    <p-tabs *ngIf="!loadingData" [(value)]="activeTab" (valueChange)="onTabChange($event)">
+        <p-tablist >
+            <div class="flex justify-between  w-full">
+                <div class="flex">
+                    <p-tab value="0" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)">
+                        Activity</p-tab>
+                    <p-tab  value="1" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)">Details</p-tab>
+                    <p-tab value="2" *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)">Invoices</p-tab>
+                    <p-tab value="3" *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)">Receipts</p-tab>
+
+                </div>
+
+                <div class="flex justify-center items-center">
+                    <p-chip >{{selectedClient?.firstName  }} {{selectedClient?.secondName}} profile</p-chip>
+
+                </div>
+            </div>
+
         </p-tablist>
         <p-tabpanels>
             <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)" value="0">
@@ -19,7 +36,13 @@
                         <p-tag severity="info"
                                [value]="selectedClient?.nextStage?.toLowerCase()?.replaceAll('_', ' ')" />
                     </div>
+                    <div class="flex pt-4">
+                        <p-button (onClick)="checklistVisible = true" label="view checklist" icon="pi pi-list-check" outlined severity="info"></p-button>
+                    </div>
                 </div>
+                <p-drawer header="Client Checklist" [style]="{ width: '380px' }" [(visible)]="checklistVisible" position="right">
+                    <app-client-milestone-checklist [clientId]="selectedClient?.id!!"></app-client-milestone-checklist>
+                </p-drawer>
 
                 <p-divider layout="horizontal" />
                 <div *ngIf="hasPrivileges(Permissions.VIEW_ACTIVITY_FEED)" class="w-full flex justify-end">
@@ -117,11 +140,7 @@
                                 <span>Complete the site visit by uploading a report and uploading client KYC documents.</span>
                                 <app-site-report-form [client]="selectedClient" (reportGenerated)="handleEventEmit()" />
 
-                                <div class="w-full gap-4 card flex flex-col">
-                                    <p-button (onClick)="siteVisitDialog=true" label="Complete Site Visit"
-                                              icon="pi pi-check" severity="success"
-                                              outlined></p-button>
-                                </div>
+
                             </div>
                             <p-dialog header="Complete Site Visit" [(visible)]="siteVisitDialog" [modal]="true"
                                       [style]="{ width: '25rem' }">
@@ -306,7 +325,7 @@
                                             <p-button icon="pi pi-eye" styleClass="p-button-text p-button-secondary"
                                                       (onClick)="viewDocument(file.fileType)"></p-button>
 <!--                                            TODO-->
-                                            <p-button *ngIf="userRole === 'SUPER_ADMIN'" icon="pi pi-plus"
+                                            <p-button *ngIf="hasPrivileges(Permissions.UPDATE_FILES)" icon="pi pi-plus"
                                                       styleClass="p-button-text p-button-success"
                                                       (onClick)="addDocumentVersion(file)"></p-button>
                                         </td>
@@ -444,13 +463,14 @@
         </div>
     </p-dialog>
 
+
     <ngx-spinner
-        bdColor="rgba(0, 0, 0, 0.8)"
-        size="medium"
-        color="#fff"
-        type="ball-clip-rotate"
+        bdColor="rgba(0, 0, 0, 0.88)"
+        size="large"
+        color="#818CF8"
+        type="ball-pulse-sync"
         [fullScreen]="true"
-        [name]="'spinner'">
-        <p style="color: white">Loading...</p>
+        [name]="'agentSpinner'">
+        <p style="color: #E0E0E0; font-size: 1rem; margin-top: 8px; text-shadow: 0 0 3px black;">Loading Data...</p>
     </ngx-spinner>
 </div>

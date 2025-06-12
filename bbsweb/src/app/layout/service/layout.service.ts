@@ -27,10 +27,10 @@ interface MenuChangeEvent {
 })
 export class LayoutService {
     _config: layoutConfig = {
-        preset: 'Aura',
+        preset: 'Nora',
         primary: 'blue',
         surface: null,
-        darkTheme: true,
+        darkTheme: false,
         menuMode: 'static'
     };
 

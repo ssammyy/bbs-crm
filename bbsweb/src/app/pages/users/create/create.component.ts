@@ -13,12 +13,16 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { ChipModule } from 'primeng/chip';
 import { Message } from 'primeng/message';
 import { InputNumber } from 'primeng/inputnumber';
+import { MessageService } from 'primeng/api';
+import { Router } from '@angular/router';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-create',
-    imports: [ReactiveFormsModule, InputText, NgIf, DropdownModule, ButtonDirective, Button, Toast, FileUploadModule, ChipModule, Message, NgForOf, InputNumber],
+    imports: [ReactiveFormsModule, InputText, NgIf, DropdownModule, ButtonDirective, Button, Toast, FileUploadModule, ChipModule, Message, NgForOf, InputNumber, ProgressSpinner],
     templateUrl: './create.component.html',
-    styleUrl: './create.component.scss'
+    styleUrl: './create.component.scss',
+    providers: [MessageService]
 })
 export class CreateComponent implements OnInit {
     userForm: FormGroup;
@@ -52,14 +56,16 @@ export class CreateComponent implements OnInit {
         private fb: FormBuilder,
         private userService: UserService,
         private rolesService: RolesService,
-        private messagesService: MessagesService
+        private messagesService: MessagesService,
+        private messageService: MessageService,
+        private router: Router
     ) {
         this.userForm = this.fb.group({
             username: ['', Validators.required],
             email: ['', [Validators.required, Validators.email]],
             phoneNumber: [''],
             gender: ['', Validators.required],
-            role: ['', Validators.required],
+            roleId: ['', Validators.required],
             bio: [''],
             paymentMethod: [''],
             bankName: [''],
@@ -76,7 +82,7 @@ export class CreateComponent implements OnInit {
     ngOnInit() {
         this.getRoles();
         // Watch for role changes to enable/disable paymentMethod and next of kin validation
-        this.userForm.get('role')?.valueChanges.subscribe((roleId) => {
+        this.userForm.get('roleId')?.valueChanges.subscribe((roleId) => {
             const selectedRole = this.roles.find((role) => role.id === roleId);
             if (selectedRole?.name === 'Agent') {
                 this.userForm.get('paymentMethod')?.setValidators([Validators.required]);
@@ -127,7 +133,7 @@ export class CreateComponent implements OnInit {
     }
 
     isAgentSelected(): boolean {
-        const selectedRoleId = this.userForm.get('role')?.value;
+        const selectedRoleId = this.userForm.get('roleId')?.value;
         const selectedRole = this.roles.find((role) => role.id === selectedRoleId);
         return selectedRole?.name === 'AGENT';
     }
@@ -165,68 +171,41 @@ export class CreateComponent implements OnInit {
         return true;
     }
 
-    async onSubmit() {
-        this.loading = true;
-        if (this.userForm.invalid) {
-            this.loading = false;
-            this.messagesService.showError('Please fill in all required fields');
-            return;
-        }
+    onSubmit() {
+        if (this.userForm.valid) {
+            this.loading = true;
+            const formData = this.userForm.value;
 
-        const userData = {
-            username: this.userForm.value.username,
-            email: this.userForm.value.email,
-            phonenumber: this.userForm.value.phoneNumber,
-            gender: this.userForm.value.gender,
-            roleId: this.userForm.value.role,
-            paymentMethod: this.userForm.value.paymentMethod,
-            bankName: this.userForm.value.bankName,
-            bankAccountNumber: this.userForm.value.bankAccountNumber,
-            bankBranch: this.userForm.value.bankBranch,
-            bankAccountHolderName: this.userForm.value.bankAccountHolderName,
-            nextOfKinIdNumber: this.userForm.value.nextOfKinIdNumber,
-            nextOfKinName: this.userForm.value.nextOfKinName,
-            nextOfKinPhoneNumber: this.userForm.value.nextOfKinPhoneNumber
-        };
-
-        // Step 1: Register the user
-        this.userService.registerUser(userData).subscribe({
-            next: async (res) => {
-                const userId = res.id; // Assuming the response includes the user ID
-                if (!userId) {
-                    this.messagesService.showError('Failed to retrieve user ID for document upload');
+            this.userService.registerUser(formData).subscribe({
+                next: (response) => {
+                    if (this.isAgentSelected()) {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Success',
+                            detail: 'Agent registration submitted for approval'
+                        });
+                    } else {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Success',
+                            detail: 'User created successfully'
+                        });
+                    }
+                    this.router.navigate(['/users']);
+                },
+                error: (error) => {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: error.error.message || 'Failed to create user'
+                    });
                     this.loading = false;
-                    return;
+                },
+                complete: () => {
+                    this.loading = false;
                 }
-
-                // Step 2: If Agent, check for missing KYC documents and upload them
-                if (this.isAgentSelected()) {
-                    if (this.missingDocuments.length > 0) {
-                        this.messagesService.showError(`Please select all required KYC documents: ${this.missingDocuments.join(', ')}`);
-                        this.loading = false;
-                        return;
-                    }
-
-                    const uploadSuccess = await this.uploadAllDocuments(userId);
-                    if (!uploadSuccess) {
-                        this.messagesService.showWarn('User registered, but some KYC documents failed to upload');
-                        this.loading = false;
-                        return;
-                    }
-                }
-
-                this.loading = false;
-                this.userForm.reset();
-                this.selectedDocuments = {};
-                const successMessage = res?.message || 'Successfully registered';
-                this.messagesService.showSuccess(successMessage);
-            },
-            error: (err) => {
-                this.loading = false;
-                const errorMessage = err?.error?.message || 'Failed to register user';
-                this.messagesService.showError(errorMessage);
-            }
-        });
+            });
+        }
     }
 
     protected readonly name = name;

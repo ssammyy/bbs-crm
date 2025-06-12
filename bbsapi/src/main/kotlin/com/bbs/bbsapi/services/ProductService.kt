@@ -1,10 +1,11 @@
 package com.bbs.bbsapi.services
 
+
+import com.bbs.bbsapi.dtos.ProductResponseDTO
 import com.bbs.bbsapi.entities.ProductDTO
-import com.bbs.bbsapi.entities.ProductResponseDTO
 import com.bbs.bbsapi.models.PortfolioFileType
 import com.bbs.bbsapi.models.Product
-import com.bbs.bbsapi.repos.ProductRepository
+import com.bbs.bbsapi.repositories.ProductRepository
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 
@@ -13,33 +14,48 @@ class ProductService(
     private val productRepository: ProductRepository,
     private val digitalOceanService: DigitalOceanService
 ) {
-    fun createProduct(dto: ProductDTO, file: MultipartFile): ProductResponseDTO {
-        // Validate DTO and file
+    fun createProduct(dto: ProductDTO, files: List<MultipartFile>): ProductResponseDTO {
+        // Validate DTO and files
         if (dto.productTitle.isBlank() || dto.description.isBlank() || dto.videoUrl.isBlank()) {
             throw IllegalArgumentException("All fields are required")
         }
-        val allowedTypes = listOf("image/png", "image/jpeg", "image/jpg", "video/mp4", "video/avi", "video/mpeg")
-        if (file.contentType !in allowedTypes) {
-            throw IllegalArgumentException("Unsupported file type")
+        if (files.isEmpty()) {
+            throw IllegalArgumentException("At least one file is required")
         }
 
-        // Upload file
-        val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
+        val allowedTypes = listOf("image/png", "image/jpeg", "image/jpg", "video/mp4", "video/avi", "video/mpeg")
+        files.forEach { file ->
+            if (file.contentType !in allowedTypes) {
+                throw IllegalArgumentException("Unsupported file type: ${file.contentType}")
+            }
+        }
 
-        // Create and save Product
+        // Upload files and collect their information
+        val fileInfos = files.map { file ->
+            val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
+            Triple(
+                objectKey,
+                fileUrl,
+                if (file.contentType?.startsWith("image") == true) PortfolioFileType.IMAGE else PortfolioFileType.VIDEO
+            )
+        }
+
+        // Create and save Product with the first file as primary
+        val primaryFile = fileInfos.first()
         val product = Product(
             productTitle = dto.productTitle,
             productVp = dto.productVp,
             productHook = dto.productHook,
             videoUrl = dto.videoUrl,
             description = dto.description,
-            fileType = if (file.contentType?.startsWith("image") == true) PortfolioFileType.IMAGE else PortfolioFileType.VIDEO,
-            fileName = file.originalFilename ?: "unknown",
-            objectKey = objectKey
+            fileType = primaryFile.third,
+            fileName = files.first().originalFilename ?: "unknown",
+            objectKey = primaryFile.first,
+            additionalFiles = fileInfos.drop(1).map { it.first }.toMutableList()
         )
         val savedProduct = productRepository.save(product)
 
-        // Return response DTO with fileUrl
+        // Return response DTO with fileUrl and additional files
         return ProductResponseDTO(
             id = savedProduct.id,
             productTitle = savedProduct.productTitle,
@@ -47,7 +63,8 @@ class ProductService(
             fileType = savedProduct.fileType,
             fileName = savedProduct.fileName,
             objectKey = savedProduct.objectKey,
-            fileUrl = fileUrl,
+            fileUrl = primaryFile.second,
+            additionalFileUrls = fileInfos.drop(1).map { it.second },
             createdAt = savedProduct.createdAt,
             productVp = savedProduct.productVp,
             productHook = savedProduct.productHook,

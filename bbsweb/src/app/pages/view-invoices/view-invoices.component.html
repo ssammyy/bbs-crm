@@ -43,7 +43,7 @@
                     <h3 class="text-base sm:text-lg font-semibold">Invoice #{{ invoice.invoiceNumber }}</h3>
                     <div class="flex flex-col sm:flex-row sm:justify-between mt-2 gap-2 sm:gap-0">
                         <p class="text-xs sm:text-sm">Invoice for: <span
-                            class="font-medium">{{ invoice.preliminary?.preliminaryType?.name || 'Site Visit' }}</span>
+                            class="font-medium">{{ invoice.invoiceType || 'Site Visit' }}</span>
                         </p>
                         <p class="text-xs sm:text-sm">Client: <span class="font-medium">{{ invoice.clientName }}
                             ({{ invoice.clientPhone }})</span></p>
@@ -73,11 +73,14 @@
                             </span>
                         </div>
                         <div class="flex gap-2 mt-2 sm:mt-0">
-                            <p-button *ngIf="InvoiceType.SITE_VISIT!=invoice.invoiceType && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
+                            <p-button *ngIf="invoice.invoiceType == InvoiceType.PRELIMINARY.toString()  && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
                                       label="View Invoice" (onClick)="viewPreliminaryInvoice(invoice?.preliminary?.id)"
                                       text severity="info" size="small"></p-button>
-                            <p-button *ngIf="InvoiceType.SITE_VISIT===invoice.invoiceType && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
-                                      label="View Invoice" (onClick)="viewInvoicePdf('SITE_VISIT')" text severity="info"
+                            <p-button *ngIf="(invoice.invoiceType === InvoiceType.SITE_VISIT ) && invoice.invoiceType != InvoiceType.PRELIMINARY.toString() && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
+                                      label="View c Invoice" (onClick)="viewInvoicePdf(invoice.invoiceType || 'SITE_VISIT')" text severity="info"
+                                      size="small"></p-button>
+                            <p-button *ngIf="(invoice.invoiceType === InvoiceType.COUNTY_INVOICE.toString() ) && invoice.invoiceType != InvoiceType.PRELIMINARY.toString() && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
+                                      label="View v Invoice" (onClick)="viewInvoicePdf(invoice.invoiceType || 'SITE_VISIT', invoice.governmentApprovalType)" text severity="info"
                                       size="small"></p-button>
                             <p-button
                                 *ngIf="!invoice.invoiceReconciled && invoice.directorApproved && invoice.pendingBalance && !hasBalanceInvoices(invoice) && hasPrivilege(Permissions.CREATE_INVOICES)"
@@ -217,7 +220,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Action Buttons -->
                 <div class="flex justify-end gap-2">
                     <p-button label="Cancel" severity="secondary" outlined (onClick)="displayReceiptDialog = false"

@@ -12,6 +12,7 @@ export interface DashboardStats {
     recentActivities: {
         id: number;
         clientId: number;
+        clientName: string;
         description: string;
         timestamp: string;
         user: string | null;

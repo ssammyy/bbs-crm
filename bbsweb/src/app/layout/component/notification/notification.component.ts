@@ -5,111 +5,279 @@ import { Notification } from '../../../shared/interfaces/notification.interface'
 import { interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule, OverlayPanel } from 'primeng/overlaypanel';
+import { DrawerModule, Drawer } from 'primeng/drawer';
 import { BadgeModule } from 'primeng/badge';
 import { RippleModule } from 'primeng/ripple';
+import { OverlayBadge } from 'primeng/overlaybadge';
+import { Divider } from 'primeng/divider';
 
 @Component({
     selector: 'app-notification',
     standalone: true,
-    imports: [CommonModule, ButtonModule, OverlayPanelModule, BadgeModule, RippleModule],
+    imports: [CommonModule, ButtonModule, DrawerModule, BadgeModule, RippleModule, OverlayBadge, Divider],
     template: `
-        <div class="relative">
-            <button
-                pButton
-                pRipple
-                type="button"
-                icon="pi pi-bell"
-                class="p-button-rounded p-button-text"
-                (click)="op.toggle($event)"
-                pBadge
-                [value]="unreadCount"
-                [severity]="'danger'"
-            ></button>
+        <div class="notification-wrapper">
+            <p-overlaybadge class="flex pt-2 " [value]="unreadCount" (click)="toggleDrawer()">
+                <i class=" pi pi-bell" style="font-size: 1.5rem"></i>
+            </p-overlaybadge>
 
-            <p-overlayPanel #op [showCloseIcon]="true" [dismissable]="true" styleClass="notification-panel">
-                <ng-template pTemplate>
-                    <div class="p-3">
-                        <div class="flex justify-content-between align-items-center mb-3">
-                            <h3 class="text-lg font-semibold m-0">Notifications</h3>
-                            <button
-                                *ngIf="unreadCount > 0"
-                                pButton
-                                pRipple
-                                type="button"
-                                label="Mark all as read"
-                                class="p-button-text p-button-sm"
-                                (click)="markAllAsRead()"
-                            ></button>
+            <p-drawer #drawer [position]="'right'" [style]="{ width: '380px' }" [modal]="true" [showCloseIcon]="true" [(visible)]="visible">
+                <div class="drawer-content">
+                    <div class="drawer-header">
+                        <div class="header-content">
+                            <strong class="title">Notifications</strong>
+                            &nbsp;
+                            <strong class="count" *ngIf="unreadCount > 0">{{ unreadCount }} unread</strong>
+                        </div>
+                        <button *ngIf="unreadCount > 0" pButton pRipple type="button" class="p-button-text p-button-sm mark-all" (click)="markAllAsRead()">
+                            <i class="pi pi-check mr-2"></i>
+                            Mark all as read
+                        </button>
+                    </div>
+
+                    <div class="notification-list">
+                        <div *ngIf="notifications.length === 0" class="empty-state">
+                            <div class="empty-icon">
+                                <i class="pi pi-bell"></i>
+                            </div>
+                            <p>All caught up!</p>
+                            <span>You're up to date with all your notifications</span>
                         </div>
 
-                        <div class="notification-list" style="max-height: 400px; overflow-y: auto;">
-                            <div
-                                *ngIf="notifications.length === 0"
-                                class="text-center text-500 p-3"
-                            >
-                                No notifications
-                            </div>
-
-                            <div
-                                *ngFor="let notification of notifications"
-                                (click)="markAsRead(notification)"
-                                class="p-3 border-bottom-1 surface-border cursor-pointer"
-                                [class.bg-blue-50]="!notification.isRead"
-                                pRipple
-                            >
-                                <div class="flex align-items-start">
-                                    <i [class]="'pi ' + getNotificationIcon(notification.type) + ' mr-3 text-500'"></i>
-                                    <div class="flex-1">
-                                        <h4 class="font-medium text-900 m-0">
-                                            {{ notification.title }}
-                                        </h4>
-                                        <p class="text-sm text-600 mt-2 mb-2">
-                                            {{ notification.message }}
-                                        </p>
-                                        <p class="text-xs text-400 m-0">
-                                            {{ notification.createdAt | date:'medium' }}
-                                        </p>
+                        <div *ngFor="let notification of notifications" (click)="markAsRead(notification)" class="notification-item" [class.unread]="!notification.isRead" pRipple>
+                            <div class="notification-content">
+                                <div class="icon-wrapper" [class]="notification.type.toLowerCase()">
+                                    <i [class]="'pi ' + getNotificationIcon(notification.type)"></i>
+                                </div>
+                                <div class="notification-details">
+                                    <div class="notification-header">
+                                        <small>{{ notification.title }}</small>
+                                        <span class="time">{{ notification.createdAt | date: 'shortTime' }}</span>
                                     </div>
-                                    <div
-                                        *ngIf="!notification.isRead"
-                                        class="w-2rem h-2rem border-circle bg-primary"
-                                    ></div>
                                 </div>
                             </div>
+                            <p-divider layout="horizontal" />
                         </div>
                     </div>
-                </ng-template>
-            </p-overlayPanel>
+                </div>
+            </p-drawer>
         </div>
     `,
-    styles: [`
-        :host ::ng-deep {
-            .notification-panel {
-                width: 400px;
+    styles: [
+        `
+            :host ::ng-deep {
+                .notification-wrapper {
+                    position: relative;
+                    display: inline-block;
+                }
+
+                .notification-button {
+                    position: relative;
+                }
+
+                .p-badge {
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    transform: translate(50%, -50%);
+                    z-index: 1000;
+                }
+
+                .drawer-content {
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    background-color: var(--surface-ground);
+                }
+
+                .drawer-header {
+                    padding: 1rem 1.25rem;
+                    background-color: var(--surface-card);
+                    border-bottom: 1px solid var(--surface-border);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+
+                    .header-content {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+
+                    .title {
+                        font-size: 0.875rem;
+                        font-weight: 600;
+                        color: var(--text-color);
+                    }
+
+                    .count {
+                        font-size: 0.75rem;
+                        color: var(--primary-color);
+                        font-weight: 500;
+                    }
+
+                    .mark-all {
+                        font-size: 0.75rem;
+                        padding: 0.25rem 0.5rem;
+                        color: var(--text-color-secondary);
+
+                        &:hover {
+                            background-color: var(--surface-hover);
+                        }
+                    }
+                }
+
+                .notification-list {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 0.5rem;
+
+                    &::-webkit-scrollbar {
+                        width: 4px;
+                    }
+
+                    &::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+
+                    &::-webkit-scrollbar-thumb {
+                        background: var(--surface-border);
+                        border-radius: 2px;
+                    }
+                }
+
+                .empty-state {
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 2rem;
+                    text-align: center;
+
+                    .empty-icon {
+                        width: 48px;
+                        height: 48px;
+                        border-radius: 50%;
+                        background-color: var(--surface-card);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin-bottom: 1rem;
+
+                        i {
+                            font-size: 1.5rem;
+                            color: var(--text-color-secondary);
+                        }
+                    }
+
+                    p {
+                        margin: 0;
+                        font-size: 1rem;
+                        font-weight: 600;
+                        color: var(--text-color);
+                    }
+
+                    span {
+                        font-size: 0.875rem;
+                        color: var(--text-color-secondary);
+                        margin-top: 0.5rem;
+                    }
+                }
+
+                .notification-item {
+                    padding: 0.75rem;
+                    border-radius: 8px;
+                    margin-bottom: 0.25rem;
+                    transition: all 0.2s;
+                    cursor: pointer;
+                    background-color: var(--surface-card);
+
+                    &:hover {
+                        background-color: var(--surface-hover);
+                    }
+
+                    &.unread {
+                        background-color: var(--primary-50);
+                    }
+                }
+
+                .notification-content {
+                    display: flex;
+                    gap: 0.75rem;
+                }
+
+                .icon-wrapper {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+
+                    &.system {
+                        background-color: var(--blue-100);
+                        color: var(--blue-700);
+                    }
+
+                    &.invoice {
+                        background-color: var(--green-100);
+                        color: var(--green-700);
+                    }
+
+                    &.approval {
+                        background-color: var(--orange-100);
+                        color: var(--orange-700);
+                    }
+
+                    i {
+                        font-size: 1rem;
+                    }
+                }
+
+                .notification-details {
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .notification-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 0.25rem;
+
+                    h4 {
+                        margin: 0;
+                        font-size: 0.875rem;
+                        font-weight: 600;
+                        color: var(--text-color);
+                        line-height: 1.4;
+                    }
+
+                    .time {
+                        font-size: 0.75rem;
+                        color: var(--text-color-secondary);
+                        white-space: nowrap;
+                        margin-left: 0.5rem;
+                    }
+                }
+
+                .message {
+                    margin: 0;
+                    font-size: 0.813rem;
+                    color: var(--text-color-secondary);
+                    line-height: 1.4;
+                }
             }
-
-            .notification-list {
-                &::-webkit-scrollbar {
-                    width: 6px;
-                }
-
-                &::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                }
-
-                &::-webkit-scrollbar-thumb {
-                    background: #888;
-                    border-radius: 3px;
-                }
-            }
-        }
-    `]
+        `
+    ]
 })
 export class NotificationComponent implements OnInit {
-    @ViewChild('op') op!: OverlayPanel;
+    @ViewChild('drawer') drawer!: Drawer;
     notifications: Notification[] = [];
     unreadCount: number = 0;
+    visible: boolean = false;
 
     constructor(private notificationService: NotificationService) {}
 
@@ -118,34 +286,30 @@ export class NotificationComponent implements OnInit {
         this.loadUnreadCount();
 
         // Refresh notifications every 30 seconds
-        interval(30000).pipe(
-            switchMap(() => this.notificationService.getUserNotifications())
-        ).subscribe(notifications => {
-            this.notifications = notifications;
-        });
+        interval(30000)
+            .pipe(switchMap(() => this.notificationService.getUserNotifications()))
+            .subscribe((notifications) => {
+                this.notifications = notifications;
+            });
 
         // Refresh unread count every 30 seconds
-        interval(30000).pipe(
-            switchMap(() => this.notificationService.getUnreadCount())
-        ).subscribe(count => {
-            this.unreadCount = count;
-        });
+        interval(30000)
+            .pipe(switchMap(() => this.notificationService.getUnreadCount()))
+            .subscribe((count) => {
+                this.unreadCount = count;
+            });
     }
 
     loadNotifications(): void {
-        this.notificationService.getUserNotifications().subscribe(
-            notifications => {
-                this.notifications = notifications;
-            }
-        );
+        this.notificationService.getUserNotifications().subscribe((notifications) => {
+            this.notifications = notifications;
+        });
     }
 
     loadUnreadCount(): void {
-        this.notificationService.getUnreadCount().subscribe(
-            count => {
-                this.unreadCount = count;
-            }
-        );
+        this.notificationService.getUnreadCount().subscribe((count) => {
+            this.unreadCount = count;
+        });
     }
 
     markAsRead(notification: Notification): void {
@@ -159,7 +323,7 @@ export class NotificationComponent implements OnInit {
 
     markAllAsRead(): void {
         this.notificationService.markAllAsRead().subscribe(() => {
-            this.notifications.forEach(notification => notification.isRead = true);
+            this.notifications.forEach((notification) => (notification.isRead = true));
             this.unreadCount = 0;
         });
     }
@@ -175,5 +339,9 @@ export class NotificationComponent implements OnInit {
             default:
                 return 'pi-bell';
         }
+    }
+
+    toggleDrawer(): void {
+        this.visible = !this.visible;
     }
 }

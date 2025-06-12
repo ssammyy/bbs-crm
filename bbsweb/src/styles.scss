@@ -134,3 +134,34 @@
     border-radius: var(--content-border-radius);
     padding: 0.5rem 1.5rem;
 }
+
+.custom-card {
+    @apply rounded-xl shadow-sm border;
+    border-color: var(--surface-border);
+}
+
+.custom-border-bottom {
+    border-bottom: 1px solid var(--surface-border);
+}
+
+.stat-box-success {
+    @apply text-center p-3 rounded-md;
+    background-color: var(--green-50);
+    color: var(--green-700);
+
+    .stat-value {
+        @apply  font-bold;
+        color: var(--green-600);
+    }
+}
+
+.stat-box-warning {
+    @apply text-center p-3 rounded-md;
+    background-color: var(--yellow-50);
+    color: var(--yellow-700);
+
+    .stat-value {
+        @apply  font-bold;
+        color: var(--yellow-600);
+    }
+}

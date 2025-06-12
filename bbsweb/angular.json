@@ -3,7 +3,7 @@
     "version": 1,
     "newProjectRoot": "projects",
     "projects": {
-        "sakai-ng": {
+        "bbsweb": {
             "projectType": "application",
             "schematics": {
                 "@schematics/angular:component": {
@@ -67,12 +67,16 @@
                 },
                 "serve": {
                     "builder": "@angular-devkit/build-angular:dev-server",
+                    "options": {
+                        "proxyConfig": "proxy.conf.json",
+                        "buildTarget": "bbsweb:build"
+                    },
                     "configurations": {
                         "production": {
-                            "buildTarget": "sakai-ng:build:production"
+                            "buildTarget": "bbsweb:build:production"
                         },
                         "development": {
-                            "buildTarget": "sakai-ng:build:development"
+                            "buildTarget": "bbsweb:build:development"
                         }
                     },
                     "defaultConfiguration": "development"

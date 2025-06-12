@@ -4,9 +4,9 @@ import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.ReportStatus
 import com.bbs.bbsapi.models.SiteReport
 import com.bbs.bbsapi.models.AuditLog
-import com.bbs.bbsapi.repos.ClientRepository
-import com.bbs.bbsapi.repos.SiteReportRepository
-import com.bbs.bbsapi.repos.AuditLogRepository
+import com.bbs.bbsapi.repositories.ClientRepository
+import com.bbs.bbsapi.repositories.SiteReportRepository
+import com.bbs.bbsapi.repositories.AuditLogRepository
 import org.springframework.stereotype.Service
 import org.springframework.http.ResponseEntity
 import org.springframework.transaction.annotation.Transactional

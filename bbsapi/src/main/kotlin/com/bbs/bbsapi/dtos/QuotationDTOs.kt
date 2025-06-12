@@ -18,7 +18,8 @@ data class PdfInvoiceDTO(
     val discountAmount: Double = 0.0,
     val subtotal: Double = total,
     val finalTotal: Double = total,
-    val parentInvoiceId: Long? = null
+    val parentInvoiceId: Long? = null,
+    val countyInvoiceType: String? = null,
 )
 
 data class PdfInvoiceItemDTO(

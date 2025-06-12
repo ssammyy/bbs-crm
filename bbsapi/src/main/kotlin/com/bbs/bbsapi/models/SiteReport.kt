@@ -1,6 +1,7 @@
 package com.bbs.bbsapi.models
 
 import com.bbs.bbsapi.enums.ReportStatus
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 
@@ -23,5 +24,4 @@ data class SiteReport(
     val notes: String? = null,
     val status: ReportStatus = ReportStatus.PENDING, // Default to PENDING
     val rejectionComments: String? = null //
-
 )

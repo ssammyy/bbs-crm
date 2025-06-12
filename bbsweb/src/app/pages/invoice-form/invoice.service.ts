@@ -31,10 +31,12 @@ export class InvoiceService {
         });
     }
 
-    getInvoicePdfNew(clientId: number, invoiceType: string): Observable<Blob> {
-        return this.http.get(`${this.apiUrl}/api/invoices/${clientId}/${invoiceType}/pdf`, {
-            responseType: 'blob'
-        });
+    getInvoicePdfNew(clientId: number, invoiceType: string, govApprovalType?: string): Observable<Blob> {
+        console.log("Invoice type", invoiceType);
+        const url = govApprovalType  !=null
+            ? `${this.apiUrl}/api/invoices/${clientId}/${invoiceType}/pdf?govApprovalType=${govApprovalType}`
+            : `${this.apiUrl}/api/invoices/${clientId}/${invoiceType}/pdf`;
+        return this.http.get(url, { responseType: 'blob' });
     }
 
     getInvoicePdfById(invoiceId: number): Observable<Blob> {
@@ -59,6 +61,10 @@ export class InvoiceService {
 
     approvePreliminaryInvoice(clientId: number, preliminaryId: number | undefined): Observable<Client> {
         return this.http.post<Client>(`${this.apiUrl}/api/preliminaries/${clientId}/approve-invoice/${preliminaryId}`, {});
+    }
+
+    approveCountyInvoice(clientId: number, invoiceType: string): Observable<Client> {
+        return this.http.post<Client>(`${this.apiUrl}/api/preliminaries/${clientId}/approve-county-invoice/${invoiceType}`, {});
     }
 
     rejectInvoice(clientId: number, remarks: string, stage: string): Observable<Client> {

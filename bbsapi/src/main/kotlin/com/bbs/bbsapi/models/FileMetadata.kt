@@ -22,6 +22,7 @@ data class FileMetadata(
     val versionNotes: String? = null,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now(),
+    var approved: Boolean = false,
     @ManyToOne
     val client: Client? = null,
     @ManyToOne

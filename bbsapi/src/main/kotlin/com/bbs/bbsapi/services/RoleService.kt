@@ -3,8 +3,8 @@ package com.bbs.bbsapi.services
 import com.bbs.bbsapi.entities.PrivilegeDTO
 import com.bbs.bbsapi.entities.RoleDTO
 import com.bbs.bbsapi.models.Role
-import com.bbs.bbsapi.repos.PrivilegeRepository
-import com.bbs.bbsapi.repos.RoleRepository
+import com.bbs.bbsapi.repositories.PrivilegeRepository
+import com.bbs.bbsapi.repositories.RoleRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

@@ -3,7 +3,7 @@ package com.bbs.bbsapi.services
 import com.bbs.bbsapi.controllers.UpdateClientCommitmentDTO
 import com.bbs.bbsapi.enums.ContactStatus
 import com.bbs.bbsapi.models.Client
-import com.bbs.bbsapi.repos.ClientRepository
+import com.bbs.bbsapi.repositories.ClientRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime

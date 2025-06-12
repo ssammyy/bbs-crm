@@ -26,6 +26,11 @@ data class Product(
     @Column(name = "object_key", nullable = false)
     var objectKey: String? = null,
 
+    @ElementCollection
+    @CollectionTable(name = "product_additional_files", joinColumns = [JoinColumn(name = "product_id")])
+    @Column(name = "object_key")
+    var additionalFiles: MutableList<String> = mutableListOf(),
+
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 

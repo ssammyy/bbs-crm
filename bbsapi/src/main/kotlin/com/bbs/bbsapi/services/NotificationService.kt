@@ -2,7 +2,7 @@ package com.bbs.bbsapi.services
 
 import com.bbs.bbsapi.models.Notification
 import com.bbs.bbsapi.models.User
-import com.bbs.bbsapi.repos.NotificationRepository
+import com.bbs.bbsapi.repositories.NotificationRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -25,7 +25,8 @@ class NotificationService(
 
     @Transactional(readOnly = true)
     fun getUserNotifications(userId: Long): List<Notification> {
-        return notificationRepository.findByUserIdOrderByCreatedOnDesc(userId)
+        println("fetching for user id $userId")
+        return notificationRepository.findByUserIdAndIsReadIsFalseOrderByCreatedOnDesc(userId)
     }
 
     @Transactional(readOnly = true)

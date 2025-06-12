@@ -17,7 +17,13 @@ data class Preliminary(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "preliminary_type_id", nullable = false)
-    val preliminaryType: PreliminaryType? = null,
+    var preliminaryType: PreliminaryType? = null,
+
+    @Column(name = "client_invoiced_for_approval", nullable = false)
+    var clientInvoicedForApproval: Boolean = false,
+
+    @Column(name = "client_paid_for_approval", nullable = false)
+    var clientPaidForApproval: Boolean = false,
 
 
     @ManyToOne(fetch = FetchType.LAZY)

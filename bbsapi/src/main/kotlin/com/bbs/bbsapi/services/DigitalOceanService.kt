@@ -4,8 +4,8 @@ import com.bbs.bbsapi.enums.FileType
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.FileMetadata
 import com.bbs.bbsapi.models.Preliminary
-import com.bbs.bbsapi.repos.ClientRepository
-import com.bbs.bbsapi.repos.FileRepository
+import com.bbs.bbsapi.repositories.ClientRepository
+import com.bbs.bbsapi.repositories.FileRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
@@ -162,13 +162,14 @@ class DigitalOceanService(
      * Get files for a client
      */
     fun getClientFiles(client: Client): ResponseEntity<List<Map<String, Any?>>> {
-        val clientFiles = fileRepository.findByClient(client)
+//        if logged in user is client, only return approved files
+        val clientFiles = fileRepository.findByClientAndApprovedIsTrue(client)
         val filesWithUrls = clientFiles.map { fileMetadata ->
             val presignedUrl = getFileUrl(fileMetadata.objectKey.toString())
             mapOf(
                 "id" to fileMetadata.id,
                 "fileType" to fileMetadata.fileType,
-                "specific" to fileMetadata.preliminary?.preliminaryType?.name,
+                "specific" to (if (fileMetadata.fileType == FileType.COUNTY_INVOICE) null else fileMetadata.preliminary?.preliminaryType?.name),
                 "fileName" to fileMetadata.fileName,
                 "fileUrl" to presignedUrl,
                 "version" to fileMetadata.version,
@@ -212,6 +213,7 @@ class DigitalOceanService(
                 fileUrl = "",
                 version = newVersion,
                 versionNotes = versionNotes,
+                approved = true,
                 client = client,
                 preliminary = fileVar.preliminary,
                 user = fileVar.user

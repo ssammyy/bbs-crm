@@ -40,6 +40,11 @@ import { ReceiptsComponent } from '../receipts/receipts.component';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Permissions } from '../data/permissions.enum';
+import { ProgressSpinner } from 'primeng/progressspinner';
+import { Drawer } from 'primeng/drawer';
+import {
+    ClientMilestoneChecklistComponent
+} from '../dashboard/components/client-milestone-checklist/client-milestone-checklist.component';
 
 @Component({
     selector: 'app-client-profile',
@@ -77,7 +82,10 @@ import { Permissions } from '../data/permissions.enum';
         FileUploadModule,
         NonKycDocumentPipe,
         ReceiptsComponent,
-        NgxSpinnerModule
+        NgxSpinnerModule,
+        ProgressSpinner,
+        Drawer,
+        ClientMilestoneChecklistComponent
     ],
     templateUrl: './client-profile.component.html',
     styleUrls: ['./client-profile.component.scss'],
@@ -110,7 +118,7 @@ export class ClientProfileComponent implements OnInit {
     loading: boolean = false;
     selectedClient: Client | null = null;
     clientFiles: Files[] = [];
-    clientIDMock: number = 10
+    clientIDMock: number = 10;
     activityFeedVisible: boolean = true;
     selectedDocument: Files | null = null;
     clientStage: string = '';
@@ -119,6 +127,7 @@ export class ClientProfileComponent implements OnInit {
     clientId: number = 0;
     uploadedFile: any;
     rejectDialog = false;
+    loadingData = false;
     invoiceRejectionRemarks = '';
     clients: Client[] = [];
     userRole!: string;
@@ -142,6 +151,7 @@ export class ClientProfileComponent implements OnInit {
         private messagesService: MessagesService,
         private invoiceService: InvoiceService,
         private uploadService: UploadService,
+
         private userGlobalService: UserGlobalService,
         private route: ActivatedRoute,
         private router: Router,
@@ -150,15 +160,16 @@ export class ClientProfileComponent implements OnInit {
     ) {}
 
     async ngOnInit() {
-        this.spinner.show();
+        this.loadingData = true;
         try {
-            this.selectedClient = history.state.client;
-            if (!this.selectedClient) {
-                const clientId = this.route.snapshot.paramMap.get('id');
-                if (clientId) {
-                    await this.fetchClientById(Number(clientId));
-                }
+            const clientId = this.route.snapshot.paramMap.get('id');
+            if (clientId) {
+                await this.fetchClientById(Number(clientId));
+            } else if (history.state.client) {
+                // If we have history state, still fetch fresh data
+                await this.fetchClientById(history.state.client.id);
             }
+
             this.personalInfoForm = this.fb.group({
                 firstName: ['', Validators.required],
                 secondName: ['', Validators.required],
@@ -178,13 +189,9 @@ export class ClientProfileComponent implements OnInit {
                 this.patchValues(this.selectedClient);
             }
 
-            await Promise.all([
-                this.getClientFiles(<number>this.selectedClient?.id),
-                this.getClientActivities(<number>this.selectedClient?.id),
-                this.getUserDetails()
-            ]);
+            await Promise.all([this.getClientFiles(<number>this.selectedClient?.id), this.getClientActivities(<number>this.selectedClient?.id), this.getUserDetails()]);
         } finally {
-            this.spinner.hide();
+            this.loadingData = false;
         }
     }
 
@@ -237,6 +244,7 @@ export class ClientProfileComponent implements OnInit {
             this.spinner.show();
             this.clientService.getClientFiles(clientId).subscribe({
                 next: (files: Files[]) => {
+                    console.log(' client files ', { files });
                     this.clientFiles = files;
                     this.spinner.hide();
                     resolve();
@@ -282,7 +290,7 @@ export class ClientProfileComponent implements OnInit {
             return;
         }
         this.uploadService
-            .upload(this.clientId, fileType, this.uploadedFile)
+            .upload( fileType, this.uploadedFile, this.clientId)
             .pipe(
                 switchMap(() => {
                     this.loading = false;
@@ -321,7 +329,7 @@ export class ClientProfileComponent implements OnInit {
     onKycFileSelect(event: any, fileType: string): void {
         const file: File = event.files[0];
         this.uploadedFile = file;
-        this.selectedDocument = {  fileType, fileName: file.name, fileUrl: '' }; // Temporary object to track selection
+        this.selectedDocument = { fileType, fileName: file.name, fileUrl: '' }; // Temporary object to track selection
     }
 
     getClientActivities(clientId: number): Promise<void> {
@@ -357,7 +365,7 @@ export class ClientProfileComponent implements OnInit {
 
     reloadClientData() {
         if (this.selectedClient?.id) {
-            this.fetchClientById(this.selectedClient.id);
+            this.fetchClientById(this.selectedClient.id).then((r) => {});
         }
     }
 
@@ -403,9 +411,8 @@ export class ClientProfileComponent implements OnInit {
         });
     }
 
-
     completeSiteVisit() {
-        this.uploadService.upload(this.idNumber, 'SITE_VISIT_REPORT', this.uploadedFile).subscribe({
+        this.uploadService.upload( 'SITE_VISIT_REPORT', this.uploadedFile, this.idNumber).subscribe({
             next: () => {
                 this.clientService.updateClientStage(<number>this.selectedClient?.id, 'GENERATE_DRAWINGS_INVOICE', 'PENDING_CLIENT_DRAWINGS_PAYMENT', `Site visit completed: ${this.siteVisitRemarks}`).subscribe({
                     next: (response) => {
@@ -428,14 +435,12 @@ export class ClientProfileComponent implements OnInit {
         });
     }
 
-
-
-
     async fetchClientById(id: number): Promise<void> {
         try {
             const response: Client = <Client>await this.clientService.getClient(id).toPromise();
             this.selectedClient = response;
             this.clientStage = response.clientStage;
+            console.log('Client Stage from fetch:', this.clientStage);
             this.patchValues(response);
         } catch (error) {
             console.error('Error fetching client:', error);
@@ -482,7 +487,8 @@ export class ClientProfileComponent implements OnInit {
 
     onTabChange(event: any) {
         console.log('Tab Change', event);
-        this.activeTab = event.value;
+        this.activeTab = event;
+        console.log('active tab ', this.activeTab);
         if (event.value === '0' && this.selectedClient) {
             // Reload client data when activity tab is selected
             this.reloadClientData();
@@ -492,14 +498,14 @@ export class ClientProfileComponent implements OnInit {
                 next: (client: Client) => {
                     this.selectedClient = client;
                     this.clientStage = client.clientStage;
+                    console.log('Client Stage after tab change:', this.clientStage);
                 }
             });
         }
     }
 
-
     hasPrivileges(privilege: string): boolean {
-        return this.userGlobalService.hasPrivilege(privilege)
+        return this.userGlobalService.hasPrivilege(privilege);
     }
 
     addDocumentVersion(file: any) {
@@ -516,14 +522,7 @@ export class ClientProfileComponent implements OnInit {
         }
         this.loading = true;
 
-
-        this.uploadService.updateDocument(
-            this.clientId,
-            this.newFile,
-            this.selectedDocument.fileType,
-            this.selectedDocument.id,
-            this.versionNotes,
-        ).subscribe({
+        this.uploadService.updateDocument(this.clientId, this.newFile, this.selectedDocument.fileType, this.selectedDocument.id, this.versionNotes).subscribe({
             next: () => {
                 this.loading = false;
                 this.displayVersionDialog = false;
@@ -544,4 +543,5 @@ export class ClientProfileComponent implements OnInit {
     }
 
     protected readonly Permissions = Permissions;
+    checklistVisible = false;
 }

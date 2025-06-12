@@ -14,16 +14,36 @@ import { Badge } from 'primeng/badge';
 import { Client } from '../../data/clietDTOs';
 import { ClientDetailsService } from '../client.service';
 import { Textarea } from 'primeng/textarea';
-
+import { InputText } from 'primeng/inputtext';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-commitment-client-view',
-    imports: [TableModule, DropdownModule, FormsModule, DatePipe, Toast, Button, Dialog, NgIf, Calendar, ReactiveFormsModule, InputTextarea, Badge, Textarea],
+    imports: [
+        TableModule, 
+        DropdownModule, 
+        FormsModule, 
+        DatePipe, 
+        Toast, 
+        Button, 
+        Dialog, 
+        NgIf, 
+        Calendar, 
+        ReactiveFormsModule, 
+        InputTextarea, 
+        Badge, 
+        Textarea,
+        InputText,
+        ProgressSpinner
+    ],
     templateUrl: './commitment-client-view.component.html',
     styleUrl: './commitment-client-view.component.scss'
 })
 export class CommitmentClientViewComponent {
     clientCommitments: Client[] = [];
+    filteredClientCommitments: Client[] = [];
+    searchQuery: string = '';
+    loading: boolean = false;
     statusOptions = [
         { label: 'Onboarded', value: 'ONBOARDED' },
         { label: 'Contacted', value: 'CONTACTED' },
@@ -56,10 +76,12 @@ export class CommitmentClientViewComponent {
     }
 
     loadClientCommitments(): void {
-        // this.clientCommitmentService.getClientCommitmentsToFollowUp().subscribe({
+        this.loading = true;
         this.clientService.getLeads().subscribe({
             next: (clientCommitments) => {
                 this.clientCommitments = clientCommitments;
+                this.filteredClientCommitments = clientCommitments;
+                this.loading = false;
             },
             error: (error) => {
                 this.messageService.add({
@@ -68,7 +90,49 @@ export class CommitmentClientViewComponent {
                     detail: 'Failed to load client commitments'
                 });
                 console.error('Error loading client commitments:', error);
+                this.loading = false;
             }
+        });
+    }
+
+    onSearch(): void {
+        if (!this.searchQuery) {
+            this.filteredClientCommitments = this.clientCommitments;
+            return;
+        }
+
+        const query = this.searchQuery.toLowerCase();
+        this.filteredClientCommitments = this.clientCommitments.filter(client => 
+            client.firstName?.toLowerCase().includes(query) ||
+            client.lastName?.toLowerCase().includes(query) ||
+            client.email?.toLowerCase().includes(query) ||
+            client.phoneNumber?.toLowerCase().includes(query) ||
+            (client as any).contactStatus?.toLowerCase().includes(query)
+        );
+    }
+
+    onSort(event: any): void {
+        const { field, order } = event;
+        this.filteredClientCommitments.sort((a, b) => {
+            let valueA = field.includes('.') ? 
+                field.split('.').reduce((obj: any, key: string) => obj?.[key], a) : 
+                (a as any)[field];
+            let valueB = field.includes('.') ? 
+                field.split('.').reduce((obj: any, key: string) => obj?.[key], b) : 
+                (b as any)[field];
+            
+            if (valueA === null || valueA === undefined) valueA = '';
+            if (valueB === null || valueB === undefined) valueB = '';
+            
+            if (field === 'followUpDate') {
+                valueA = new Date(valueA).getTime();
+                valueB = new Date(valueB).getTime();
+                return order === 1 ? valueA - valueB : valueB - valueA;
+            }
+            
+            return order === 1 ? 
+                String(valueA).localeCompare(String(valueB)) : 
+                String(valueB).localeCompare(String(valueA));
         });
     }
 
@@ -89,8 +153,6 @@ export class CommitmentClientViewComponent {
                 contactStatus: this.editForm.value.contactStatus,
                 notes: this.editForm.value.notes
             };
-            // this.personalInfoForm.addControl('surName', new FormControl(this.personalInfoForm.get('lastName')?.value));
-            // this.personalInfoForm.addControl('locationType', new FormControl(this.personalInfoForm.get('location')?.value));
             this.selectedClientCommitment.surName = this.selectedClientCommitment.lastName;
             this.selectedClientCommitment.locationType = this.selectedClientCommitment.location;
             const updatedClient = { ...this.selectedClientCommitment, ...updatedData };

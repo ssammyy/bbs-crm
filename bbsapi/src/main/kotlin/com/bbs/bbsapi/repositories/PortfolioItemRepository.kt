@@ -1,4 +1,4 @@
-package com.bbs.bbsapi.repos
+package com.bbs.bbsapi.repositories
 
 import com.bbs.bbsapi.models.PortfolioItem
 import org.springframework.data.jpa.repository.JpaRepository

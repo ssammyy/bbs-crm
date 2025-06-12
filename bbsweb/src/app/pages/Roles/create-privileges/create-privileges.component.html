@@ -1,23 +1,37 @@
-<div >
-    <p-toast/>
-    <div class="card grid grid-cols-1 md:grid-cols-4">
-        <div class="font-semibold text-xl p-4 flex flex-col md:col-span-1">
-            <h3 class="text-red-400">
-                Create privileges
-            </h3>
-            <p-divider layout="horizontal" />
-            <small style="color:  var(--primary-color)">
-                Privileges are actions that a user can perform on the system
-            </small>
+<div *ngIf="loading" class="w-full flex items-center justify-center p-8">
+    <p-progress-spinner strokeWidth="8" fill="transparent" animationDuration=".5s" [style]="{ width: '50px', height: '50px' }" />
+</div>
+
+<div *ngIf="!loading" class="p-4 custom-card">
+    <div class="mb-4">
+        <p class="font-bold">Create Privileges</p>
+        <p class="text-gray-600">Privileges are actions that a user can perform on the system.</p>
+    </div>
+
+    <div class="mb-4 flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+            <label for="name2" class="font-medium">Name</label>
+            <input 
+                [(ngModel)]="privilegeName" 
+                placeholder="e.g. CREATE_USER" 
+                pInputText 
+                id="name2" 
+                type="text" 
+                class="w-full"
+            />
         </div>
-        <div class="flex flex-col md:col-span-3 gap-4 p-4">
-            <div class="flex flex-wrap gap-6 md:mt-12">
-                <div class="flex flex-col grow basis-0 gap-2 w-full">
-                    <label for="name2">Name</label>
-                    <input [(ngModel)]="privilegeName" placeholder="e.g. CREATE_USER" pInputText id="name2" type="text" class="w-full"/>
-                </div>
-            </div>
-            <p-button [disabled]="privilegeName===''" icon="pi pi-file-plus" (onClick)="createPrivilege()" size="small" [outlined]="true" label="Create" [loading]="loading" class="w-full md:w-auto"></p-button>
+
+        <div class="flex justify-end">
+            <p-button 
+                [disabled]="privilegeName===''" 
+                icon="pi pi-file-plus" 
+                (onClick)="createPrivilege()" 
+                size="small" 
+                [outlined]="true" 
+                label="Create" 
+                [loading]="loading" 
+                class="w-full sm:w-auto"
+            ></p-button>
         </div>
     </div>
 </div>

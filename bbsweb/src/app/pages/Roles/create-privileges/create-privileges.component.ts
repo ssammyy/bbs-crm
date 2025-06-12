@@ -7,10 +7,12 @@ import { MessageService } from 'primeng/api';
 import { MessagesService } from '../../../layout/service/messages.service';
 import { FormsModule } from '@angular/forms';
 import { Toast } from 'primeng/toast';
+import { ProgressSpinner } from 'primeng/progressspinner';
+import { NgIf } from '@angular/common';
 
 @Component({
     selector: 'app-create-privileges',
-    imports: [InputText, Divider, Button, FormsModule, Toast],
+    imports: [InputText, Divider, Button, FormsModule, Toast, ProgressSpinner, NgIf],
     templateUrl: './create-privileges.component.html',
     styleUrl: './create-privileges.component.scss'
 })

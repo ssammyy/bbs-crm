@@ -1,0 +1,193 @@
+// Container styles
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+// Card styles
+.license-card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+}
+
+// Header styles
+.license-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--surface-border);
+
+    i {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+        margin-right: 0.5rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 0;
+    }
+}
+
+// Content styles
+.license-content {
+    padding: 1rem;
+
+    p {
+        color: var(--text-color-secondary);
+        margin-bottom: 1rem;
+    }
+}
+
+// Grid layout
+.license-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+// Form field styles
+.field {
+    margin-bottom: 1rem;
+
+    label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: var(--text-color);
+    }
+}
+
+// File upload styles
+::ng-deep {
+    .p-fileupload-buttonbar {
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
+
+    .p-button.p-button-outlined {
+        &:hover {
+            background: var(--primary-color);
+            color: var(--primary-color-text);
+        }
+    }
+
+    .p-dropdown {
+        width: 100%;
+    }
+
+    .p-chip {
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+}
+
+// Status chip styles
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+
+    &.success {
+        background-color: var(--green-100);
+        color: var(--green-700);
+    }
+
+    &.warning {
+        background-color: var(--yellow-100);
+        color: var(--yellow-700);
+    }
+
+    &.error {
+        background-color: var(--red-100);
+        color: var(--red-700);
+    }
+}
+
+// Button styles
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+// Loading spinner styles
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: var(--surface-ground);
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+
+    i {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+        margin-right: 0.5rem;
+    }
+
+    span {
+        color: var(--text-color-secondary);
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .license-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        
+        .p-button {
+            width: 100%;
+        }
+    }
+}
+
+// Dark mode support
+:host-context(.dark-theme) {
+    .license-card {
+        background: var(--surface-card);
+        border-color: var(--surface-border);
+    }
+
+    .license-header {
+        border-color: var(--surface-border);
+    }
+
+    .status-chip {
+        &.success {
+            background-color: var(--green-900);
+            color: var(--green-100);
+        }
+
+        &.warning {
+            background-color: var(--yellow-900);
+            color: var(--yellow-100);
+        }
+
+        &.error {
+            background-color: var(--red-900);
+            color: var(--red-100);
+        }
+    }
+}

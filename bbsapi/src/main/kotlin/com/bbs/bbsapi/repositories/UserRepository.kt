@@ -1,4 +1,4 @@
-package com.bbs.bbsapi.repos
+package com.bbs.bbsapi.repositories
 
 import com.bbs.bbsapi.models.Privilege
 import com.bbs.bbsapi.models.Role
@@ -25,6 +25,7 @@ interface UserRepository : JpaRepository<User, Long> {
      fun countUserByRole_Name(s: String): Long
      fun countUserByRoleNot(s: Role): Long
      fun findByRole_Name(s: String): List<User>
+    fun findFirstByRole_Name(s: String): Optional<User>
 }
 
 @Repository

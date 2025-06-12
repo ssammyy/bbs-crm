@@ -9,6 +9,8 @@ import com.bbs.bbsapi.services.UserService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import org.springframework.cache.annotation.Cacheable
+import org.springframework.cache.annotation.CacheEvict
 
 @RestController
 @RequestMapping("/api/user")
@@ -20,12 +22,14 @@ class UserController(private val userService: UserService) {
     }
 
     @GetMapping("/all")
+    @Cacheable(value = ["users"], unless = "#result == null")
     fun getAllUsers(): ResponseEntity<List<UserDTO>> {
         return ResponseEntity.ok(userService.getAllUsers())
     }
 
 
     @PutMapping("/{userId}")
+    @CacheEvict(value = ["users"], allEntries = true)
     fun updateUser(
         @PathVariable userId: Long,
         @RequestBody updatedUserDTO: UserDTO
@@ -35,6 +39,7 @@ class UserController(private val userService: UserService) {
     }
 
     @DeleteMapping("/{userId}")
+    @CacheEvict(value = ["users"], allEntries = true)
     fun deleteUser(@PathVariable userId: Long): ResponseEntity<Void> {
         userService.deleteUser(userId)
         return ResponseEntity.noContent().build()

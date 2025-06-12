@@ -1,148 +1,174 @@
-<div class="card mx-auto shadow-lg rounded-lg p-6 ">
-    <div class="block md:flex">
-        <div class="w-full md:w-1/5 p-4">
-            <h3 class="text-red-400">
-                Client leads Follow-Ups
-            </h3>
-            <small style="color: var(--primary-color)">
-                Review and update the status of clients who need follow-up.
-            </small>
-        </div>
-        <div class="w-full md:w-4/5">
-            <div class="p-6 rounded-lg">
-                <p-table [value]="clientCommitments" [tableStyle]="{'min-width': '50rem'}">
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Follow-Up Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-clientCommitment>
-                        <tr>
-                            <td>{{ clientCommitment.firstName }} {{clientCommitment.lastName}}</td>
-                            <td>{{ clientCommitment.email }}</td>
-                            <td>{{ clientCommitment.phoneNumber }}</td>
-                            <td>{{ clientCommitment.followUpDate | date:'yyyy-MM-dd HH:mm' }}</td>
-                            <td>
-                                <p-badge
-                                    [value]="clientCommitment.contactStatus"
-                                    [severity]="getBadgeSeverity(clientCommitment.contactStatus)"
-                                    styleClass="mr-2"
-                                ></p-badge>
-                            </td>
-                            <td>
-                                <div class="flex gap-2">
-                                    <p-button
-                                        icon="pi pi-eye"
-                                        label="View"
-                                        [outlined]="true"
-                                        (click)="showEditDialog(clientCommitment)"
-                                        class="rounded-md shadow-sm"
-                                    ></p-button>
+<div *ngIf="loading" class="w-full flex items-center justify-center p-8">
+    <p-progress-spinner strokeWidth="8" fill="transparent" animationDuration=".5s" [style]="{ width: '50px', height: '50px' }" />
+</div>
 
-                                </div>
-                            </td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            </div>
-        </div>
+<div *ngIf="!loading" class="p-4 custom-card">
+    <div class="mb-4">
+        <p class="font-bold">Client Leads Follow-Ups</p>
+        <p class="text-gray-600">Review and update the status of clients who need follow-up.</p>
     </div>
 
-    <!-- Edit Dialog -->
-    <p-dialog
-        header="Edit Client Commitment"
-        [(visible)]="displayEditDialog"
-        [modal]="true"
-        [style]="{width: '50vw'}"
-        [baseZIndex]="10000"
-        [draggable]="false"
-        [resizable]="false"
+    <div class="mb-4 flex flex-col sm:flex-row gap-4">
+        <span class="p-input-icon-left w-full sm:w-auto flex gap-4 items-center flex-grow">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search clients..." class="w-full" />
+        </span>
+    </div>
+
+    <p-table
+        [value]="filteredClientCommitments"
+        [tableStyle]="{'min-width': '50rem'}"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 20]"
+        [scrollable]="true"
+        [styleClass]="'p-datatable-sm p-datatable-striped'"
+        [responsiveLayout]="'scroll'"
+        (onSort)="onSort($event)"
     >
-        <form [formGroup]="editForm" (ngSubmit)="saveChanges()" class="p-6 rounded-lg">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Follow-Up Date
-                    </label>
-                    <p-calendar
-                        formControlName="followUpDate"
-                        [showTime]="true"
-                        [minDate]="minDate"
-                        placeholder="Select follow-up date and time"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                    ></p-calendar>
-                    <small
-                        *ngIf="editForm.get('followUpDate')?.invalid && editForm.get('followUpDate')?.touched"
-                        class="text-red-500"
-                    >
-                        Follow-up date is required and must be in the future.
-                    </small>
-                </div>
-
-                <div class="col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Contact Status
-                    </label>
-                    <p-dropdown
-                        [options]="statusOptions"
-                        formControlName="contactStatus"
-                        placeholder="Select Status"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                    >
-                        <ng-template let-option pTemplate="item">
-                            <div class="flex items-center">
-                                <p-badge
-                                    [value]="option.label"
-                                    [severity]="getBadgeSeverity(option.value)"
-                                    styleClass="mr-2"
-                                ></p-badge>
-                            </div>
-                        </ng-template>
-                    </p-dropdown>
-                    <small
-                        *ngIf="editForm.get('contactStatus')?.invalid && editForm.get('contactStatus')?.touched"
-                        class="text-red-500"
-                    >
-                        Contact status is required.
-                    </small>
-                </div>
-
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Notes
-                    </label>
-                    <textarea
-                        pTextarea
-                        formControlName="notes"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                        placeholder="Additional notes (e.g., what they said)"
-                    ></textarea>
-                </div>
-            </div>
-
-            <div class="mt-6 flex justify-end w-full">
-                <p-button
-                    type="button"
-                    label="Cancel"
-                    [outlined]="true"
-                    (click)="displayEditDialog = false"
-                    class="mr-2 rounded-md shadow-sm"
-                ></p-button>
-                <p-button
-                    type="submit"
-                    label="Save"
-                    [outlined]="true"
-                    [disabled]="editForm.invalid"
-                    class="rounded-md shadow-sm"
-                ></p-button>
-            </div>
-        </form>
-    </p-dialog>
-
-    <p-toast />
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="firstName">
+                    Name
+                    <p-sortIcon field="firstName"></p-sortIcon>
+                </th>
+                <th pSortableColumn="email">
+                    Email
+                    <p-sortIcon field="email"></p-sortIcon>
+                </th>
+                <th pSortableColumn="phoneNumber">
+                    Phone
+                    <p-sortIcon field="phoneNumber"></p-sortIcon>
+                </th>
+                <th pSortableColumn="followUpDate">
+                    Follow-Up Date
+                    <p-sortIcon field="followUpDate"></p-sortIcon>
+                </th>
+                <th pSortableColumn="contactStatus">
+                    Status
+                    <p-sortIcon field="contactStatus"></p-sortIcon>
+                </th>
+                <th>Actions</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-clientCommitment>
+            <tr>
+                <td>{{ clientCommitment.firstName }} {{clientCommitment.lastName}}</td>
+                <td>{{ clientCommitment.email }}</td>
+                <td>{{ clientCommitment.phoneNumber }}</td>
+                <td>{{ clientCommitment.followUpDate | date:'yyyy-MM-dd HH:mm' }}</td>
+                <td>
+                    <p-badge
+                        [value]="clientCommitment.contactStatus"
+                        [severity]="getBadgeSeverity(clientCommitment.contactStatus)"
+                        styleClass="mr-2"
+                    ></p-badge>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <p-button
+                            icon="pi pi-eye"
+                            label="View"
+                            [outlined]="true"
+                            (click)="showEditDialog(clientCommitment)"
+                            class="rounded-md shadow-sm"
+                        ></p-button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
 </div>
+
+<!-- Edit Dialog -->
+<p-dialog
+    header="Edit Client Commitment"
+    [(visible)]="displayEditDialog"
+    [modal]="true"
+    [style]="{width: '50vw'}"
+    [baseZIndex]="10000"
+    [draggable]="false"
+    [resizable]="false"
+>
+    <form [formGroup]="editForm" (ngSubmit)="saveChanges()" class="p-6 rounded-lg">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="col-span-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Follow-Up Date
+                </label>
+                <p-calendar
+                    formControlName="followUpDate"
+                    [showTime]="true"
+                    [minDate]="minDate"
+                    placeholder="Select follow-up date and time"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                ></p-calendar>
+                <small
+                    *ngIf="editForm.get('followUpDate')?.invalid && editForm.get('followUpDate')?.touched"
+                    class="text-red-500"
+                >
+                    Follow-up date is required and must be in the future.
+                </small>
+            </div>
+
+            <div class="col-span-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Contact Status
+                </label>
+                <p-dropdown
+                    [options]="statusOptions"
+                    formControlName="contactStatus"
+                    placeholder="Select Status"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                >
+                    <ng-template let-option pTemplate="item">
+                        <div class="flex items-center">
+                            <p-badge
+                                [value]="option.label"
+                                [severity]="getBadgeSeverity(option.value)"
+                                styleClass="mr-2"
+                            ></p-badge>
+                        </div>
+                    </ng-template>
+                </p-dropdown>
+                <small
+                    *ngIf="editForm.get('contactStatus')?.invalid && editForm.get('contactStatus')?.touched"
+                    class="text-red-500"
+                >
+                    Contact status is required.
+                </small>
+            </div>
+
+            <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Notes
+                </label>
+                <textarea
+                    pTextarea
+                    formControlName="notes"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                    placeholder="Additional notes (e.g., what they said)"
+                ></textarea>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end w-full">
+            <p-button
+                type="button"
+                label="Cancel"
+                [outlined]="true"
+                (click)="displayEditDialog = false"
+                class="mr-2 rounded-md shadow-sm"
+            ></p-button>
+            <p-button
+                type="submit"
+                label="Save"
+                [outlined]="true"
+                [disabled]="editForm.invalid"
+                class="rounded-md shadow-sm"
+            ></p-button>
+        </div>
+    </form>
+</p-dialog>
+
+<p-toast />

@@ -26,6 +26,7 @@ export class InvoiceFormComponent implements OnInit {
     @Input() client!: Client;
     @Input() invoiceType!: InvoiceType;
     @Input() preliminaryId?: number;
+    @Input() countyApprovalType!: string;
     @Output() invoiceGenerated = new EventEmitter<void>();
 
     invoiceForm: FormGroup;
@@ -42,12 +43,6 @@ export class InvoiceFormComponent implements OnInit {
     preliminaryTypes: PreliminaryType[] = [];
     selectedPreliminaryType: PreliminaryType | null = null;
 
-    private defaultProformaItems: InvoiceItem[] = [
-        { description: 'Site Visit Fee', quantity: 1, unitPrice: 0, totalPrice: 0 },
-        { description: 'Architectural Drawings', quantity: 1, unitPrice: 0, totalPrice: 0 },
-        { description: 'Preparation of BOQ', quantity: 1, unitPrice: 0, totalPrice: 0 }
-    ];
-
     constructor(
         private fb: FormBuilder,
         private invoiceService: InvoiceService,
@@ -61,9 +56,9 @@ export class InvoiceFormComponent implements OnInit {
 
     ngOnInit(): void {
         const navigationState = history.state;
-
         if (navigationState.client) {
             this.client = navigationState.client;
+            this.invoiceType = navigationState?.invoiceType;
             if (this.invoiceType == null) {
                 this.invoiceType = InvoiceType.PRELIMINARY;
             }
@@ -82,6 +77,10 @@ export class InvoiceFormComponent implements OnInit {
                 }
             ];
             this.calculateTotal();
+        } else if (this.invoiceType == InvoiceType.COUNTY_INVOICE) {
+            this.countyApprovalType = navigationState.countyApprovalType;
+            console.log('invoice type', this.invoiceType);
+            this.loadInvoiceData();
         } else {
             this.invoiceType = InvoiceType.SITE_VISIT;
             this.loadInvoiceData();
@@ -106,6 +105,10 @@ export class InvoiceFormComponent implements OnInit {
     loadInvoiceData(): void {
         if (this.invoiceType === InvoiceType.SITE_VISIT) {
             this.addSiteVisitItem();
+        }
+        if (this.invoiceType === InvoiceType.COUNTY_INVOICE) {
+            console.log('it is county invoice ');
+            this.addCountyItems();
         }
     }
 
@@ -141,6 +144,25 @@ export class InvoiceFormComponent implements OnInit {
             isPreliminary: false
         });
         this.calculateTotal();
+    }
+
+    addCountyItems() {
+        this.items.push(
+            {
+                description: `County Fee for ${this.countyApprovalType.replaceAll('_',' ').toLowerCase()}`,
+                quantity: 1,
+                unitPrice: 0,
+                totalPrice: 0,
+                isPreliminary: false
+            },
+            {
+                description: 'Facilitation Fee',
+                quantity: 1,
+                unitPrice: 0,
+                totalPrice: 0,
+                isPreliminary: false
+            }
+        );
     }
 
     onPreliminaryTypeSelect(item: InvoiceItem, type: PreliminaryType): void {
@@ -194,9 +216,9 @@ export class InvoiceFormComponent implements OnInit {
 
     onSubmit(): void {
         this.loading = true;
-        
+
         // Check for zero unit prices
-        const itemsWithZeroPrice = this.items.filter(item => item.unitPrice === 0);
+        const itemsWithZeroPrice = this.items.filter((item) => item.unitPrice === 0);
         if (itemsWithZeroPrice.length > 0) {
             this.loading = false;
             this.messagesServices.showError('Unit price cannot be zero. Please set a valid price for all items.');
@@ -212,6 +234,7 @@ export class InvoiceFormComponent implements OnInit {
                 clientName: `${this.client.firstName} ${this.client.lastName}`.trim(),
                 clientPhone: this.client.phoneNumber,
                 projectName: this.client.projectName,
+                countyInvoiceType: this.countyApprovalType,
                 items: this.items.map((item) => ({
                     description: item.description,
                     quantity: item.quantity,

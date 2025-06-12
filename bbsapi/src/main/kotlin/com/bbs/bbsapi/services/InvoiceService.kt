@@ -5,19 +5,21 @@ import com.bbs.bbsapi.entities.InvoiceResponse
 import com.bbs.bbsapi.entities.PdfInvoiceDTO
 import com.bbs.bbsapi.entities.PdfInvoiceItemDTO
 import com.bbs.bbsapi.entities.PaymentConfirmationDTO
-import com.bbs.bbsapi.enums.ClientStage
-import com.bbs.bbsapi.enums.InvoiceType
-import com.bbs.bbsapi.enums.PaymentMethod
+import com.bbs.bbsapi.enums.*
 import com.bbs.bbsapi.models.*
-import com.bbs.bbsapi.repos.*
+import com.bbs.bbsapi.repositories.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Throw
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import org.springframework.context.annotation.Lazy
+import kotlin.math.log
 
 data class ReceiptDTO(
     val invoiceId: Long,
@@ -41,17 +43,25 @@ class InvoiceService(
     private val pdfGenerator: PdfGenerator,
     private val clientService: ClientService,
     private val emailService: EmailService,
-    private val preliminaryService: PreliminaryService,
-    private val preliminaryTypeRepository: PreliminaryTypeRepository
+    @Lazy private val preliminaryService: PreliminaryService,
+    private val preliminaryTypeRepository: PreliminaryTypeRepository,
+    private val userRepository: UserRepository,
+    private val clientRepository: ClientRepository
 ) {
+    val log = LoggerFactory.getLogger(PreliminaryService::class.java)
 
     @Transactional
     fun createInvoice(request: PdfInvoiceDTO): InvoiceResponse {
+        log.info("Invoice type check >>> ${request.invoiceType}")
+
         val client = clientService.getClientById(request.clientId)
         val preliminary = request.preliminaryId?.let {
             preliminaryRepository.findById(it)
-                .orElseThrow { IllegalArgumentException("Preliminary not found: $it") }
+                .orElseThrow { IllegalArgumentException("Preliminary not found: $it")
+                }
         }
+
+
 
         val subtotal = request.items.sumOf { it.totalPrice }
         val discountAmount = if (request.discountPercentage > 0) {
@@ -78,7 +88,7 @@ class InvoiceService(
             finalTotal = finalTotal
         )
 
-        if (preliminary != null) {
+        if (preliminary != null  && request.invoiceType != InvoiceType.COUNTY_INVOICE) {
             preliminary.invoiced = true
             preliminary.invoice = invoice
             preliminaryRepository.save(preliminary)
@@ -123,13 +133,7 @@ class InvoiceService(
 
         when (request.invoiceType) {
             InvoiceType.PROFORMA -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    emailService.sendEmail(
-                        "samuikumbu@gmail.com",
-                        "CLIENT PROFORMA INVOICE PENDING YOUR ACTION",
-                        "Kindly log in to the BBS_CRM system and approve ${client.firstName} ${client.lastName} proforma invoice"
-                    )
-                }
+
                 clientService.changeClientStatus(
                     ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL,
                     client,
@@ -138,6 +142,23 @@ class InvoiceService(
                 )
             }
             InvoiceType.SITE_VISIT -> {
+                val invoicePdf = getInvoicePdf(client.id, InvoiceType.SITE_VISIT, null)
+                val attachment = EmailService.EmailAttachment(
+                    fileName = "site_visit_invoice.pdf",
+                    content = invoicePdf,
+                    contentType = "application/pdf"
+                )
+                CoroutineScope(Dispatchers.IO).launch {
+
+
+                    emailService.sendEmail(
+                        "samuikumbu@gmail.com",
+                        "SITE VISIT INVOICE PENDING YOUR ACTION",
+                        "Dear user, \n\n Find attached  site visit invoice. Log into the system to approve. \n\n Regards",
+                        userRepository.findFirstByRole_Name(RoleEnum.MANAGING_DIRECTOR.toString()).get(),
+                        attachment
+                    )
+                }
                 clientService.changeClientStatus(
                     ClientStage.PENDING_DIRECTOR_SITE_VISIT_INVOICE_APPROVAL,
                     client,
@@ -166,6 +187,19 @@ class InvoiceService(
             }
             InvoiceType.PRELIMINARY -> {
                 // No status change needed
+            }
+            InvoiceType.COUNTY_INVOICE->{
+                val prelim = preliminaryRepository.findByClientIdAndPreliminaryType_Name(client.id, request.countyInvoiceType!!)
+                log.info("working on county invoice >>>>>>>>>>>>>///>>>>>>///>>>>>>>///>>>>>>>///>>>>>///>>>>>>///")
+                savedInvoice.governmentApprovalType = request.countyInvoiceType.toString()
+                invoiceRepository.save(savedInvoice)
+                val preliminaryType = preliminaryTypeRepository.findByName("REGULATORY_APPROVALS")
+                    .orElseThrow { IllegalArgumentException("Preliminary type not found") }
+                log.info("preliminary being checked is ${preliminary?.id}")
+                prelim?.clientInvoicedForApproval = true
+                prelim?.status = PreliminaryStatus.PENDING_CLIENT_FACILITATION_PAYMENT
+                prelim?.preliminaryType = preliminaryType
+                prelim?.let { preliminaryRepository.save(it) }
             }
         }
 
@@ -230,9 +264,17 @@ class InvoiceService(
     }
 
     @Transactional(readOnly = true)
-    fun getInvoicePdf(clientId: Long, invoiceType: InvoiceType): ByteArray {
+    fun getInvoicePdf(clientId: Long, invoiceType: InvoiceType, countyApprovalType: String?): ByteArray {
+        log.info("county approval type", countyApprovalType)
         if (invoiceType == InvoiceType.PROFORMA) {
             return pdfGenerator.generateInvoicePdf(getProformaInvoice(clientId)!!)
+        }
+        if (countyApprovalType!= null ) {
+            log.info("Approval type is $countyApprovalType")
+            val invoice = invoiceRepository.findByClientIdAndGovernmentApprovalType(clientId, countyApprovalType.toString())
+                ?: throw IllegalArgumentException("Invoice not found for client $clientId and type $invoiceType")
+            return pdfGenerator.generateInvoicePdf(convertToPdfDto(invoice))
+
         }
         val invoice = invoiceRepository.findByClientIdAndInvoiceType(clientId, invoiceType)
             ?: throw IllegalArgumentException("Invoice not found for client $clientId and type $invoiceType")
@@ -285,6 +327,25 @@ class InvoiceService(
         val client = clientService.getClientById(clientId)
             ?: throw IllegalArgumentException("Client not found for client ID $clientId")
 
+
+        if (invoice.invoiceType != InvoiceType.SITE_VISIT) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val invoicePdf = getInvoicePdf(client.id, InvoiceType.SITE_VISIT, null)
+                val attachment = EmailService.EmailAttachment(
+                    fileName = "${invoice.invoiceType}.pdf",
+                    content = invoicePdf,
+                    contentType = "application/pdf"
+                )
+
+                emailService.sendEmail(
+                    "samuikumbu@gmail.com",
+                    "INVOICE PENDING YOUR ACTION",
+                    "Dear ${client.firstName}, \n Find attached your ${invoice.invoiceType} invoice. You can log in to the system and view a summary of your invoice. \n Regards",
+                    client.email?.let { userRepository.findByEmail(it) },
+                    attachment
+                )
+            }
+        }
         when (stage) {
             ClientStage.PROFORMA_INVOICE_PENDING_DIRECTOR_APPROVAL -> {
                 invoice.directorApproved = true
@@ -305,7 +366,26 @@ class InvoiceService(
                     ClientStage.PENDING_SITE_VISIT,
                     "Director approved site visit invoice"
                 )
+
+                // Load the invoice data before launching the coroutine
+                val invoicePdf = getInvoicePdf(client.id, InvoiceType.SITE_VISIT, null)
+                val attachment = EmailService.EmailAttachment(
+                    fileName = "site_visit_invoice.pdf",
+                    content = invoicePdf,
+                    contentType = "application/pdf"
+                )
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    emailService.sendEmail(
+                        "samuikumbu@gmail.com",
+                        "SITE VISIT INVOICE PENDING YOUR ACTION",
+                        "Dear ${client.firstName}, \n Find attached your site visit invoice. You can log in to the system and view a summary of your invoice. \n Regards",
+                        client.email?.let { userRepository.findByEmail(it) },
+                        attachment
+                    )
+                }
             }
+
             ClientStage.GENERATE_DRAWINGS_INVOICE -> {
                 invoice.directorApproved = true
                 invoiceRepository.save(invoice)
@@ -499,12 +579,26 @@ class InvoiceService(
         // Create the confirmation message
         val confirmationMessage = "Client confirmed payment of ${payment.amountPaid} via ${payment.paymentMethod}" +
             if (payment.reference.isNotBlank()) " with reference ${payment.reference}" else ""
+        val client = invoice.clientName
+        CoroutineScope(Dispatchers.IO).launch {
+            emailService.sendEmail(
+                "samuikumbu@gmail.com",
+                "CLIENT CONFIRMED PAYMENT",
+                "Client $client  confirmed payment of ${payment.amountPaid} via ${payment.paymentMethod}" +
+                        if (payment.reference.isNotBlank()) " with reference ${payment.reference}" else "" + "\n Log in to the system and reconcile the invoice",
+                userRepository.findFirstByRole_Name(RoleEnum.MANAGING_DIRECTOR.toString()).get()
+            )
+        }
+        clientRepository.findByPhoneNumberAndSoftDeleteFalse(invoice.clientPhone)?.let {
+            clientService.addClientActivity(
+                it,
+                "Client confirmed payment of ${payment.amountPaid}",
+            )
+        }
 
         // Update the invoice
         invoice.clientPaymentConfirmation = confirmationMessage
         invoice.clientConfirmedPayment = true
-
-
 
         return invoiceRepository.save(invoice)
     }

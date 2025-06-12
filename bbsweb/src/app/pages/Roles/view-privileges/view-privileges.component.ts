@@ -9,26 +9,29 @@ import { DatePipe, NgIf } from '@angular/common';
 import { RolesService } from '../roles.service';
 import { MessagesService } from '../../../layout/service/messages.service';
 import { Dialog } from 'primeng/dialog';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, SortEvent } from 'primeng/api';
 import { Router, RouterLink } from '@angular/router';
 import { Privilege } from '../RoleDtos';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-view-privileges',
-    imports: [Button, Divider, InputText, ReactiveFormsModule, FormsModule, Toast, TableModule, DatePipe, ButtonDirective, Dialog, ConfirmPopupModule, NgIf, RouterLink],
+    imports: [Button, Divider, InputText, ReactiveFormsModule, FormsModule, Toast, TableModule, DatePipe, ButtonDirective, Dialog, ConfirmPopupModule, NgIf, RouterLink, ProgressSpinner],
     templateUrl: './view-privileges.component.html',
     styleUrl: './view-privileges.component.scss',
     providers: [ConfirmationService]
 })
 export class ViewPrivilegesComponent implements OnInit {
     privileges: Privilege[] = [];
+    filteredPrivileges: Privilege[] = [];
     loading = false;
     visible = false;
     selectedPrivilege: Privilege | null = null;
     editMode = false;
     privilegeName = '';
+    searchQuery = '';
 
     constructor(
         private rolesService: RolesService,
@@ -46,14 +49,60 @@ export class ViewPrivilegesComponent implements OnInit {
         this.rolesService.getPrivileges().subscribe({
             next: (data) => {
                 this.privileges = data;
+                this.filteredPrivileges = data;
                 this.loading = false;
             },
             error: (error: any) => {
                 console.log(error);
                 this.messagesService.showError('Failed to load privileges');
                 this.privileges = [];
+                this.filteredPrivileges = [];
                 this.loading = false;
             }
+        });
+    }
+
+    onSearch() {
+        if (!this.searchQuery.trim()) {
+            this.filteredPrivileges = this.privileges;
+            return;
+        }
+
+        const query = this.searchQuery.toLowerCase().trim();
+        this.filteredPrivileges = this.privileges.filter(privilege => 
+            privilege.name.toLowerCase().includes(query) ||
+            (privilege.createdBy && privilege.createdBy.toLowerCase().includes(query)) ||
+            (privilege.updatedBy && privilege.updatedBy.toLowerCase().includes(query))
+        );
+    }
+
+    onSort(event: SortEvent) {
+        const { field, order } = event;
+        if (!field || !order) return;
+
+        this.filteredPrivileges.sort((a, b) => {
+            let valueA = a[field as keyof Privilege];
+            let valueB = b[field as keyof Privilege];
+
+            // Handle date fields
+            if (field === 'createdOn' || field === 'updatedOn') {
+                valueA = new Date(valueA as string).getTime();
+                valueB = new Date(valueB as string).getTime();
+            }
+
+            // Handle string fields
+            if (typeof valueA === 'string') {
+                valueA = valueA.toLowerCase();
+                valueB = valueB?.toString().toLowerCase() || '';
+            }
+
+            if (valueA < valueB) {
+                return order === 1 ? -1 : 1;
+            }
+            if (valueA > valueB) {
+                return order === 1 ? 1 : -1;
+            }
+            return 0;
         });
     }
 

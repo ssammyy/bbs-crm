@@ -1,19 +1,21 @@
 package com.bbs.bbsapi.services
 
+import com.bbs.bbsapi.dtos.ClientDetailsDTO
+import com.bbs.bbsapi.dtos.SiteReportDTO
 import com.bbs.bbsapi.entities.ClientDTO
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.ContactStatus
 import com.bbs.bbsapi.enums.InvoiceType
+import com.bbs.bbsapi.enums.RoleEnum
 import com.bbs.bbsapi.models.Activity
 import com.bbs.bbsapi.models.Client
 import com.bbs.bbsapi.models.User
-import com.bbs.bbsapi.repos.*
+import com.bbs.bbsapi.repositories.*
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import kotlin.math.log
 
 @Service
 class ClientService(
@@ -95,7 +97,7 @@ class ClientService(
         if (clientDTO.contactStatus == ContactStatus.ONBOARDED) {
             addClientActivity(client!!, "$loggedInUser changed on-boarded client ${client?.firstName} ${client?.lastName}  ")
         }
-        addClientActivity(client!!, "$loggedInUser changed lead ${client?.firstName} ${client?.lastName}  status to ${client.contactStatus}  ")
+        addClientActivity(client!!, "$loggedInUser changed  ${client?.firstName} ${client?.lastName}  status to ${clientDTO.contactStatus}  ")
 
         client?.country = clientDTO.country.toString()
         client?.email = clientDTO.email
@@ -158,9 +160,57 @@ class ClientService(
         return activityRepository.findByClientIdOrderByTimestampDesc(clientId)
     }
 
-    fun getClientByEmail(email: String): Client? {
-        val client = clientRepository.findByEmailAndSoftDeleteFalse(email) ?: throw NullPointerException("Client not found")
-        return client
+    fun getClientByEmail(email: String): ClientDetailsDTO? {
+        val client = clientRepository.findByEmailAndSoftDeleteFalse(email)
+        return client?.toClientDetailsDTO()
+    }
+
+    private fun Client.toClientDetailsDTO(): ClientDetailsDTO {
+        return ClientDetailsDTO(
+            id = id,
+            firstName = firstName,
+            secondName = secondName,
+            lastName = lastName,
+            email = email,
+            phoneNumber = phoneNumber,
+            dob = dob,
+            gender = gender,
+            preferredContact = preferredContact,
+            location = location,
+            country = country,
+            county = county,
+            countryCode = countryCode,
+            idNumber = idNumber,
+            clientStage = clientStage,
+            nextStage = nextStage,
+            clientSource = clientSource,
+            projectName = projectName,
+            projectActive = projectActive,
+            productOffering = productOffering,
+            productTag = productTag,
+            bankName = bankName,
+            bankBranch = bankBranch,
+            consultancySubtags = consultancySubtags,
+            notes = notes,
+            followUpDate = followUpDate,
+            contactStatus = contactStatus,
+            siteVisitDone = siteVisitDone,
+            siteReport = siteReport?.toSiteReportDTO()
+        )
+    }
+
+    private fun com.bbs.bbsapi.models.SiteReport.toSiteReportDTO(): SiteReportDTO {
+        return SiteReportDTO(
+            id = id,
+            location = location,
+            soilType = soilType,
+            siteMeasurements = siteMeasurements,
+            topography = topography,
+            infrastructure = infrastructure,
+            notes = notes,
+            status = status,
+            rejectionComments = rejectionComments
+        )
     }
 
     fun getLeads(): List<Client> {

@@ -4,9 +4,10 @@ import com.bbs.bbsapi.entities.ReceiptDTO
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
 import com.bbs.bbsapi.models.Receipt
-import com.bbs.bbsapi.repos.InvoiceRepository
-import com.bbs.bbsapi.repos.ReceiptRepository
-import com.bbs.bbsapi.repos.PreliminaryRepository
+import com.bbs.bbsapi.repositories.InvoiceRepository
+import com.bbs.bbsapi.repositories.ReceiptRepository
+import com.bbs.bbsapi.repositories.PreliminaryRepository
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -72,12 +73,19 @@ class ReceiptService(
             }
 
             invoiceRepository.save(invoice)
+            val authentication = SecurityContextHolder.getContext().authentication
+
             println("Updated invoice ${invoice.id}: balance=${invoice.balance}, reconciled=${invoice.invoiceReconciled}")
+            clientService.addClientActivity(
+                client,
+                "${authentication.name} reconciled {${invoice.invoiceType} invoice. Invoice balance=${invoice.balance}}",
+            )
 
             if (invoice.invoiceReconciled) {
+
+
                 val prelimsToClear = preliminaryRepository.findByInvoiceId(invoice.id)
                 prelimsToClear.forEach { prelim ->
-                    println("Updating preliminary ${prelim.id} to invoiceClearedFlag=true")
                     prelim.invoiceClearedFlag = true
                     preliminaryRepository.save(prelim)
                 }
@@ -90,6 +98,7 @@ class ReceiptService(
                         "Client Paid for site visit"
                     )
                 }
+
             }
 
            val savedReceipt = receiptRepository.save(receipt)
