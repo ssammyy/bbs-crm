@@ -18,4 +18,5 @@ export enum InvoiceType {
     OPEN = 'OPEN',
     PRELIMINARY = 'PRELIMINARY',
     COUNTY_INVOICE = 'COUNTY_INVOICE',
+    MAIN_PROFORMA= 'MAIN_PROFORMA',
 }

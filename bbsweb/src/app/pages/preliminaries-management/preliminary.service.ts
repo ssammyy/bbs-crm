@@ -56,4 +56,16 @@ export class PreliminaryService {
     bypassInvoiceClearance(preliminary: Preliminary): Observable<Preliminary> {
         return this.http.post<Preliminary>(`${this.apiUrl}/api/preliminaries/bypass-invoice`, preliminary);
     }
+
+    updateCountyApprovalStatus(preliminaryId: number, status: 'APPROVED' | 'REJECTED' | 'PENDING', remarks: string): Observable<Preliminary> {
+        return this.http.post<Preliminary>(`${this.apiUrl}/api/preliminaries/county-approval`, {
+            preliminaryId,
+            status,
+            remarks
+        });
+    }
+
+    submitBOQAmount(preliminaryId: number, amount: number): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/api/preliminaries/${preliminaryId}/boq-amount`, { amount });
+    }
 }

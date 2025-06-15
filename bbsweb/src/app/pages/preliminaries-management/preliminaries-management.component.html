@@ -11,185 +11,128 @@
 
 <p-accordion class=" " [value]="0">
     <p-accordion-panel *ngIf="hasPrivileges(Permissions.CREATE_PRELIMINARY)" [value]="1">
-        <p-accordion-header>Initiate New Preliminary</p-accordion-header>
-        <p-accordion-content class="space-y-6">
+        <p-accordion-header>
+            <span class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                    <i class="pi pi-plus text-blue-600 text-xl"></i>
+                </span>
+                <span class="font-bold text-blue-900 text-lg">Initiate New Preliminary</span>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content class="space-y-6 bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-blue-100">
             <div class="space-y-4">
                 <label for="preliminaryType" class="block font-medium">Select Preliminary Type</label>
-                <p-dropdown
-                    class="z-50"
-                    id="preliminaryType"
-                    [options]="preliminaryTypes"
-                    [(ngModel)]="selectedPreliminaryType"
-                    placeholder="Select a preliminary type"
-                    optionLabel="name"
-                    appendTo="body"
-                    optionValue="id"
-                ></p-dropdown>
+                <p-dropdown class="z-50" id="preliminaryType" [options]="preliminaryTypes" [(ngModel)]="selectedPreliminaryType" placeholder="Select a preliminary type" optionLabel="name" appendTo="body" optionValue="id"></p-dropdown>
             </div>
 
             <!-- Toggle Add Form -->
             <div class="flex items-center justify-between gap-4 p-4 border-t">
                 <span class="text-sm">Preliminary not available?</span>
-                <p-button
-                    text
-                    size="small"
-                    severity="info"
-                    (click)="toggleAddPreliminaryForm()"
-                    [label]="showAddForm ? 'Cancel' : 'Add New Preliminary Type'"
-                    class="hover:text-blue-400"
-                ></p-button>
+                <p-button text size="small" severity="info" (click)="toggleAddPreliminaryForm()" [label]="showAddForm ? 'Cancel' : 'Add New Preliminary Type'" class="hover:text-blue-400"></p-button>
             </div>
 
             <!-- Form to Add New Preliminary Type -->
             <form *ngIf="showAddForm" (ngSubmit)="addPreliminaryType()" class="space-y-4">
                 <div>
                     <label for="newPreliminaryName" class="block font-medium">Preliminary Name</label>
-                    <input
-                        pInputText
-                        id="newPreliminaryName"
-                        type="text"
-                        [(ngModel)]="newPreliminary.name"
-                        name="newPreliminaryName"
-                        placeholder="Enter preliminary name"
-                        required
-                        class="w-full"
-                    />
+                    <input pInputText id="newPreliminaryName" type="text" [(ngModel)]="newPreliminary.name" name="newPreliminaryName" placeholder="Enter preliminary name" required class="w-full" />
                 </div>
                 <div>
                     <label for="newPreliminaryDescription" class="block font-medium">Description (Optional)</label>
-                    <textarea
-                        pTextarea
-                        id="newPreliminaryDescription"
-                        [(ngModel)]="newPreliminary.description"
-                        name="newPreliminaryDescription"
-                        placeholder="Enter description"
-                        rows="3"
-                        class="w-full"
-                    ></textarea>
+                    <textarea pTextarea id="newPreliminaryDescription" [(ngModel)]="newPreliminary.description" name="newPreliminaryDescription" placeholder="Enter description" rows="3" class="w-full"></textarea>
                 </div>
                 <div class="flex gap-4">
-                    <label for="requiresGovernmentApproval" class="block font-medium">Requires Government
-                        Approval</label>
-                    <p-checkbox
-                        id="requiresGovernmentApproval"
-                        [(ngModel)]="newPreliminary.requiresGovernmentApproval"
-                        name="requiresGovernmentApproval"
-                        binary="true"
-                    ></p-checkbox>
+                    <label for="requiresGovernmentApproval" class="block font-medium">Requires Government Approval</label>
+                    <p-checkbox id="requiresGovernmentApproval" [(ngModel)]="newPreliminary.requiresGovernmentApproval" name="requiresGovernmentApproval" binary="true"></p-checkbox>
                 </div>
-                <br>
-                <p-button
-                    label="Add New Preliminary Type"
-                    type="submit"
-                    outlined
-                    severity="primary"
-                    class="hover:text-primary-600"
-                ></p-button>
+                <br />
+                <p-button label="Add New Preliminary Type" type="submit" outlined severity="primary" class="hover:text-primary-600"></p-button>
             </form>
 
             <!-- Initiate Activity Button -->
-            <p-button
-                class="mb-8"
-                outlined
-                [loading]="loading"
-                *ngIf="!showAddForm"
-                (click)="initiateActivity()"
-                [disabled]="!selectedPreliminaryType"
-                label="Initiate Activity"
-                severity="primary"
-                class="hover:text-primary-600"
-            ></p-button>
+            <p-button class="mb-8" outlined [loading]="loading" *ngIf="!showAddForm" (click)="initiateActivity()" [disabled]="!selectedPreliminaryType" label="Initiate Activity" severity="primary" class="hover:text-primary-600"></p-button>
         </p-accordion-content>
     </p-accordion-panel>
 </p-accordion>
 
-<div *ngIf="hasPrivileges(Permissions.VIEW_PRELIMINARY)" class=" mt-4 mx-auto space-y-4">
+<div *ngIf="hasPrivileges(Permissions.VIEW_PRELIMINARY)" class="mt-4 mx-auto space-y-4">
     <div class="flex justify-between items-center">
         <strong class="text-lg font-semibold">Available Preliminaries</strong>
     </div>
 
     <!-- Card for Each Preliminary -->
     <div *ngFor="let preliminary of preliminaries" class="mt-2">
-        <p-panel [header]="preliminary.preliminaryType.name" class="w-full shadow-md rounded-lg">
-            <div class="space-y-2">
-                <p class="text-sm">{{ preliminary.preliminaryType.description || 'No description available' }}</p>
-                <p class="text-sm">Requires Government
-                    Approval: {{ preliminary.preliminaryType?.requiresGovernmentApproval ? 'Yes' : 'No' }}</p>
-                <div class="flex justify-between items-center gap-4">
-                    <div class="flex flex-wrap gap-2">
-                        <span [ngClass]="getStatusChipClass(preliminary.status)"
-                              class="text-xs font-medium px-2 py-1 rounded-full">
-                            {{ preliminary.status }}
+        <div class="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-blue-100 transition-all duration-300 hover:shadow-2xl">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+                <div class="flex-1 space-y-2">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                            <i class="pi pi-folder text-blue-600 text-xl"></i>
                         </span>
-                        <span *ngIf="preliminary.invoiced"
-                              class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
-                            Invoiced
+                        <span class="font-bold text-blue-900 text-lg">{{ preliminary.preliminaryType.name.toLowerCase().replaceAll('_', ' ') }}</span>
+                    </div>
+                    <p class="text-sm text-gray-700">{{ preliminary.preliminaryType.description || 'No description available' }}</p>
+                    <p class="text-sm text-gray-500">
+                        Requires Government Approval: <span class="font-semibold">{{ preliminary.preliminaryType?.requiresGovernmentApproval ? 'Yes' : 'No' }}</span>
+                    </p>
+                </div>
+                <div class="flex-1 flex flex-col gap-2 items-end">
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        <span [ngClass]="getStatusChipClass(preliminary.status) + ' px-3 py-1 rounded-full text-xs font-bold shadow-sm'"> <i class="pi pi-info-circle mr-1"></i> {{ preliminary.status }} </span>
+                        <span *ngIf="preliminary.invoiced" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm"> <i class="pi pi-file-invoice"></i> Invoiced </span>
+                        <span *ngIf="!preliminary.invoiced" class="bg-amber-200 text-blue-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm"> <i class="pi pi-exclamation-circle"></i> Not Invoiced </span>
+                        <span *ngIf="preliminary.clientInvoicedForApproval && !preliminary.clientPaidForApproval" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                            <i class="pi pi-hourglass"></i> Client invoiced for county approval - pending payment
                         </span>
-                        <span *ngIf="!preliminary.invoiced"
-                              class="bg-amber-200 text-blue-800  text-xs font-medium px-2 py-1 rounded-full">
-                            Not Invoiced
+                        <span *ngIf="preliminary.invoiceClearedFlag" class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm"> <i class="pi pi-check-circle"></i> Invoice Cleared </span>
+                        <span *ngIf="preliminary.countyApprovedDocumentUploaded" class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                            <i class="pi pi-check-square"></i> Approved by county government - document uploaded to the system
                         </span>
-                        <span *ngIf="preliminary.clientInvoicedForApproval"
-                              class="bg-blue-100 text-blue-800  text-xs font-medium px-2 py-1 rounded-full">
-                            Client invoiced for approval - pending payment
+                        <span *ngIf="preliminary.clientPaidForApproval" class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                            <i class="pi pi-money-bill"></i> Client paid for county approval
                         </span>
-                        <span *ngIf="preliminary.invoiceClearedFlag"
-                              class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                            Invoice Cleared
-                        </span>
-                        <span *ngIf="preliminary.invoiced && !preliminary.invoiceClearedFlag"
-                              class="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded-full">
-                            Pending Payment
+                        <span *ngIf="preliminary.invoiced && !preliminary.invoiceClearedFlag" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                            <i class="pi pi-clock"></i> Pending Payment
                         </span>
                     </div>
-                    <p-button
-                        outlined
-                        size="small"
-                        icon="pi pi-eye"
-                        (onClick)="showPreliminaryDialog(preliminary)"
-                        label="View"
-                        class="hover:text-blue-400"
-                    ></p-button>
+                    <p-button outlined size="small" icon="pi pi-eye" (onClick)="showPreliminaryDialog(preliminary)" label="View" class="hover:text-blue-400 transition-all duration-200 hover:scale-105"></p-button>
                 </div>
             </div>
-        </p-panel>
+        </div>
     </div>
 </div>
 
 <!-- Preliminary Dialog -->
-<p-dialog
-    [header]="modalPreliminary?.preliminaryType.name"
-    [(visible)]="displayDialog"
-    [modal]="true"
-    [style]="{ width: '50rem' }"
-    [baseZIndex]="10000"
-    [draggable]="false"
-    [resizable]="false"
-    class="shadow-lg"
->
+<p-dialog [header]="modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ')" [(visible)]="displayDialog" [modal]="true" [style]="{ width: '50rem' }" [baseZIndex]="10000" [draggable]="false" [resizable]="false" class="shadow-lg">
     <div class="space-y-6 p-4">
         <!-- Preliminary Details -->
-        <div *ngIf="!modalPreliminary?.invoiced && hasPrivileges(Permissions.CREATE_INVOICES)"
-             class="flex justify-between items-center gap-4">
-            <p-message severity="info" size="small" class="w-3/4">
-                This activity has not been invoiced yet. Use the button to proceed.
-            </p-message>
-            <p-button icon="pi pi-receipt" label="Raise Invoice" (onClick)="navigateToInvoiceForm()" text
-                      severity="info" class="hover:text-blue-400"></p-button>
+        <div *ngIf="!modalPreliminary?.invoiced && hasPrivileges(Permissions.CREATE_INVOICES)" class="flex justify-between items-center gap-4">
+            <p-message severity="info" size="small" class="w-3/4"> This activity has not been invoiced yet. Use the button to proceed. </p-message>
+            <p-button icon="pi pi-receipt" label="Raise Invoice" (onClick)="navigateToInvoiceForm()" text severity="info" class="hover:text-blue-400"></p-button>
         </div>
 
         <div>
             <h3 class="text-lg font-medium">Details</h3>
             <p class="text-sm">{{ modalPreliminary?.preliminaryType.description || 'No description available' }}</p>
-            <p class="text-xs mt-1">Status: <span class="font-medium">{{ modalPreliminary?.status }}</span></p>
-            <p *ngIf="modalPreliminary?.rejectionRemarks" class="text-xs mt-1">Rejection Remarks: <span
-                class="font-medium">{{ modalPreliminary?.rejectionRemarks }}</span></p>
+            <p class="text-xs mt-1">
+                Status: <span class="font-medium">{{ modalPreliminary?.status }}</span>
+            </p>
+            <p *ngIf="modalPreliminary?.rejectionRemarks" class="text-xs mt-1">
+                Rejection Remarks: <span class="font-medium">{{ modalPreliminary?.rejectionRemarks }}</span>
+            </p>
         </div>
         <!--        IF BOQ ONLY QS CAN SEE-->
 
-
-        <div *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.UPLOAD_TECHNICAL_WORKS) "
-             class="space-y-4">
+        <div
+            *ngIf="
+                modalPreliminary?.status === 'INITIATED' &&
+                hasPrivileges(Permissions.UPLOAD_TECHNICAL_WORKS) &&
+                modalPreliminary?.preliminaryType.name !== 'BOQ_PREPARATION' &&
+                modalPreliminary?.preliminaryType.name !== 'NCA_APPROVALS' &&
+                modalPreliminary?.preliminaryType.name !== 'NEMA_APPROVALS'
+            "
+            class="space-y-4"
+        >
             <p class="text-sm">Upload documents for technical director approval</p>
             <p-fileUpload
                 mode="basic"
@@ -201,22 +144,30 @@
                 styleClass="p-button-outlined p-button-secondary rounded-lg"
             ></p-fileUpload>
             <div class="flex justify-end">
-                <p-button
-                    [disabled]="!uploadedFile"
-                    [loading]="loading"
-                    (onClick)="submitTechnicalWorks()"
-                    label="Submit"
-                    icon="pi pi-check"
-                    outlined
-                    severity="info"
-                    class="hover:text-blue-400"
-                ></p-button>
+                <p-button [disabled]="!uploadedFile" [loading]="loading" (onClick)="submitTechnicalWorks()" label="Submit" icon="pi pi-check" outlined severity="info" class="hover:text-blue-400"></p-button>
             </div>
         </div>
-        <div
-            *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.UPLOAD_BOQ) && modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION' "
-            class="space-y-4">
+        <div *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.UPLOAD_BOQ) && modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION'" class="space-y-4">
             <p class="text-sm">Upload documents for director approval</p>
+
+            <!-- Add BOQ Amount Input -->
+            <div class="mb-4">
+                <label for="boqAmount" class="block text-sm font-medium text-gray-700 mb-1">BOQ Total Amount (KES)</label>
+                <p-inputNumber
+                    id="boqAmount"
+                    [(ngModel)]="boqTotalAmount"
+                    mode="currency"
+                    currency="KES"
+                    locale="en-US"
+                    [minFractionDigits]="2"
+                    [maxFractionDigits]="2"
+                    [style]="{ width: '100%' }"
+                    placeholder="Enter total BOQ amount"
+                    class="w-full"
+                ></p-inputNumber>
+            </div>
+            <br />
+
             <p-fileUpload
                 mode="basic"
                 [name]="modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ')"
@@ -227,143 +178,126 @@
                 styleClass="p-button-outlined p-button-secondary rounded-lg"
             ></p-fileUpload>
             <div class="flex justify-end">
-                <p-button
-                    [disabled]="!uploadedFile"
-                    [loading]="loading"
-                    (onClick)="submitTechnicalWorks()"
-                    label="Submit"
-                    icon="pi pi-check"
-                    outlined
-                    severity="info"
-                    class="hover:text-blue-400"
-                ></p-button>
+                <p-button [disabled]="!uploadedFile || !boqTotalAmount" [loading]="loading" (onClick)="submitTechnicalWorks()" label="Submit" icon="pi pi-check" outlined severity="info" class="hover:text-blue-400"></p-button>
+            </div>
+        </div>
+        <div
+            *ngIf="modalPreliminary?.status === 'INITIATED' && hasPrivileges(Permissions.MANAGE_COUNTY_APPROVAL) && (modalPreliminary?.preliminaryType.name === 'NCA_APPROVALS' || modalPreliminary?.preliminaryType.name === 'NEMA_APPROVALS')"
+            class="space-y-4"
+        >
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-blue-800 mb-2">County Invoice Upload</h3>
+                <p class="text-sm text-blue-600 mb-4">Please upload the invoice received from the county government for processing.</p>
+
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <p-fileUpload
+                            *ngIf="!isCountyInvoiceUploaded()"
+                            mode="basic"
+                            name="COUNTY_INVOICE"
+                            [customUpload]="true"
+                            (onSelect)="onCountyInvoiceSelect($event)"
+                            chooseLabel="Select County Invoice"
+                            class="w-full"
+                            styleClass="p-button-outlined p-button-secondary rounded-lg"
+                        ></p-fileUpload>
+
+                        <p-chip *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'" label="Selected" styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"></p-chip>
+
+                        <p-button
+                            *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'"
+                            label="Upload"
+                            icon="pi pi-upload"
+                            [loading]="loading"
+                            styleClass="p-button-outlined p-button-success"
+                            (onClick)="onUpload('COUNTY_INVOICE')"
+                        ></p-button>
+
+                        <p-chip *ngIf="isCountyInvoiceUploaded()" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
+
+                        <a *ngIf="isCountyInvoiceUploaded()" (click)="viewDocument('COUNTY_INVOICE')" class="text-blue-600 hover:underline cursor-pointer"> View </a>
+                    </div>
+
+                    <small *ngIf="!isCountyInvoiceUploaded() && !(uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE')" class="text-gray-500 text-xs">
+                        Upload the invoice received from the county government to proceed with payment processing.
+                    </small>
+
+                    <small *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'" class="text-gray-500 text-xs"> Click Upload to save the selected invoice. </small>
+                </div>
             </div>
         </div>
 
-        <div
-            *ngIf="modalPreliminary?.status === 'PENDING_T_D_APPROVAL' && hasPrivileges(Permissions.APPROVE_TECHNICAL_WORKS)"
-            class="space-y-4">
-            <p class="text-sm">View uploaded documents
-                for {{ modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ') }} and take action</p>
+        <!-- BOQ Amount Badge/Card (only for BOQ_PREPARATION) -->
+        <div *ngIf="modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION'" class="mb-2">
+            <div class="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded px-3 py-1 w-fit">
+                <i class="pi pi-money-bill text-blue-600 text-base"></i>
+                <span class="text-xs font-semibold text-blue-800">BOQ Amount:</span>
+                <span class="text-sm font-bold text-blue-900">{{ modalPreliminary.boqAmount | currency: 'KES' : 'symbol-narrow' : '1.2-2' }}</span>
+            </div>
+        </div>
+
+        <div *ngIf="modalPreliminary?.status === 'PENDING_T_D_APPROVAL' && hasPrivileges(Permissions.APPROVE_TECHNICAL_WORKS)" class="space-y-4">
+            <p class="text-sm">View uploaded documents for {{ modalPreliminary?.preliminaryType.name.toLowerCase().replaceAll('_', ' ') }} and take action</p>
             <div *ngIf="clientFiles.length > 0" class="space-y-2">
-                <div *ngFor="let doc of clientFiles" class="rounded-lg shadow-md p-4 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="flex-shrink-0">
-                            <!-- SVG for document icon will be inserted here -->
+                <div *ngFor="let doc of clientFiles" class="rounded-lg shadow-sm border border-gray-100 p-4 mb-2 hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-gray-100 p-2 rounded-lg">
+                            <i class="pi pi-file text-gray-600 text-xl"></i>
                         </div>
-                        <a
-                            [href]="doc.fileUrl"
-                            target="_blank"
-                            pButton
-                            outlined
-                            severity="secondary"
-                            icon="pi pi-arrow-up-right"
-                            [label]="doc.fileName"
-                            class="text-blue-600 hover:text-blue-800 font-medium"
-                        ></a>
+                        <div>
+                            <div class="font-medium text-gray-800">{{ doc.fileName }}</div>
+                        </div>
                     </div>
+                    <a [href]="doc.fileUrl" target="_blank" pButton outlined severity="secondary" icon="pi pi-arrow-up-right" label="View" class="text-blue-600 hover:text-blue-800 font-medium"></a>
                 </div>
             </div>
             <div class="flex justify-end gap-4">
-                <p-button
-                    [loading]="loading"
-                    (onClick)="acceptTechnicalWorks('TECHNICAL_DIRECTOR')"
-                    label="Accept"
-                    severity="success"
-                    outlined
-                    icon="pi pi-check"
-                    class="hover:text-green-400"
-                ></p-button>
-                <p-button
-                    [loading]="loading"
-                    (onClick)="showRejectDialog('TECHNICAL_DIRECTOR')"
-                    label="Reject"
-                    severity="danger"
-                    outlined
-                    icon="pi pi-times"
-                    class="hover:text-red-400"
-                ></p-button>
+                <p-button [loading]="loading" (onClick)="acceptTechnicalWorks('TECHNICAL_DIRECTOR')" label="Accept" severity="success" outlined icon="pi pi-check" class="hover:text-green-400"></p-button>
+                <p-button [loading]="loading" (onClick)="showRejectDialog('TECHNICAL_DIRECTOR')" label="Reject" severity="danger" outlined icon="pi pi-times" class="hover:text-red-400"></p-button>
             </div>
         </div>
 
-        <div
-            *ngIf="modalPreliminary?.status === 'PENDING_M_D_APPROVAL' && hasPrivileges(Permissions.APPROVE_PRELIMINARY)"
-            class="space-y-4">
-
-            <div *ngFor="let doc of clientFiles" class="rounded-lg shadow-md p-4 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="flex-shrink-0">
-                        <!-- SVG for document icon will be inserted here -->
+        <div *ngIf="modalPreliminary?.status === 'PENDING_M_D_APPROVAL' && hasPrivileges(Permissions.APPROVE_PRELIMINARY)" class="space-y-4">
+            <div *ngFor="let doc of clientFiles" class="rounded-lg shadow-sm border border-gray-100 p-4 mb-2 hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gray-100 p-2 rounded-lg">
+                        <i class="pi pi-file text-gray-600 text-xl"></i>
                     </div>
-                    <a
-                        [href]="doc.fileUrl"
-                        target="_blank"
-                        pButton
-                        outlined
-                        severity="secondary"
-                        icon="pi pi-arrow-up-right"
-                        [label]="doc.fileName"
-                        class="text-blue-600 hover:text-blue-800 font-medium"
-                    ></a>
+                    <div>
+                        <div class="font-medium text-gray-800">{{ doc.fileName }}</div>
+                    </div>
                 </div>
+                <a [href]="doc.fileUrl" target="_blank" pButton outlined severity="secondary" icon="pi pi-arrow-up-right" label="View" class="text-blue-600 hover:text-blue-800 font-medium"></a>
             </div>
             <div class="custom-warn-chip" *ngIf="!modalPreliminary?.invoiced">
-                <small> This activity has not been invoiced yet.
-                </small>
+                <small> This activity has not been invoiced yet. </small>
             </div>
             <div class="custom-warn-chip" *ngIf="!modalPreliminary?.invoiceClearedFlag">
-                <small> This activity has an uncleared invoice.
-                </small>
+                <small> This activity has an uncleared invoice. </small>
             </div>
             <div class="flex justify-end gap-4">
-                <p-button
-                    [loading]="loading"
-                    (onClick)="acceptTechnicalWorks('MANAGING_DIRECTOR')"
-                    label="Accept"
-                    severity="success"
-                    outlined
-                    icon="pi pi-check"
-                    class="hover:text-green-400"
-                ></p-button>
-                <p-button
-                    [loading]="loading"
-                    (onClick)="showRejectDialog('MANAGING_DIRECTOR')"
-                    label="Reject"
-                    severity="danger"
-                    outlined
-                    icon="pi pi-times"
-                    class="hover:text-red-400"
-                ></p-button>
+                <p-button [loading]="loading" (onClick)="acceptTechnicalWorks('MANAGING_DIRECTOR')" label="Accept" severity="success" outlined icon="pi pi-check" class="hover:text-green-400"></p-button>
+                <p-button [loading]="loading" (onClick)="showRejectDialog('MANAGING_DIRECTOR')" label="Reject" severity="danger" outlined icon="pi pi-times" class="hover:text-red-400"></p-button>
             </div>
         </div>
 
-
-        <div *ngIf="modalPreliminary?.status === 'PENDING_SUBMISSION_OF_FILES_TO_COUNTY'" class="space-y-4">
-
-
+        <div *ngIf="modalPreliminary?.status === 'PENDING_SUBMISSION_OF_FILES_TO_COUNTY' && hasPrivileges(Permissions.MANAGE_COUNTY_APPROVAL)" class="space-y-4">
             <!-- License Selection Section -->
-            <div *ngFor="let doc of clientFiles | nonKycDocument" class="rounded-lg shadow-md p-4 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="flex-shrink-0">
-                        <!-- SVG for document icon will be inserted here -->
+            <div *ngFor="let doc of clientFiles | nonKycDocument" class="rounded-lg shadow-sm border border-gray-100 p-4 mb-2 hover:shadow-md transition-shadow duration-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gray-100 p-2 rounded-lg">
+                        <i class="pi pi-file text-gray-600 text-xl"></i>
                     </div>
-                    <a
-                        [href]="doc.fileUrl"
-                        target="_blank"
-                        pButton
-                        outlined
-                        severity="secondary"
-                        icon="pi pi-arrow-up-right"
-                        [label]="doc.fileName"
-                        class="text-blue-600 hover:text-blue-800 font-medium"
-                    ></a>
+                    <div>
+                        <div class="font-medium text-gray-800">{{ doc.fileName }}</div>
+                    </div>
                 </div>
+                <a [href]="doc.fileUrl" target="_blank" pButton outlined severity="secondary" icon="pi pi-arrow-up-right" label="View" class="text-blue-600 hover:text-blue-800 font-medium"></a>
             </div>
 
             <div class="bg-white shadow rounded-lg p-6 mb-6">
                 <h4 class="text-lg font-semibold text-gray-800 mb-4">Required Professional Licenses</h4>
-                <p class="text-sm text-gray-600 mb-4">Please ensure at least one of the following licenses is
-                    uploaded:</p>
+                <p class="text-sm text-gray-600 mb-4">Please ensure at least one of the following licenses is uploaded:</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- NCA License -->
@@ -393,18 +327,8 @@
                                 styleClass="p-button-outlined p-button-success"
                                 (onClick)="onLicenseUpload('NCA_CONTRACTOR_LICENSE')"
                             ></p-button>
-                            <p-chip
-                                *ngIf="isLicenseUploaded('NCA_CONTRACTOR_LICENSE')"
-                                label="Uploaded"
-                                styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
-                            ></p-chip>
-                            <a
-                                *ngIf="isLicenseUploaded('NCA_CONTRACTOR_LICENSE')"
-                                (click)="viewLicense('NCA_CONTRACTOR_LICENSE')"
-                                class="text-blue-600 hover:underline cursor-pointer"
-                            >
-                                View
-                            </a>
+                            <p-chip *ngIf="isLicenseUploaded('NCA_CONTRACTOR_LICENSE')" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
+                            <a *ngIf="isLicenseUploaded('NCA_CONTRACTOR_LICENSE')" (click)="viewLicense('NCA_CONTRACTOR_LICENSE')" class="text-blue-600 hover:underline cursor-pointer"> View </a>
                         </div>
                     </div>
 
@@ -412,14 +336,7 @@
                     <div class="field">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Structural Engineer License</label>
                         <div class="space-y-3">
-                            <p-dropdown
-                                [options]="getFilteredUsers('STRUCTURAL_ENGINEER')"
-                                [(ngModel)]="selectedEngineer"
-                                optionLabel="username"
-                                placeholder="Select Engineer"
-                                [showClear]="true"
-                                class="w-full"
-                            >
+                            <p-dropdown [options]="getFilteredUsers('STRUCTURAL_ENGINEER')" [(ngModel)]="selectedEngineer" optionLabel="username" placeholder="Select Engineer" [showClear]="true" class="w-full">
                                 <ng-template let-user pTemplate="item">
                                     <div class="flex items-center p-2">
                                         <div>
@@ -454,18 +371,8 @@
                                     styleClass="p-button-outlined p-button-success"
                                     (onClick)="onLicenseUpload('STRUCTURAL_ENGINEER_LICENSE')"
                                 ></p-button>
-                                <p-chip
-                                    *ngIf="isLicenseUploaded('STRUCTURAL_ENGINEER_LICENSE', selectedEngineer.id)"
-                                    label="Uploaded"
-                                    styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
-                                ></p-chip>
-                                <a
-                                    *ngIf="isLicenseUploaded('STRUCTURAL_ENGINEER_LICENSE', selectedEngineer.id)"
-                                    (click)="viewLicense('STRUCTURAL_ENGINEER_LICENSE', selectedEngineer.id)"
-                                    class="text-blue-600 hover:underline cursor-pointer"
-                                >
-                                    View
-                                </a>
+                                <p-chip *ngIf="isLicenseUploaded('STRUCTURAL_ENGINEER_LICENSE', selectedEngineer.id)" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
+                                <a *ngIf="isLicenseUploaded('STRUCTURAL_ENGINEER_LICENSE', selectedEngineer.id)" (click)="viewLicense('STRUCTURAL_ENGINEER_LICENSE', selectedEngineer.id)" class="text-blue-600 hover:underline cursor-pointer"> View </a>
                             </div>
                         </div>
                     </div>
@@ -474,14 +381,7 @@
                     <div class="field">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Architect License</label>
                         <div class="space-y-3">
-                            <p-dropdown
-                                [options]="getFilteredUsers('ARCHITECT')"
-                                [(ngModel)]="selectedArchitect"
-                                optionLabel="username"
-                                placeholder="Select Architect"
-                                [showClear]="true"
-                                class="w-full"
-                            >
+                            <p-dropdown [options]="getFilteredUsers('ARCHITECT')" [(ngModel)]="selectedArchitect" optionLabel="username" placeholder="Select Architect" [showClear]="true" class="w-full">
                                 <ng-template let-user pTemplate="item">
                                     <div class="flex items-center p-2">
                                         <div>
@@ -516,18 +416,8 @@
                                     styleClass="p-button-outlined p-button-success"
                                     (onClick)="onLicenseUpload('ARCHITECT_LICENSE')"
                                 ></p-button>
-                                <p-chip
-                                    *ngIf="isLicenseUploaded('ARCHITECT_LICENSE', selectedArchitect.id)"
-                                    label="Uploaded"
-                                    styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
-                                ></p-chip>
-                                <a
-                                    *ngIf="isLicenseUploaded('ARCHITECT_LICENSE', selectedArchitect.id)"
-                                    (click)="viewLicense('ARCHITECT_LICENSE', selectedArchitect.id)"
-                                    class="text-blue-600 hover:underline cursor-pointer"
-                                >
-                                    View
-                                </a>
+                                <p-chip *ngIf="isLicenseUploaded('ARCHITECT_LICENSE', selectedArchitect.id)" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
+                                <a *ngIf="isLicenseUploaded('ARCHITECT_LICENSE', selectedArchitect.id)" (click)="viewLicense('ARCHITECT_LICENSE', selectedArchitect.id)" class="text-blue-600 hover:underline cursor-pointer"> View </a>
                             </div>
                         </div>
                     </div>
@@ -536,10 +426,8 @@
 
             <!-- KYC Documents Grid -->
             <h3 class="text-lg font-medium">KYC Documents Check</h3>
-            <p class="text-sm text-gray-500">All KYC documents must be uploaded before proceeding with county
-                approval.</p>
+            <p class="text-sm text-gray-500">All KYC documents must be uploaded before proceeding with county approval.</p>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
                 <div *ngFor="let doc of kycDocuments" class="field">
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ doc.label }}</label>
                     <div class="flex items-center space-x-3">
@@ -555,11 +443,7 @@
                             styleClass="p-button-outlined p-button-secondary rounded-lg"
                         ></p-fileUpload>
                         <!-- Show chip and upload button if a file is selected but not yet uploaded -->
-                        <p-chip
-                            *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
-                            label="Selected"
-                            styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"
-                        ></p-chip>
+                        <p-chip *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType" label="Selected" styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"></p-chip>
                         <p-button
                             *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
                             label="Upload"
@@ -569,29 +453,11 @@
                             (onClick)="onUpload(doc.fileType)"
                         ></p-button>
                         <!-- Show uploaded status if the document is already uploaded -->
-                        <p-chip
-                            *ngIf="isKycDocumentUploaded(doc.fileType)"
-                            label="Uploaded"
-                            styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
-                        ></p-chip>
-                        <a
-                            *ngIf="isKycDocumentUploaded(doc.fileType)"
-                            (click)="viewDocument(doc.fileType)"
-                            class="text-blue-600 hover:underline cursor-pointer"
-                        >
-                            View
-                        </a>
+                        <p-chip *ngIf="isKycDocumentUploaded(doc.fileType)" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
+                        <a *ngIf="isKycDocumentUploaded(doc.fileType)" (click)="viewDocument(doc.fileType)" class="text-blue-600 hover:underline cursor-pointer"> View </a>
                     </div>
-                    <small
-                        *ngIf="!isKycDocumentUploaded(doc.fileType) && !(uploadedFile && selectedDocument?.fileType === doc.fileType)"
-                        class="text-gray-500 text-xs mt-1">
-                        Upload this document to complete KYC requirements.
-                    </small>
-                    <small
-                        *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
-                        class="text-gray-500 text-xs mt-1">
-                        Click Upload to save the selected file.
-                    </small>
+                    <small *ngIf="!isKycDocumentUploaded(doc.fileType) && !(uploadedFile && selectedDocument?.fileType === doc.fileType)" class="text-gray-500 text-xs mt-1"> Upload this document to complete KYC requirements. </small>
+                    <small *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType" class="text-gray-500 text-xs mt-1"> Click Upload to save the selected file. </small>
                 </div>
             </div>
 
@@ -606,19 +472,11 @@
                     [disabled]="!areAllKycDocumentsUploaded() || !isAtLeastOneLicenseUploaded()"
                     class="hover:text-green-400"
                 ></p-button>
-                <p-button
-                    [loading]="loading"
-                    (onClick)="showRejectDialog('COUNTY')"
-                    label="Reject"
-                    severity="danger"
-                    outlined
-                    icon="pi pi-times"
-                    class="hover:text-red-400"
-                ></p-button>
+                <p-button [loading]="loading" (onClick)="showRejectDialog('COUNTY')" label="Reject" severity="danger" outlined icon="pi pi-times" class="hover:text-red-400"></p-button>
             </div>
         </div>
 
-        <div *ngIf="modalPreliminary?.status === 'PENDING_COUNTY_FEE_PAYMENT'" class="space-y-4">
+        <div *ngIf="modalPreliminary?.status === 'PENDING_COUNTY_FEE_PAYMENT' && hasPrivileges(Permissions.MANAGE_COUNTY_APPROVAL)" class="space-y-4">
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 class="text-lg font-medium text-blue-800 mb-2">County Invoice Upload</h3>
                 <p class="text-sm text-blue-600 mb-4">Please upload the invoice received from the county government for processing.</p>
@@ -636,11 +494,7 @@
                             styleClass="p-button-outlined p-button-secondary rounded-lg"
                         ></p-fileUpload>
 
-                        <p-chip
-                            *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'"
-                            label="Selected"
-                            styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"
-                        ></p-chip>
+                        <p-chip *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'" label="Selected" styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"></p-chip>
 
                         <p-button
                             *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'"
@@ -651,34 +505,20 @@
                             (onClick)="onUpload('COUNTY_INVOICE')"
                         ></p-button>
 
-                        <p-chip
-                            *ngIf="isCountyInvoiceUploaded()"
-                            label="Uploaded"
-                            styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
-                        ></p-chip>
+                        <p-chip *ngIf="isCountyInvoiceUploaded()" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
 
-                        <a
-                            *ngIf="isCountyInvoiceUploaded()"
-                            (click)="viewDocument('COUNTY_INVOICE')"
-                            class="text-blue-600 hover:underline cursor-pointer"
-                        >
-                            View
-                        </a>
+                        <a *ngIf="isCountyInvoiceUploaded()" (click)="viewDocument('COUNTY_INVOICE')" class="text-blue-600 hover:underline cursor-pointer"> View </a>
                     </div>
 
-                    <small *ngIf="!isCountyInvoiceUploaded() && !(uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE')"
-                           class="text-gray-500 text-xs">
+                    <small *ngIf="!isCountyInvoiceUploaded() && !(uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE')" class="text-gray-500 text-xs">
                         Upload the invoice received from the county government to proceed with payment processing.
                     </small>
 
-                    <small *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'"
-                           class="text-gray-500 text-xs">
-                        Click Upload to save the selected invoice.
-                    </small>
+                    <small *ngIf="!isCountyInvoiceUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_INVOICE'" class="text-gray-500 text-xs"> Click Upload to save the selected invoice. </small>
                 </div>
             </div>
         </div>
-        <div *ngIf="modalPreliminary?.status === 'PENDING_CLIENT_FACILITATION_PAYMENT'" class="space-y-4">
+        <div *ngIf="modalPreliminary?.status === 'PENDING_CLIENT_FACILITATION_PAYMENT' && hasPrivileges(Permissions.MANAGE_COUNTY_APPROVAL)" class="space-y-4">
             <div *ngIf="!modalPreliminary?.clientInvoicedForApproval" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 class="text-lg font-medium text-blue-800 mb-2">Generate an invoice for the client</h3>
                 <p class="text-sm text-blue-600 mb-4">Click below to generate an invoice reflecting the uploaded county invoice plus a facilitation fee.</p>
@@ -697,48 +537,140 @@
                 </div>
             </div>
         </div>
+        <div *ngIf="modalPreliminary?.status === 'PENDING_APPROVAL_BY_COUNTY' && hasPrivileges(Permissions.MANAGE_COUNTY_APPROVAL)" class="space-y-4">
+            <!-- County Receipt Upload Section -->
+            <span *ngIf="modalPreliminary?.countyReceiptUploaded" class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full"> County Payment Receipt uploaded </span>
+            <div *ngIf="!modalPreliminary?.countyReceiptUploaded" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-blue-800 mb-2">County Receipt Upload</h3>
+                <p class="text-sm text-blue-600 mb-4">Please upload the receipt received from the county government after payment.</p>
 
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <p-fileUpload
+                            *ngIf="!isCountyReceiptUploaded()"
+                            mode="basic"
+                            name="COUNTY_RECEIPT"
+                            [customUpload]="true"
+                            (onSelect)="onCountyReceiptSelect($event)"
+                            chooseLabel="Select County Receipt"
+                            class="w-full"
+                            styleClass="p-button-outlined p-button-secondary rounded-lg"
+                        ></p-fileUpload>
+
+                        <p-chip *ngIf="!isCountyReceiptUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_RECEIPT'" label="Selected" styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"></p-chip>
+
+                        <p-button
+                            *ngIf="!isCountyReceiptUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_RECEIPT'"
+                            label="Upload"
+                            icon="pi pi-upload"
+                            outlined
+                            [loading]="loading"
+                            styleClass="p-button-outlined p-button-success"
+                            (onClick)="onUpload('COUNTY_RECEIPT')"
+                        ></p-button>
+
+                        <p-chip *ngIf="isCountyReceiptUploaded()" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
+
+                        <a *ngIf="isCountyReceiptUploaded()" (click)="viewDocument('COUNTY_RECEIPT')" class="text-blue-600 hover:underline cursor-pointer"> View </a>
+                    </div>
+
+                    <small *ngIf="!isCountyReceiptUploaded() && !(uploadedFile && selectedDocument?.fileType === 'COUNTY_RECEIPT')" class="text-gray-500 text-xs"> Upload the receipt received from the county government after payment. </small>
+                </div>
+            </div>
+
+            <!-- Approval Status Section -->
+            <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-gray-800 mb-2">County Approval Status</h3>
+                <p class="text-sm text-gray-600 mb-4">Please indicate whether the county has approved the application and upload the approved document if available.</p>
+
+                <div class="space-y-4">
+                    <!-- Approval Status Selection -->
+                    <div class="flex items-center space-x-4">
+                        <label class="text-sm font-medium text-gray-700">Approval Status:</label>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center">
+                                <input type="radio" id="approved" name="approvalStatus" value="APPROVED" [(ngModel)]="countyApprovalStatus" class="mr-2" />
+                                <label for="approved" class="text-sm">Approved</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="rejected" name="approvalStatus" value="REJECTED" [(ngModel)]="countyApprovalStatus" class="mr-2" />
+                                <label for="rejected" class="text-sm">Rejected</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Approved Document Upload -->
+                    <div *ngIf="countyApprovalStatus === 'APPROVED'" class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <p-fileUpload
+                                *ngIf="!isApprovedDocumentUploaded()"
+                                mode="basic"
+                                name="COUNTY_APPROVED_DOCUMENT"
+                                [customUpload]="true"
+                                (onSelect)="onApprovedDocumentSelect($event)"
+                                chooseLabel="Select Approved Document"
+                                class="w-full"
+                                styleClass="p-button-outlined p-button-secondary rounded-lg"
+                            ></p-fileUpload>
+
+                            <p-chip *ngIf="!isApprovedDocumentUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_APPROVED_DOCUMENT'" label="Selected" styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"></p-chip>
+
+                            <p-button
+                                *ngIf="!isApprovedDocumentUploaded() && uploadedFile && selectedDocument?.fileType === 'COUNTY_APPROVED_DOCUMENT'"
+                                label="Upload"
+                                icon="pi pi-upload"
+                                [loading]="loading"
+                                styleClass="p-button-outlined p-button-success"
+                                (onClick)="onUpload('APPROVED_DOC')"
+                            ></p-button>
+
+                            <p-chip *ngIf="isApprovedDocumentUploaded()" label="Uploaded" styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"></p-chip>
+
+                            <a *ngIf="isApprovedDocumentUploaded()" (click)="viewDocument('COUNTY_APPROVED_DOCUMENT')" class="text-blue-600 hover:underline cursor-pointer"> View </a>
+                        </div>
+
+                        <small *ngIf="!isApprovedDocumentUploaded() && !(uploadedFile && selectedDocument?.fileType === 'COUNTY_APPROVED_DOCUMENT')" class="text-gray-500 text-xs">
+                            Upload the document received from the county government indicating approval.
+                        </small>
+                    </div>
+
+                    <!-- Rejection Remarks -->
+                    <div *ngIf="countyApprovalStatus === 'REJECTED'" class="space-y-2">
+                        <label for="rejectionRemarks" class="block text-sm font-medium text-gray-700">Rejection Remarks:</label>
+                        <textarea id="rejectionRemarks" pTextarea [(ngModel)]="countyRejectionRemarks" placeholder="Enter rejection remarks from county" rows="3" class="w-full"></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end">
+                        <p-button
+                            [loading]="loading"
+                            (onClick)="submitCountyApprovalStatus()"
+                            label="Submit Approval Status"
+                            icon="pi pi-check"
+                            [disabled]="!countyApprovalStatus || (countyApprovalStatus === 'APPROVED' && !isApprovedDocumentUploaded()) || (countyApprovalStatus === 'REJECTED' && !countyRejectionRemarks)"
+                            styleClass="p-button-primary"
+                            class="hover:text-blue-400"
+                        ></p-button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <ng-template pTemplate="footer">
-        <p-button label="Close" (onClick)="displayDialog = false"
-                  styleClass="p-button-text hover:text-gray-400"></p-button>
+        <p-button label="Close" (onClick)="displayDialog = false" styleClass="p-button-text hover:text-gray-400"></p-button>
     </ng-template>
 </p-dialog>
 
 <!-- Rejection Dialog -->
-<p-dialog
-    header="Reject Preliminary"
-    [(visible)]="displayRejectDialog"
-    [modal]="true"
-    [style]="{ width: '30rem' }"
-    [baseZIndex]="10000"
-    [draggable]="false"
-    [resizable]="false"
->
+<p-dialog header="Reject Preliminary" [(visible)]="displayRejectDialog" [modal]="true" [style]="{ width: '30rem' }" [baseZIndex]="10000" [draggable]="false" [resizable]="false">
     <div class="space-y-4 p-4">
         <p>Please provide remarks for rejection:</p>
-        <textarea
-            pTextarea
-            [(ngModel)]="rejectRemarks"
-            placeholder="Enter rejection remarks"
-            rows="4"
-            class="w-full"
-        ></textarea>
+        <textarea pTextarea [(ngModel)]="rejectRemarks" placeholder="Enter rejection remarks" rows="4" class="w-full"></textarea>
     </div>
     <ng-template pTemplate="footer">
-        <p-button
-            label="Cancel"
-            (onClick)="displayRejectDialog = false"
-            styleClass="p-button-text hover:text-gray-400"
-        ></p-button>
-        <p-button
-            label="Reject"
-            [disabled]="!rejectRemarks"
-            (onClick)="confirmReject()"
-            severity="danger"
-            icon="pi pi-times"
-        ></p-button>
+        <p-button label="Cancel" (onClick)="displayRejectDialog = false" styleClass="p-button-text hover:text-gray-400"></p-button>
+        <p-button label="Reject" [disabled]="!rejectRemarks" (onClick)="confirmReject()" severity="danger" icon="pi pi-times"></p-button>
     </ng-template>
     <p-confirmdialog>
         <ng-template #message let-message>

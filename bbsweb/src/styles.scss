@@ -138,6 +138,7 @@
 .custom-card {
     @apply rounded-xl shadow-sm border;
     border-color: var(--surface-border);
+    background-color: var(--surface-overlay);
 }
 
 .custom-border-bottom {
@@ -164,4 +165,12 @@
         @apply  font-bold;
         color: var(--yellow-600);
     }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

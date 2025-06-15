@@ -4,39 +4,38 @@
 
     </div>
 
-    <p-tabs *ngIf="!loadingData" [(value)]="activeTab" (valueChange)="onTabChange($event)">
-        <p-tablist >
-            <div class="flex justify-between  w-full">
-                <div class="flex">
-                    <p-tab value="0" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)">
-                        Activity</p-tab>
-                    <p-tab  value="1" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)">Details</p-tab>
-                    <p-tab value="2" *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)">Invoices</p-tab>
-                    <p-tab value="3" *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)">Receipts</p-tab>
-
+    <p-tabs scrollable *ngIf="!loadingData" [(value)]="activeTab" (valueChange)="onTabChange($event)">
+        <p-tablist>
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full">
+                <!-- Tabs: scrollable on mobile, left-aligned on large screens -->
+                <div class="flex overflow-x-auto whitespace-nowrap no-scrollbar bg-white/80 backdrop-blur-md shadow-xl rounded-2xl px-2 py-2 border border-blue-100">
+                    <p-tab value="0" class="min-w-max px-2 font-bold text-blue-900" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)"><i class="pi pi-bolt mr-2 text-blue-500"></i>Activity</p-tab>
+                    <p-tab value="1" class="min-w-max px-2 font-bold text-blue-900" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)"><i class="pi pi-id-card mr-2 text-green-500"></i>Details</p-tab>
+                    <p-tab value="2" class="min-w-max px-2 font-bold text-blue-900" *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)"><i class="pi pi-file mr-2 text-purple-500"></i>Documents</p-tab>
+                    <p-tab value="3" class="min-w-max px-2 font-bold text-blue-900" *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)"><i class="pi pi-file-invoice mr-2 text-yellow-500"></i>Invoices</p-tab>
+                    <p-tab value="4" class="min-w-max px-2 font-bold text-blue-900" *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)"><i class="pi pi-money-bill mr-2 text-pink-500"></i>Receipts</p-tab>
                 </div>
+                <!-- Profile chip: right on large screens, below on small screens -->
+                <div class="flex items-center gap-2 mt-2 pr-3 lg:mt-0 lg:justify-end">
 
-                <div class="flex justify-center items-center">
-                    <p-chip >{{selectedClient?.firstName  }} {{selectedClient?.secondName}} profile</p-chip>
-
+                    <p-chip class="capitalize bg-blue-100 text-blue-900 px-4 py-2 rounded-full font-bold shadow"><i class="pi pi-user text-lg mr-2"></i>{{selectedClient?.firstName}} {{selectedClient?.secondName}} profile</p-chip>
                 </div>
             </div>
-
         </p-tablist>
         <p-tabpanels>
             <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_ACTIVITY)" value="0">
-                <div class="flex justify-between w-full">
-                    <div class="flex pt-4 gap-4">
+                <div class="flex flex-col md:flex-row md:justify-between w-full gap-4">
+                    <div class="flex items-center gap-2">
                         <strong>Current Client Stage</strong>
                         <p-tag severity="info"
                                [value]="selectedClient?.clientStage?.toLowerCase()?.replaceAll('_', ' ')" />
                     </div>
-                    <div class="flex pt-4 gap-4">
+                    <div class="flex items-center gap-2">
                         <strong>Next Action</strong>
                         <p-tag severity="info"
                                [value]="selectedClient?.nextStage?.toLowerCase()?.replaceAll('_', ' ')" />
                     </div>
-                    <div class="flex pt-4">
+                    <div class="flex items-center">
                         <p-button (onClick)="checklistVisible = true" label="view checklist" icon="pi pi-list-check" outlined severity="info"></p-button>
                     </div>
                 </div>
@@ -160,8 +159,17 @@
 
 
                         <div>
-                            <app-preliminary-management *ngIf="clientStage==='PRELIMINARIES' && hasPrivileges(Permissions.MANAGE_PRELIMINARY)"
-                                                        [client]="selectedClient!!"></app-preliminary-management>
+                            <div *ngIf="clientStage === 'CONTRACT_SIGNING' && hasPrivileges(Permissions.MANAGE_PRELIMINARY)">
+                                <app-contract-signing
+                                    [boqAmount]="selectedClient?.boqAmount!!"
+                                    [clientId]="selectedClient?.id!!"
+                                    (contractSigned)="onContractSigned()">
+                                </app-contract-signing>
+                            </div>
+                            <app-preliminary-management
+                                *ngIf="(clientStage === 'PRELIMINARIES' || clientStage === 'CONTRACT_SIGNING') && hasPrivileges(Permissions.MANAGE_PRELIMINARY)"
+                                [client]="selectedClient!!">
+                            </app-preliminary-management>
                         </div>
 
 
@@ -169,28 +177,32 @@
                     </div>
 
                     <div *ngIf="activityFeedVisible && hasPrivileges(Permissions.VIEW_ACTIVITY_FEED)"
-                         class="mb-4 lg:col-start-3 lg:col-span-1 order-first lg:order-last">
-                        <h3 class="text-xl font-semibold mb-2">Activity Feed</h3>
-                        <p-listbox [options]="activities" [listStyle]="{ 'max-height': '250px' }" class="w-full">
-                            <ng-template let-activity pTemplate="item">
-                                <div class="p-2">
-                                    <p class="font-semibold text-sm lg:text-base break-words">{{ activity.description }}</p>
-                                    <span class="text-xs lg:text-sm text-gray-500">{{ activity.timestamp | date }}</span>
-                                </div>
-                            </ng-template>
-                        </p-listbox>
+                         class="mb-4   lg:col-start-3 lg:col-span-1 order-first lg:order-last">
+                        <div class="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-blue-100 mb-4">
+                            <h3 class="text-xl font-semibold mb-2">Activity Feed</h3>
+                            <p-listbox [options]="activities" [listStyle]="{ 'max-height': '250px' }" class="w-full">
+                                <ng-template let-activity pTemplate="item">
+                                    <div class="p-2">
+                                        <p class="font-semibold text-sm lg:text-base break-words">{{ activity.description }}</p>
+                                        <span class="text-xs lg:text-sm text-gray-500">{{ activity.timestamp | date }}</span>
+                                    </div>
+                                </ng-template>
+                            </p-listbox>
+                        </div>
                     </div>
                 </div>
             </p-tabpanel>
             <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DETAILS)" value="1">
-                <div class="client-profile-container">
+                <div class="client-profile-container bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-blue-100">
                     <form [formGroup]="personalInfoForm" class="space-y-8">
                         <!-- Personal Information Section -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <i class="pi pi-user mr-2"></i>
-                                <h3 class="section-title">Personal Information</h3>
-                                <div class="section-actions">
+                        <div class="section-card bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-blue-100 mb-8">
+                            <div class="section-header flex items-center gap-3 mb-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                                    <i class="pi pi-user text-blue-600 text-xl"></i>
+                                </span>
+                                <h3 class="section-title text-lg font-bold text-blue-900">Personal Information</h3>
+                                <div class="section-actions ml-auto flex gap-2">
                                     <p-button *ngIf="!editMode" icon="pi pi-pencil"
                                               (click)="editClient()" label="Edit"
                                               styleClass="p-button-text p-button-sm"></p-button>
@@ -300,130 +312,140 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- KYC Documents Section -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <i class="pi pi-folder mr-2"></i>
-                                <h3 class="section-title">Other Uploaded Documents</h3>
-                            </div>
-                            <p-table [value]="clientFiles | nonKycDocument" [tableStyle]="{'min-width': '50rem'}">
-                                <ng-template pTemplate="header">
-                                    <tr>
-                                        <th>File Type</th>
-                                        <th>File Name</th>
-                                        <th>Version</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </ng-template>
-                                <ng-template pTemplate="body" let-file>
-                                    <tr>
-                                        <td>{{ file.specific?.replace('_', ' ') || file.fileType?.replace('_', ' ') }}</td>
-                                        <td>{{ file.fileName }}</td>
-                                        <td>{{ file.version || '1' }}</td>
-                                        <td>
-                                            <p-button icon="pi pi-eye" styleClass="p-button-text p-button-secondary"
-                                                      (onClick)="viewDocument(file.fileType)"></p-button>
-<!--                                            TODO-->
-                                            <p-button *ngIf="hasPrivileges(Permissions.UPDATE_FILES)" icon="pi pi-plus"
-                                                      styleClass="p-button-text p-button-success"
-                                                      (onClick)="addDocumentVersion(file)"></p-button>
-                                        </td>
-                                    </tr>
-                                </ng-template>
-                                <ng-template pTemplate="emptymessage">
-                                    <tr>
-                                        <td colspan="4">No other documents uploaded.</td>
-                                    </tr>
-                                </ng-template>
-                            </p-table>
-                        </div>
-
-                        <!-- KYC Documents Section -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <i class="pi pi-file mr-2"></i>
-                                <h3 class="section-title">KYC Documents</h3>
-                            </div>
-                            <p class="text-sm text-gray-500 mb-4">Upload or view KYC documents for the client.</p>
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div *ngFor="let doc of kycDocuments" class="field">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ doc.label }}</label>
-                                    <div class="flex items-center space-x-3">
-                                        <!-- Show file upload option if the document is not uploaded -->
-                                        <p-fileUpload
-                                            *ngIf="!isKycDocumentUploaded(doc.fileType)"
-                                            mode="basic"
-                                            [name]="doc.fileType"
-                                            [customUpload]="true"
-                                            (onSelect)="onKycFileSelect($event, doc.fileType)"
-                                            chooseLabel="Select File"
-                                            class="w-full"
-                                            styleClass="p-button-outlined p-button-secondary rounded-lg"
-                                        ></p-fileUpload>
-                                        <!-- Show chip and upload button if a file is selected but not yet uploaded -->
-                                        <p-chip
-                                            *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
-                                            label="Selected"
-                                            styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"
-                                        ></p-chip>
-                                        <p-button
-                                            *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
-                                            label="Upload"
-                                            icon="pi pi-upload"
-                                            [loading]="loading"
-                                            styleClass="p-button-outlined p-button-success"
-                                            (onClick)="onUpload(doc.fileType)"
-                                        ></p-button>
-                                        <!-- Show uploaded status if the document is already uploaded -->
-                                        <p-chip
-                                            *ngIf="isKycDocumentUploaded(doc.fileType)"
-                                            label="Uploaded"
-                                            styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
-                                        ></p-chip>
-                                        <a
-                                            *ngIf="isKycDocumentUploaded(doc.fileType)"
-                                            (click)="viewDocument(doc.fileType)"
-                                            class="text-blue-600 hover:underline cursor-pointer"
-                                        >
-                                            View
-                                        </a>
-                                        <!--                                        <p-button-->
-                                        <!--                                            *ngIf="isKycDocumentUploaded(doc.fileType) && userRole === 'SUPER_ADMIN'"-->
-                                        <!--                                            icon="pi pi-pencil"-->
-                                        <!--                                            styleClass="p-button-text p-button-secondary"-->
-                                        <!--                                            [disabled]="!clientFiles.find(f => f.fileType === doc.fileType)"-->
-                                        <!--                                            (onClick)="editDocument(clientFiles.find(f => f.fileType === doc.fileType) || null)"-->
-                                        <!--                                        ></p-button>-->
-                                    </div>
-                                    <small
-                                        *ngIf="!isKycDocumentUploaded(doc.fileType) && !(uploadedFile && selectedDocument?.fileType === doc.fileType)"
-                                        class="text-gray-500 text-xs mt-1">
-                                        Upload this document to complete KYC requirements.
-                                    </small>
-                                    <small
-                                        *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
-                                        class="text-gray-500 text-xs mt-1">
-                                        Click Upload to save the selected file.
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Other Uploaded Documents Section -->
                     </form>
                 </div>
             </p-tabpanel>
-            <p-tabpanel  *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)" value="2">
-                <div class="client-profile-container">
+            <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_CLIENT_DOCUMENTS)" value="2">
+                <div class="client-profile-container bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-blue-100">
+                    <!-- KYC Documents Section -->
+                    <div class="section-card bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-blue-100 mb-8">
+                        <div class="section-header flex items-center gap-3 mb-4">
+                            <span class="inline-flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full">
+                                <i class="pi pi-file text-purple-600 text-xl"></i>
+                            </span>
+                            <h3 class="section-title text-lg font-bold text-purple-900">KYC Documents</h3>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">Upload or view KYC documents for the client.</p>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div *ngFor="let doc of kycDocuments" class="field">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ doc.label }}</label>
+                                <div class="flex items-center space-x-3">
+                                    <!-- Show file upload option if the document is not uploaded -->
+                                    <p-fileUpload
+                                        *ngIf="!isKycDocumentUploaded(doc.fileType)"
+                                        mode="basic"
+                                        [name]="doc.fileType"
+                                        [customUpload]="true"
+                                        (onSelect)="onKycFileSelect($event, doc.fileType)"
+                                        chooseLabel="Select File"
+                                        class="w-full"
+                                        styleClass="p-button-outlined p-button-secondary rounded-lg"
+                                    ></p-fileUpload>
+                                    <!-- Show chip and upload button if a file is selected but not yet uploaded -->
+                                    <p-chip
+                                        *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
+                                        label="Selected"
+                                        styleClass="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full"
+                                    ></p-chip>
+                                    <p-button
+                                        *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
+                                        label="Upload"
+                                        icon="pi pi-upload"
+                                        [loading]="loading"
+                                        styleClass="p-button-outlined p-button-success"
+                                        (onClick)="onUpload(doc.fileType)"
+                                    ></p-button>
+                                    <!-- Show uploaded status if the document is already uploaded -->
+                                    <p-chip
+                                        *ngIf="isKycDocumentUploaded(doc.fileType)"
+                                        label="Uploaded"
+                                        styleClass="bg-green-100 text-green-800 px-3 py-1 rounded-full"
+                                    ></p-chip>
+                                    <a
+                                        *ngIf="isKycDocumentUploaded(doc.fileType)"
+                                        (click)="viewDocument(doc.fileType)"
+                                        class="text-blue-600 hover:underline cursor-pointer"
+                                    >
+                                        View
+                                    </a>
+                                </div>
+                                <small
+                                    *ngIf="!isKycDocumentUploaded(doc.fileType) && !(uploadedFile && selectedDocument?.fileType === doc.fileType)"
+                                    class="text-gray-500 text-xs mt-1">
+                                    Upload this document to complete KYC requirements.
+                                </small>
+                                <small
+                                    *ngIf="!isKycDocumentUploaded(doc.fileType) && uploadedFile && selectedDocument?.fileType === doc.fileType"
+                                    class="text-gray-500 text-xs mt-1">
+                                    Click Upload to save the selected file.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Uploaded Documents Section -->
+                    <div class="section-card bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-blue-100">
+                        <div class="section-header flex items-center gap-3 mb-4">
+                            <span class="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-full">
+                                <i class="pi pi-folder text-yellow-600 text-xl"></i>
+                            </span>
+                            <h3 class="section-title text-lg font-bold text-yellow-900">Other Uploaded Documents</h3>
+                        </div>
+                        <p-table [value]="clientFiles | nonKycDocument" [tableStyle]="{'min-width': '50rem'}">
+                            <ng-template pTemplate="header">
+                                <tr>
+                                    <th>File Type</th>
+                                    <th>File Name</th>
+                                    <th>Version</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-file>
+                                <tr>
+                                    <td class="capitalize">{{ file.specific?.replace('_', ' ').toLowerCase() || file.fileType?.replace('_', ' ').toLowerCase() }}</td>
+                                    <td>{{ file.fileName }}</td>
+                                    <td>{{ file.version || '1' }}</td>
+                                    <td>
+                                        <p-button icon="pi pi-eye" styleClass="p-button-text p-button-secondary"
+                                                  (onClick)="viewDocument(file.fileType)"></p-button>
+                                        <p-button *ngIf="hasPrivileges(Permissions.UPDATE_FILES)" icon="pi pi-plus"
+                                                  styleClass="p-button-text p-button-success"
+                                                  (onClick)="addDocumentVersion(file)"></p-button>
+                                    </td>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="emptymessage">
+                                <tr>
+                                    <td colspan="4">No other documents uploaded.</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </div>
+                </div>
+            </p-tabpanel>
+            <p-tabpanel  *ngIf="hasPrivileges(Permissions.MANAGE_INVOICES)" value="3">
+                <div class="client-profile-container bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-blue-100">
+                    <div class="section-header flex items-center gap-3 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                            <i class="pi pi-file-invoice text-green-600 text-xl"></i>
+                        </span>
+                        <h3 class="section-title text-lg font-bold text-green-900">Invoices</h3>
+                    </div>
                     <app-view-invoices [client]="selectedClient!!"
-                                       [isActive]="activeTab === '2'"
+                                       [isActive]="activeTab === '3'"
                                        (receiptGenerated)="handleEventEmit()"></app-view-invoices>
 
                 </div>
             </p-tabpanel>
 
-            <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)" value="3">
-                <div class="client-profile-container">
+            <p-tabpanel *ngIf="hasPrivileges(Permissions.MANAGE_RECEIPTS)" value="4">
+                <div class="client-profile-container bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-blue-100">
+                    <div class="section-header flex items-center gap-3 mb-4">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-pink-100 rounded-full">
+                            <i class="pi pi-money-bill text-pink-600 text-xl"></i>
+                        </span>
+                        <h3 class="section-title text-lg font-bold text-pink-900">Receipts</h3>
+                    </div>
                     <app-receipts [clientId]="selectedClient?.id "></app-receipts>
                 </div>
             </p-tabpanel>

@@ -82,8 +82,9 @@ export class ViewUsersComponent implements OnInit {
         this.userService.getUsers().subscribe({
             next: (data) => {
                 this.loadingUsers = false;
-                this.users = data;
-                this.filteredUsers = data;
+                // Filter out users with CLIENT role
+                this.users = data.filter(user => user.role?.name !== 'CLIENT');
+                this.filteredUsers = this.users;
             },
             error: (error) => {
                 this.loadingUsers = false;

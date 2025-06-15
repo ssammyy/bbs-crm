@@ -32,7 +32,6 @@ export class InvoiceService {
     }
 
     getInvoicePdfNew(clientId: number, invoiceType: string, govApprovalType?: string): Observable<Blob> {
-        console.log("Invoice type", invoiceType);
         const url = govApprovalType  !=null
             ? `${this.apiUrl}/api/invoices/${clientId}/${invoiceType}/pdf?govApprovalType=${govApprovalType}`
             : `${this.apiUrl}/api/invoices/${clientId}/${invoiceType}/pdf`;
@@ -67,6 +66,11 @@ export class InvoiceService {
         return this.http.post<Client>(`${this.apiUrl}/api/preliminaries/${clientId}/approve-county-invoice/${invoiceType}`, {});
     }
 
+    approveMainProformaInvoice(clientId: number, ): Observable<Client> {
+        return this.http.post<Client>(`${this.apiUrl}/api/preliminaries/${clientId}/approve-main-proforma`, {});
+
+    }
+
     rejectInvoice(clientId: number, remarks: string, stage: string): Observable<Client> {
         return this.http.post<Client>(`${this.apiUrl}/api/invoices/${clientId}/reject`, { remarks, stage });
     }
@@ -95,5 +99,17 @@ export class InvoiceService {
 
     confirmPayment(invoiceId: number, payment: PaymentConfirmation): Observable<any> {
         return this.http.post(`${this.apiUrl}/api/invoices/${invoiceId}/confirm-payment`, payment);
+    }
+
+    submitContract(contractData: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/api/invoices/contract`, contractData);
+    }
+
+    getMainProformaContract(clientId: number): Observable<any> {
+        return this.http.get(`${this.apiUrl}/api/invoices/${clientId}/MAIN_PROFORMA/pdf`);
+    }
+
+    getInstallmentInvoices(parentInvoiceId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/api/invoices/balance/${parentInvoiceId}`);
     }
 }

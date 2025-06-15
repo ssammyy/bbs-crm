@@ -1,0 +1,279 @@
+<p-toast></p-toast>
+
+<div class=" mx-auto p-4">
+    <form *ngIf="!contractResult" [formGroup]="contractForm" (ngSubmit)="onSubmit()" class="space-y-4">
+        <p-card header="Contract Document" styleClass="shadow-sm">
+            <div class="space-y-2">
+                <p class="text-sm text-gray-600">Upload signed contract</p>
+                <p-fileUpload
+                    mode="basic"
+                    name="contract"
+                    [customUpload]="true"
+                    (onSelect)="onFileSelect($event)"
+                    chooseLabel="Select Document"
+                    class="w-full"
+                    styleClass="p-button-outlined p-button-secondary rounded-md"
+                ></p-fileUpload>
+                <small *ngIf="uploadedFile" class="text-green-600">
+                    Selected: {{uploadedFile.name}}
+                </small>
+            </div>
+        </p-card>
+        <!-- Project Timelines -->
+        <p-card header="Project Timelines" styleClass="shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <p-calendar formControlName="projectStartDate" [showIcon]="true" dateFormat="dd/mm/yy" class="w-full"></p-calendar>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Duration (days)</label>
+                    <p-inputNumber formControlName="projectDuration" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">End Date</label>
+                    <p class="text-base font-semibold text-blue-600">
+                        {{ projectEndDate ? (projectEndDate | date:'dd/MM/yyyy') : '-' }}
+                    </p>
+                </div>
+            </div>
+        </p-card>
+
+        <!-- Contract File Upload -->
+
+
+        <!-- Payment Schedule Configuration -->
+        <p-card header="Payment Schedule" styleClass="shadow-sm">
+            <div class="space-y-1">
+                <div class="flex justify-between items-center">
+                    <p class="text-sm text-blue-500">Total: {{boqAmount | currency:'KES':'symbol-narrow':'1.2-2'}} as per the Bill of Quantities</p>
+                    <p-button
+                        icon="pi pi-plus"
+                        label="Add Installment"
+                        (onClick)="addPaymentSchedule()"
+                        styleClass="p-button-outlined p-button-secondary text-sm"
+                    ></p-button>
+                </div>
+
+                <!-- Payment Schedule Items -->
+                <div formArrayName="paymentSchedules" class="space-y-3">
+                    <div *ngFor="let schedule of paymentSchedules.controls; let i = index" [formGroupName]="i"
+                         class="bg-gray-50 p-2 rounded-md border border-gray-200">
+                        <div class="flex justify-between items-center ">
+                            <h3 class="text-base font-medium text-gray-800">Installment {{i + 1}}</h3>
+                            <p-button
+                                *ngIf="paymentSchedules.length > 1"
+                                icon="pi pi-trash"
+                                (onClick)="removePaymentSchedule(i)"
+                                styleClass="p-button-text p-button-danger"
+                            ></p-button>
+                        </div>
+
+                        <!-- Single Row: Description, Percentage, Amount, Due Date -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Description</label>
+                                <input
+                                    pInputText
+                                    formControlName="description"
+                                    placeholder="e.g., Foundation Completion"
+                                    class="w-full rounded-md"
+                                />
+                            </div>
+                            <div class="flex flex-col items-center text-center">
+                                <label class="block text-sm font-medium text-gray-700">%</label>
+                                <p-inputNumber
+                                    formControlName="percentage"
+                                    [min]="0"
+                                    [max]="100"
+                                    [showButtons]="false"
+                                    class="w-14 text-center border rounded-md"
+                                    (onInput)="updateAmounts()"
+                                    suffix="%"
+                                ></p-inputNumber>
+                            </div>
+                            <div class="text-center">
+                                <label class="block text-sm font-medium text-gray-700">Amount</label>
+                                <p class="text-base font-semibold text-blue-600">
+                                    {{schedule.get('amount')?.value | currency:'KES':'symbol-narrow':'1.2-2'}}
+                                </p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Due Date</label>
+                                <p-calendar formControlName="dueDate" [showIcon]="true" dateFormat="dd/mm/yy" class="w-full"></p-calendar>
+                                <small *ngIf="dueDateErrors[i]" class="text-red-600 text-xs">
+                                    Due date cannot be after {{ projectEndDate | date:'dd/MM/yyyy' }}.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Percentage -->
+                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-md">
+                    <span class="text-sm font-medium text-blue-800">Total Percentage:</span>
+                    <span [ngClass]="{'text-red-600': !isTotalValid(), 'text-green-600': isTotalValid()}"
+                          class="text-base font-bold">
+                        {{totalPercentage}}%
+                    </span>
+                </div>
+            </div>
+        </p-card>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+            <p-button
+                type="submit"
+                [loading]="loadingSubmit"
+                label="Submit Contract"
+                icon="pi pi-check"
+                [disabled]="!contractForm.valid || !isTotalValid()"
+                styleClass="p-button-primary text-sm"
+            ></p-button>
+        </div>
+    </form>
+
+    <!-- Contract Visualization -->
+    <div *ngIf="contractResult && !isEditing" class="mt-6">
+        <div class="bg-white/80 backdrop-blur-md  rounded-2xl p-8 mb-6 border border-blue-100 transition-all duration-300 hover:shadow-2xl">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-8">
+                <!-- Timeline & Status -->
+                <div class="flex-1 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                            <i class="pi pi-calendar text-blue-600 text-xl"></i>
+                        </span>
+                        <span class="font-semibold text-lg text-blue-900">{{ contractResult.projectStartDate | date:'dd MMM yyyy' }}</span>
+                        <span class="ml-2 text-xs text-gray-500">Start</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                            <i class="pi pi-clock text-green-600 text-xl"></i>
+                        </span>
+                        <span class="font-bold text-2xl text-green-700">{{ daysElapsed }}</span>
+                        <span class="text-xs text-gray-500">days elapsed</span>
+                        <span class="mx-2 text-gray-400">/</span>
+                        <span class="font-bold text-2xl text-blue-700">{{ daysRemaining }}</span>
+                        <span class="text-xs text-gray-500">days left</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full">
+                            <i class="pi pi-calendar-times text-purple-600 text-xl"></i>
+                        </span>
+                        <span class="font-semibold text-lg text-purple-900">{{ contractEndDate | date:'dd MMM yyyy' }}</span>
+                        <span class="ml-2 text-xs text-gray-500">End</span>
+                    </div>
+                </div>
+                <!-- Financials & Meta -->
+                <div class="flex-1 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-full">
+                            <i class="pi pi-money-bill text-yellow-600 text-xl"></i>
+                        </span>
+                        <span class="font-semibold text-lg text-yellow-900">{{ contractResult.boqAmount | currency:'KES':'symbol-narrow':'1.2-2' }}</span>
+                        <span class="ml-2 text-xs text-gray-500">BOQ Total</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8" [ngClass]="totalAmountPaid > 0 ? 'bg-green-100' : 'bg-gray-100'">
+                            <i class="pi pi-credit-card" [ngClass]="totalAmountPaid > 0 ? 'text-green-600' : 'text-gray-400'" class="text-xl"></i>
+                        </span>
+                        <span class="font-semibold text-lg" [ngClass]="totalAmountPaid > 0 ? 'text-green-700' : 'text-gray-500'">{{ totalAmountPaid | currency:'KES':'symbol-narrow':'1.2-2' }}</span>
+                        <span class="ml-2 text-xs text-gray-500">Total Paid</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-pink-100 rounded-full">
+                            <i class="pi pi-hashtag text-pink-600 text-xl"></i>
+                        </span>
+                        <span class="font-semibold text-lg text-pink-900">#{{ contractResult.id }}</span>
+                        <span class="ml-2 text-xs text-gray-500">Contract No.</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-200 rounded-full">
+                            <i class="pi pi-check-circle text-blue-700 text-xl"></i>
+                        </span>
+                        <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 shadow-sm">Active</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="mt-8">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-medium text-blue-700">Progress</span>
+                    <span class="text-xs text-gray-500">{{ progressPercent }}%</span>
+                </div>
+                <div class="w-full bg-gradient-to-r from-blue-100 via-blue-200 to-blue-50 rounded-full h-5 relative overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 via-blue-400 to-green-400 h-5 rounded-full transition-all duration-700 ease-in-out flex items-center pl-3" [style.width]="progressPercent + '%'">
+                        <span class="text-xs text-white font-bold drop-shadow-sm animate-pulse">{{ daysElapsed }}d</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end mt-8">
+                <button pButton type="button" (click)="startEdit()" label="Edit Contract" class="p-button-outlined p-button-secondary transition-all duration-200 hover:scale-105"></button>
+            </div>
+        </div>
+        <!-- Installment Breakdown Modern Card -->
+        <div class="bg-white/80 backdrop-blur-md  rounded-2xl p-8 mb-6 border border-blue-100 transition-all duration-300 hover:shadow-2xl">
+            <div class="flex items-center mb-6">
+                <span class="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mr-3">
+                    <i class="pi pi-list text-blue-600 text-2xl"></i>
+                </span>
+                <h2 class="text-xl font-bold text-blue-900 tracking-tight">Installment Breakdown</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm rounded-xl overflow-hidden">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-blue-50 via-blue-100 to-blue-50">
+                            <th class="p-3 text-left font-semibold text-blue-700">#</th>
+                            <th class="p-3 text-left font-semibold text-blue-700">Description</th>
+                            <th class="p-3 text-center font-semibold text-blue-700">Amount</th>
+                            <th class="p-3 text-center font-semibold text-blue-700">Due Date</th>
+                            <th class="p-3 text-center font-semibold text-blue-700">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let inst of contractResult.installmentInvoices; let i = index" class="border-b hover:bg-blue-50 transition-all duration-200">
+                            <td class="p-3 font-bold text-blue-900 text-lg">{{ i + 1 }}</td>
+                            <td class="p-3 flex items-center gap-2">
+                                <span class="inline-flex items-center justify-center w-7 h-7 bg-green-100 rounded-full">
+                                    <i class="pi pi-flag text-green-600 text-base"></i>
+                                </span>
+                                <span class="font-medium text-gray-800">{{ inst.items[0]?.description }}</span>
+                            </td>
+                            <td class="p-3 text-center font-bold text-green-700 text-lg">{{ inst.total | currency:'KES':'symbol-narrow':'1.2-2' }}</td>
+                            <td class="p-3 text-center">
+                                <span class="inline-flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-full text-xs font-semibold text-blue-700">
+                                    <i class="pi pi-calendar text-blue-500"></i>
+                                    {{ inst.dateIssued | date:'dd MMM yyyy' }}
+                                </span>
+                            </td>
+                            <td class="p-3 text-center">
+                                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold shadow-sm"
+                                    [ngClass]="{
+                                        'bg-green-100 text-green-800': inst.cleared,
+                                        'bg-yellow-100 text-yellow-800': !inst.cleared
+                                    }">
+                                    <i class="pi" [ngClass]="inst.cleared ? 'pi-check-circle' : 'pi-clock'" class="mr-1"></i>
+                                    {{ inst.cleared ? 'Paid' : 'Pending' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="mb-4">
+            <p class="font-medium text-blue-700">Next Payment Due:</p>
+            <span *ngIf="nextPaymentDue !== 'All Paid'; else allPaid">
+                {{ nextPaymentDue | date:'dd/MM/yyyy' }}
+            </span>
+            <ng-template #allPaid>All Paid</ng-template>
+        </div>
+    </div>
+
+    <!-- Edit Contract Form -->
+    <form *ngIf="isEditing" [formGroup]="contractForm" (ngSubmit)="saveEdit()" class="space-y-4">
+        <!-- ...reuse contract form fields here... -->
+        <button pButton type="submit" label="Save" class="p-button-primary"></button>
+    </form>
+</div>
+

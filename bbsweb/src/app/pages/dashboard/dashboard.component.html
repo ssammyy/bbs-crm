@@ -4,44 +4,43 @@
     <!-- Main Dashboard Content -->
     <div class="flex-1">
         <!-- Greeting Section -->
-        <div class="mb-6  shadow-sm custom-card">
+        <div class="mb-6 bg-white/80 backdrop-blur-md  rounded-2xl border border-blue-100">
             <div class="p-6">
                 <p class="text-xl font-semibold ">{{ greeting }}, {{ userName }}</p>
             </div>
         </div>
 
         <!-- Admin Dashboard -->
-        <div *ngIf="hasPrivilege(Permissions.VIEW_MAIN_DASHBOARD)" class="mb-6 custom-card">
-            <div class="flex items-center p-6 custom-border-bottom">
-                <i class="pi pi-th-large mr-2 text-2xl "></i>
-                <h1 class="text-xl font-semibold ">Admin Dashboard</h1>
+        <div *ngIf="hasPrivilege(Permissions.VIEW_MAIN_DASHBOARD)" class="mb-6 bg-white/80 backdrop-blur-md  rounded-2xl border border-blue-100">
+            <div class="flex items-center p-6 border-b border-blue-100">
+                <i class="pi pi-th-large mr-2 text-2xl text-blue-600"></i>
+                <h1 class="text-xl font-semibold text-blue-900">Admin Dashboard</h1>
             </div>
-
             <div class="p-6">
                 <p class="mb-6 text-sm ">Key business metrics and recent activities.</p>
 
                 <!-- Top Section: Key Metrics -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                    <div class="rounded-lg custom-card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                    <div class="rounded-2xl bg-white/80 backdrop-blur-md  border border-blue-100 hover:shadow-2xl transition-shadow duration-200 cursor-pointer"
                          (click)="navigateTo('view-clients')">
                         <div class="flex flex-col items-center justify-center h-40 p-4">
-                            <div class="p-2 rounded-full bg-blue-50 mb-3">
+                            <div class="p-2 rounded-full bg-blue-100 mb-3">
                                 <i class="pi pi-users text-blue-600 text-xl"></i>
                             </div>
                             <div class="text-center">
-                                <h3 class="text-sm font-semibold  mb-2">Total Clients</h3>
+                                <h3 class="text-sm font-semibold text-blue-900 mb-2">Total Clients</h3>
                                 <p class="text-2xl font-bold text-blue-600">{{ stats?.totalActiveClients }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="rounded-lg custom-card hover:shadow-md transition-shadow duration-200 cursor-pointer">
+                    <div class="rounded-2xl bg-white/80 backdrop-blur-md  border border-green-100 hover:shadow-2xl transition-shadow duration-200 cursor-pointer">
                         <div class="flex flex-col items-center justify-center h-40 p-4">
-                            <div class="p-2 rounded-full bg-green-50 mb-3">
+                            <div class="p-2 rounded-full bg-green-100 mb-3">
                                 <i class="pi pi-chart-line text-green-600 text-xl"></i>
                             </div>
                             <div class="text-center">
-                                <h3 class="text-sm font-semibold  mb-2">Total Revenue </h3>
+                                <h3 class="text-sm font-semibold text-green-900 mb-2">Total Revenue </h3>
                                 <div class="stat-box-success">
                                     <small
                                         class="stat-value">KSH {{ stats?.invoiceStats?.totalRevenue | number: '1.2-2' }}</small>
@@ -50,40 +49,40 @@
                         </div>
                     </div>
 
-                    <div class="rounded-lg custom-card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                    <div class="rounded-2xl bg-white/80 backdrop-blur-md  border border-indigo-100 hover:shadow-2xl transition-shadow duration-200 cursor-pointer"
                          (click)="navigateTo('view-users')">
                         <div class="flex flex-col items-center justify-center h-40 p-4">
-                            <div class="p-2 rounded-full bg-indigo-50 mb-3">
+                            <div class="p-2 rounded-full bg-indigo-100 mb-3">
                                 <i class="pi pi-shield text-indigo-600 text-xl"></i>
                             </div>
                             <div class="text-center">
-                                <h3 class="text-sm font-semibold  mb-2">Total Agents</h3>
+                                <h3 class="text-sm font-semibold text-indigo-900 mb-2">Total Agents</h3>
                                 <p class="text-2xl font-bold text-indigo-600">{{ stats?.totalAgents }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="rounded-lg custom-card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                    <div class="rounded-2xl bg-white/80 backdrop-blur-md  border border-purple-100 hover:shadow-2xl transition-shadow duration-200 cursor-pointer"
                          (click)="navigateTo('view-leads')">
                         <div class="flex flex-col items-center justify-center h-40 p-4">
-                            <div class="p-2 rounded-full bg-purple-50 mb-3">
+                            <div class="p-2 rounded-full bg-purple-100 mb-3">
                                 <i class="pi pi-briefcase text-purple-600 text-xl"></i>
                             </div>
                             <div class="text-center">
-                                <h3 class="text-sm font-semibold  mb-2">Commitments</h3>
+                                <h3 class="text-sm font-semibold text-purple-900 mb-2">Commitments</h3>
                                 <p class="text-2xl font-bold text-purple-600">{{ stats?.commitMentClients }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="rounded-lg custom-card hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                    <div class="rounded-2xl bg-white/80 backdrop-blur-md  border border-teal-100 hover:shadow-2xl transition-shadow duration-200 cursor-pointer"
                          (click)="navigateTo('view-users')">
                         <div class="flex flex-col items-center justify-center h-40 p-4">
-                            <div class="p-2 rounded-full bg-teal-50 mb-3">
+                            <div class="p-2 rounded-full bg-teal-100 mb-3">
                                 <i class="pi pi-users text-teal-600 text-xl"></i>
                             </div>
                             <div class="text-center">
-                                <h3 class="text-sm font-semibold  mb-2">System Users</h3>
+                                <h3 class="text-sm font-semibold text-teal-900 mb-2">System Users</h3>
                                 <p class="text-2xl font-bold text-teal-600">{{ stats?.totalSystemUsers }}</p>
                             </div>
                         </div>
@@ -93,10 +92,10 @@
                 <!-- Bottom Section: Detailed Cards -->
                 <!-- Row 1: Invoice Statistics, Highest Revenue by Client, Super Admins -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                    <div class="custom-card">
-                        <div class="flex items-center p-4 custom-border-bottom">
+                    <div class="bg-white/80 backdrop-blur-md  rounded-2xl border border-indigo-100">
+                        <div class="flex items-center p-4 border-b border-indigo-100">
                             <i class="pi pi-file-invoice-dollar mr-2 text-lg text-indigo-600"></i>
-                            <h3 class="text-sm font-semibold ">Invoice Statistics</h3>
+                            <h3 class="text-sm font-semibold text-indigo-900">Invoice Statistics</h3>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
                             <div class="stat-box-success">
@@ -112,10 +111,10 @@
                         </div>
                     </div>
 
-                    <div class="custom-card">
-                        <div class="flex items-center p-4 custom-border-bottom">
+                    <div class="bg-white/80 backdrop-blur-md  rounded-2xl border border-blue-100">
+                        <div class="flex items-center p-4 border-b border-blue-100">
                             <i class="pi pi-star-fill mr-2 text-lg text-blue-600"></i>
-                            <h3 class="text-sm font-semibold ">Highest Revenue by Client</h3>
+                            <h3 class="text-sm font-semibold text-blue-900">Highest Revenue by Client</h3>
                         </div>
                         <div class="flex flex-col items-center justify-center h-40 p-4">
                             <p class="text-xs  mb-2">Client: <span
@@ -125,8 +124,8 @@
                         </div>
                     </div>
 
-                    <div class="custom-card">
-                        <div class="flex items-center p-4 custom-border-bottom">
+                    <div class="bg-white/80 backdrop-blur-md  rounded-2xl border border-amber-100">
+                        <div class="flex items-center p-4 border-b border-amber-100">
                             <i class="pi pi-crown mr-2 text-lg text-amber-600"></i>
                             <h3 class="text-sm font-semibold text-amber-700">Super Admins</h3>
                         </div>
@@ -143,8 +142,8 @@
 
                 <!-- Row 2: Revenue Over Time and Clients Over Time -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                    <div class="custom-card">
-                        <div class="flex items-center p-4 custom-border-bottom">
+                    <div class="bg-white/80 backdrop-blur-md  rounded-2xl border border-green-100">
+                        <div class="flex items-center p-4 border-b border-green-100">
                             <i class="pi pi-chart-line mr-2 text-lg text-green-600"></i>
                             <h3 class="text-sm font-semibold text-green-700">Revenue Over Time</h3>
                         </div>
@@ -154,8 +153,8 @@
                         </div>
                     </div>
 
-                    <div class="custom-card">
-                        <div class="flex items-center p-4 custom-border-bottom">
+                    <div class="bg-white/80 backdrop-blur-md  rounded-2xl border border-pink-100">
+                        <div class="flex items-center p-4 border-b border-pink-100">
                             <i class="pi pi-chart-line mr-2 text-lg text-pink-600"></i>
                             <h3 class="text-sm font-semibold text-pink-700">Clients Over Time</h3>
                         </div>
@@ -169,8 +168,8 @@
 
                 <!-- Row 3: Client Source Distribution and Recent Activities -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                    <div class="custom-card">
-                        <div class="flex items-center p-4 custom-border-bottom">
+                    <div class="bg-white/80 backdrop-blur-md  rounded-2xl border border-teal-100">
+                        <div class="flex items-center p-4 border-b border-teal-100">
                             <i class="pi pi-chart-bar mr-2 text-lg text-teal-600"></i>
                             <h3 class="text-sm font-semibold text-teal-700">Client Source Distribution</h3>
                         </div>
@@ -180,10 +179,10 @@
                         </div>
                     </div>
 
-                    <div class="custom-card">
-                        <div class="flex items-center p-4 custom-border-bottom">
-                            <i class="pi pi-history mr-2 text-lg "></i>
-                            <h3 class="text-sm font-semibold ">Recent Activities</h3>
+                    <div class="bg-white/80 backdrop-blur-md  rounded-2xl border border-blue-100">
+                        <div class="flex items-center p-4 border-b border-blue-100">
+                            <i class="pi pi-history mr-2 text-lg text-blue-600"></i>
+                            <h3 class="text-sm font-semibold text-blue-900">Recent Activities</h3>
                         </div>
                         <div class="p-4">
                             <p-progressSpinner *ngIf="loading" styleClass="w-8 h-8 mx-auto" strokeWidth="3"
@@ -226,8 +225,8 @@
 
         <!-- Client Dashboard -->
         <div *ngIf="hasPrivilege(Permissions.VIEW_CLIENT_DASHBOARD) && stats && !loading && userRole!='SUPER_ADMIN'"
-             class="mb-6 custom-card">
-            <div class="flex items-center p-6 custom-border-bottom">
+             class="mb-6 bg-white/80 backdrop-blur-md  rounded-2xl border border-blue-100">
+            <div class="flex items-center p-6 border-b border-blue-100">
                 <i class="pi pi-user mr-2 text-2xl "></i>
                 <h1 class="text-xl font-semibold ">Your Project Dashboard</h1>
             </div>
@@ -235,126 +234,86 @@
             <div class="p-6">
                 <p class="mb-6 text-sm ">Track your project progress and financials.</p>
 
-                <!-- Top Section: Key Metrics -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Main Content Grid: Top 4 Cards + Milestone Checklist -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <!-- Milestone Checklist: 1/2 width -->
+                  <div class="col-span-1">
+                    <div class="custom-card w-full h-full min-h-[340px] flex flex-col">
+                      <app-client-milestone-checklist [clientId]="clientId"></app-client-milestone-checklist>
+                    </div>
+                  </div>
+                  <!-- Sidebar Cards: 1/2 width, stacked vertically -->
+                  <div class="col-span-1 flex flex-col gap-4">
+                    <!-- Project Status -->
                     <div class="custom-card">
-                        <div class="flex items-center p-4">
-                            <div class="p-2 rounded-full bg-blue-50 mr-3">
-                                <i class="pi pi-briefcase text-blue-600 text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold ">Project Status</h3>
-                                <small
-                                    class="text-sm font-bold text-blue-600">{{ stats?.projectDetails?.clientStage | titlecase }}</small>
-                            </div>
+                      <div class="flex items-center p-4">
+                        <div class="p-2 rounded-full bg-blue-50 mr-3">
+                          <i class="pi pi-briefcase text-blue-600 text-xl"></i>
                         </div>
+                        <div>
+                          <h3 class="text-sm font-semibold ">Project Status</h3>
+                          <small class="text-sm font-bold text-blue-600">{{ stats?.projectDetails?.clientStage | titlecase }}</small>
+                        </div>
+                      </div>
                     </div>
-
+                    <!-- Total Paid -->
                     <div class="custom-card">
-                        <div class="flex items-center p-4">
-                            <div class="p-2 rounded-full bg-green-50 mr-3">
-                                <i class="pi pi-chart-line text-green-600 text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold ">Total Paid</h3>
-                                <p class="text-lg font-bold text-green-600">
-                                    KSH {{ stats?.invoiceStats?.totalRevenue | number: '1.2-2' }}</p>
-                            </div>
+                      <div class="flex items-center p-4">
+                        <div class="p-2 rounded-full bg-green-50 mr-3">
+                          <i class="pi pi-chart-line text-green-600 text-xl"></i>
                         </div>
+                        <div>
+                          <h3 class="text-sm font-semibold ">Total Paid</h3>
+                          <p class="text-lg font-bold text-green-600">
+                            KSH {{ stats?.invoiceStats?.totalRevenue | number: '1.2-2' }}</p>
+                        </div>
+                      </div>
                     </div>
-
+                    <!-- Pending Payment -->
                     <div class="custom-card">
-                        <div class="flex items-center p-4">
-                            <div class="p-2 rounded-full bg-amber-50 mr-3">
-                                <i class="pi pi-hourglass text-amber-600 text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold ">Pending Payment</h3>
-                                <p class="text-lg font-bold text-amber-600">
-                                    KSH {{ stats?.invoiceStats?.pendingToBeClearedAmount | number: '1.2-2' }}</p>
-                            </div>
+                      <div class="flex items-center p-4">
+                        <div class="p-2 rounded-full bg-amber-50 mr-3">
+                          <i class="pi pi-hourglass text-amber-600 text-xl"></i>
                         </div>
+                        <div>
+                          <h3 class="text-sm font-semibold ">Pending Payment</h3>
+                          <p class="text-lg font-bold text-amber-600">
+                            KSH {{ stats?.invoiceStats?.pendingToBeClearedAmount | number: '1.2-2' }}</p>
+                        </div>
+                      </div>
                     </div>
-
+                    <!-- Offering -->
                     <div class="custom-card">
-                        <div class="flex items-center p-4">
-                            <div class="p-2 rounded-full bg-purple-50 mr-3">
-                                <i class="pi pi-box text-purple-600 text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold ">Offering</h3>
-                                <p class="text-lg font-bold text-purple-600">{{ stats?.projectDetails?.productOffering | titlecase }}</p>
-                            </div>
+                      <div class="flex items-center p-4">
+                        <div class="p-2 rounded-full bg-purple-50 mr-3">
+                          <i class="pi pi-box text-purple-600 text-xl"></i>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Main Content Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Left Column: Milestone Checklist -->
-                    <div class="lg:col-span-1">
-                        <app-client-milestone-checklist [clientId]="5"></app-client-milestone-checklist>
-                    </div>
-
-                    <!-- Right Column: Detailed Cards -->
-                    <div class="lg:col-span-2">
-                        <div class="grid grid-cols-1 gap-4">
-                            <!-- Invoice Statistics Card -->
-                            <div class="custom-card">
-                                <div class="flex items-center p-4 custom-border-bottom">
-                                    <i class="pi pi-file-invoice-dollar mr-2 text-lg text-indigo-600"></i>
-                                    <h3 class="text-sm font-semibold ">Invoice Statistics</h3>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
-                                    <div class="text-center p-3 bg-green-50 rounded-md">
-                                        <p class="text-xs ">Total Paid</p>
-                                        <p class="text-lg font-bold text-green-600">
-                                            KSH {{ stats?.invoiceStats?.totalRevenue | number: '1.2-2' }}</p>
-                                    </div>
-                                    <div class="text-center p-3 bg-yellow-50 rounded-md">
-                                        <p class="text-xs ">Pending Payment</p>
-                                        <p class="text-lg font-bold text-yellow-600">
-                                            KSH {{ stats?.invoiceStats?.pendingToBeClearedAmount | number: '1.2-2' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Recent Activities Card -->
-                            <div class="custom-card">
-                                <div class="flex items-center p-4 custom-border-bottom">
-                                    <i class="pi pi-history mr-2 text-lg "></i>
-                                    <h3 class="text-sm font-semibold ">Recent Activities</h3>
-                                </div>
-                                <div class="p-4">
-                                    <p-table [value]="stats?.recentActivities ?? []" [paginator]="true" [rows]="5"
-                                             styleClass="p-datatable-striped p-datatable-gridlines" responsiveLayout="scroll"
-                                             [tableStyle]="{'min-width': '40rem'}">
-                                        <ng-template pTemplate="header">
-                                            <tr class="bg-gray-50 sticky top-0">
-                                                <th class="p-2 text-left text-xs font-semibold  w-1/2">Description</th>
-                                                <th class="p-2 text-left text-xs font-semibold  w-1/6">Client ID</th>
-                                                <th class="p-2 text-left text-xs font-semibold  w-1/6">Timestamp</th>
-                                                <th class="p-2 text-left text-xs font-semibold  w-1/6">User</th>
-                                            </tr>
-                                        </ng-template>
-                                        <ng-template pTemplate="body" let-activity>
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="p-2 border-b border-gray-200  truncate max-w-xs">{{ activity.description }}</td>
-                                                <td class="p-2 border-b border-gray-200 ">{{ activity.clientId }}</td>
-                                                <td class="p-2 border-b border-gray-200 ">{{ activity.timestamp | date: 'medium' }}</td>
-                                                <td class="p-2 border-b border-gray-200 ">{{ activity.user || 'System' }}</td>
-                                            </tr>
-                                        </ng-template>
-                                        <ng-template pTemplate="emptymessage">
-                                            <tr>
-                                                <td colspan="4" class="text-center p-3 ">No recent activities found.</td>
-                                            </tr>
-                                        </ng-template>
-                                    </p-table>
-                                </div>
-                            </div>
+                        <div>
+                          <h3 class="text-sm font-semibold ">Offering</h3>
+                          <p class="text-lg font-bold text-purple-600">{{ stats?.projectDetails?.productOffering | titlecase }}</p>
                         </div>
+                      </div>
                     </div>
+                    <!-- Invoice Stats -->
+                    <div class="custom-card">
+                      <div class="flex items-center p-4 custom-border-bottom">
+                        <i class="pi pi-file-invoice-dollar mr-2 text-lg text-indigo-600"></i>
+                        <h3 class="text-sm font-semibold ">Invoice Statistics</h3>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
+                        <div class="text-center p-3 bg-green-50 rounded-md">
+                          <p class="text-xs ">Total Paid</p>
+                          <p class="text-lg font-bold text-green-600">
+                            KSH {{ stats?.invoiceStats?.totalRevenue | number: '1.2-2' }}</p>
+                        </div>
+                        <div class="text-center p-3 bg-yellow-50 rounded-md">
+                          <p class="text-xs ">Pending Payment</p>
+                          <p class="text-lg font-bold text-yellow-600">
+                            KSH {{ stats?.invoiceStats?.pendingToBeClearedAmount | number: '1.2-2' }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
             </div>
         </div>
@@ -362,8 +321,8 @@
         <!-- Agent Dashboard -->
         <div
             *ngIf="hasPrivilege(Permissions.VIEW_AGENT_DASHBOARD) && agentStats && !agentLoading && userRole!='SUPER_ADMIN'"
-            class="p-6 custom-card">
-            <div class="mb-6 flex items-center custom-border-bottom pb-4">
+            class="p-6 bg-white/80 backdrop-blur-md  rounded-2xl border border-blue-100">
+            <div class="mb-6 flex items-center border-b border-blue-100 pb-4">
                 <i class="pi pi-shield mr-2 text-2xl "></i>
                 <h1 class="text-xl font-semibold ">Agent Dashboard</h1>
             </div>
@@ -536,7 +495,6 @@
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center">
                         <i class="pi pi-bell mr-2 text-xl text-blue-600"></i>
-                        <h2 class="text-lg font-semibold ">Notifications</h2>
                         <span class="ml-2 px-2 py-1 text-xs font-semibold text-white bg-red-500 rounded-full">
                             {{ unreadCount }} unread
                         </span>
@@ -554,24 +512,11 @@
 
                     <div *ngIf="!notificationLoading" class="divide-y divide-gray-200">
                         <div *ngFor="let notification of notifications.slice(0, 5)"
-                             class="p-4 hover:bg-gray-50 transition-colors duration-200"
-                             [ngClass]="{'bg-blue-50': !notification.isRead}">
+                             class="p-2 hover:bg-gray-50 transition-colors duration-200"
+                             >
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
-                                    <h3 class="text-sm font-semibold ">{{ notification.title }}</h3>
-                                    <div class="flex items-center mt-2">
-                                        <span class="text-xs ">{{ notification.createdAt | date:'medium' }}</span>
-                                        <span *ngIf="notification.type"
-                                              class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full"
-                                              [ngClass]="{
-                                                'bg-blue-100 text-blue-800': notification.type === 'INFO',
-                                                'bg-green-100 text-green-800': notification.type === 'SUCCESS',
-                                                'bg-yellow-100 text-yellow-800': notification.type === 'WARNING',
-                                                'bg-red-100 text-red-800': notification.type === 'ERROR'
-                                              }">
-                                            {{ notification.type }}
-                                        </span>
-                                    </div>
+                                    <h3 class="text-sm font-semibold capitalize ">{{ notification.title.replaceAll('_',' ').toLowerCase() }}</h3>
                                 </div>
                                 <button *ngIf="!notification.isRead"
                                         pButton

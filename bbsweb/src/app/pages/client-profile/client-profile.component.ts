@@ -45,6 +45,7 @@ import { Drawer } from 'primeng/drawer';
 import {
     ClientMilestoneChecklistComponent
 } from '../dashboard/components/client-milestone-checklist/client-milestone-checklist.component';
+import { ContractSigningComponent } from '../contract-signing/contract-signing.component';
 
 @Component({
     selector: 'app-client-profile',
@@ -85,7 +86,8 @@ import {
         NgxSpinnerModule,
         ProgressSpinner,
         Drawer,
-        ClientMilestoneChecklistComponent
+        ClientMilestoneChecklistComponent,
+        ContractSigningComponent
     ],
     templateUrl: './client-profile.component.html',
     styleUrls: ['./client-profile.component.scss'],
@@ -467,7 +469,7 @@ export class ClientProfileComponent implements OnInit {
     }
 
     goToInvoices() {
-        this.activeTab = '2';
+        this.activeTab = '3';
     }
 
     viewDocument(fileType: string) {
@@ -544,4 +546,9 @@ export class ClientProfileComponent implements OnInit {
 
     protected readonly Permissions = Permissions;
     checklistVisible = false;
+
+    onContractSigned() {
+        // Handle contract signing completion
+        this.handleEventEmit();
+    }
 }

@@ -343,10 +343,10 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
     createNewInvoice() {}
 
     approveInvoice(invoice: Invoice): void {
+        console.log('invoice >> ', {invoice});
         this.loading = true;
 
         if (invoice.invoiceType == InvoiceType.COUNTY_INVOICE.toString()) {
-            console.log('Invoice Type is in COUNTY_INVOICE ', { invoice });
             this.invoiceService.approveCountyInvoice(this.client.id, invoice.governmentApprovalType!!).subscribe({
                 next: (result: any) => {
                     this.loading = false;
@@ -359,6 +359,19 @@ export class ViewInvoicesComponent implements OnInit, OnChanges {
 
                 }
             });
+        } else if(invoice.invoiceType == InvoiceType.MAIN_PROFORMA.toString()) {
+            this.invoiceService.approveMainProformaInvoice(this.client.id).subscribe({
+                next: (result: any) => {
+                    this.loading = false;
+                    this.messagesService.showSuccess('Invoice approved successfully.');
+                    this.loadInvoices();
+                },
+                error: (error: any) => {
+                    this.loading = false;
+                    this.messagesService.showError('Failed to approve invoice. Please try again.');
+                }
+            })
+
         } else {
             this.invoiceService.approvePreliminaryInvoice(this.client.id, invoice.preliminary?.id).subscribe({
                 next: (result) => {

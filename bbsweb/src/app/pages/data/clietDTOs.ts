@@ -26,7 +26,8 @@ export interface Client {
     bankBranch: string;
     consultancySubtag: string;
     notes: string;
-    followUpDate: Date
+    followUpDate: Date;
+    boqAmount: number;
 }
 export interface Files{
     id?: number;
@@ -66,6 +67,8 @@ export interface Invoice {
     cleared: boolean;
     preliminary?: Preliminary;
     governmentApprovalType?: string;
+    countyReceiptUploaded: boolean;
+    countyApprovedDocumentUploaded: boolean;
 }
 
 export interface InvoiceItem {
@@ -108,9 +111,11 @@ export interface Preliminary {
     status: string;
     invoiced: boolean;
     clientInvoicedForApproval: boolean;
+    clientPaidForApproval: boolean;
     invoiceClearedFlag: boolean;
     rejectionRemarks: string;
-
+    countyApprovedDocumentUploaded: boolean;
+    boqAmount: number;
 }
 
 

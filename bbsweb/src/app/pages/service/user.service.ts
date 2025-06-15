@@ -36,6 +36,7 @@ export class UserGlobalService {
 
 
     role!: Role
+    clientId!: number
 
 
 
@@ -69,6 +70,12 @@ export class UserGlobalService {
     clearUser(): void {
         localStorage.removeItem('user'); // Remove user
         this.userSubject.next(null);
+    }
+    setClientId(clientId: number) {
+        localStorage.setItem('clientId', clientId.toString());
+    }
+    getClientId(): number {
+        return Number(localStorage.getItem('clientId'));
     }
 
     getUserFromStorage(): any {

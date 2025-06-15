@@ -193,13 +193,18 @@ export class AppMenu {
     }
 
     async getClient(): Promise<void> {
-        try {
-            const result = await firstValueFrom(this.userService.getClientDetails(this.userEmail));
-            this.userRole = this.userService.getRole();
-            this.clientId = result.id;
-        } catch (error) {
-            console.error('Error fetching client details', error);
+        this.userRole = this.userService.getRole();
+        if (this.userRole === 'CLIENT') {
+            try {
+                const result = await firstValueFrom(this.userService.getClientDetails(this.userEmail));
+                console.log('resullllt ', result.id);
+                this.userService.setClientId(result.id);
+                this.clientId = result.id;
+            } catch (error) {
+                console.error('Error fetching client details', error);
+            }
         }
+
     }
 
 

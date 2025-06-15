@@ -43,6 +43,7 @@ import { ToastModule } from 'primeng/toast';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { TooltipModule } from 'primeng/tooltip';
 import { NonKycDocumentPipe } from '../site-report-form/non-kyc-document.pipe';
+import { InputNumberModule } from 'primeng/inputnumber';
 
 @Component({
     selector: 'app-preliminary-management',
@@ -81,7 +82,8 @@ import { NonKycDocumentPipe } from '../site-report-form/non-kyc-document.pipe';
         ConfirmDialogModule,
         NgxSpinnerModule,
         TooltipModule,
-        NonKycDocumentPipe
+        NonKycDocumentPipe,
+        InputNumberModule
     ],
     providers: [MessageService, ConfirmationService]
 })
@@ -94,6 +96,7 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
     preliminaries: Preliminary[] = [];
     showAddForm: boolean = false;
     newPreliminary: PreliminaryType = { requiresGovernmentApproval: false, id: 0, name: '', description: '' };
+    boqTotalAmount: number | null = null;
 
     invoices: Invoice[] = [];
     documents: Files[] = [];
@@ -117,6 +120,9 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
     selectedLicense: LicenseFile | null = null;
     licenseFiles: LicenseFile[] = [];
     users: User[] = [];
+
+    countyApprovalStatus: 'APPROVED' | 'REJECTED' | 'PENDING' | null = null;
+    countyRejectionRemarks: string = '';
 
     constructor(
         private http: HttpClient,
@@ -194,7 +200,10 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
                 invoiced: false,
                 invoiceClearedFlag: false,
                 rejectionRemarks: '',
-                clientInvoicedForApproval: false
+                clientInvoicedForApproval: false,
+                clientPaidForApproval: false,
+                countyApprovedDocumentUploaded: false,
+                boqAmount: 0,
             };
             console.log('selectedPreliminaryType>>>>> ', this.selectedPreliminaryType);
 
@@ -306,8 +315,47 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
     }
 
     submitTechnicalWorks(): void {
-        if (this.modalPreliminary && this.uploadedFile) {
-            this.loading = true;
+        if (!this.uploadedFile) return;
+        this.loading = true;
+
+        if (this.modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION' && !this.boqTotalAmount) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Please enter the BOQ total amount'
+            });
+            this.loading = false;
+            return;
+        }
+        if(this.modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION' && !this.boqTotalAmount){
+            this.uploadService.upload('PRELIMINARY', this.uploadedFile, this.client.id, this.modalPreliminary?.id).subscribe({
+                next: (resp) => {
+                    if (this.modalPreliminary?.preliminaryType.name === 'BOQ_PREPARATION') {
+                        this.preliminaryService.submitBOQAmount(this.modalPreliminary.id, this.boqTotalAmount!).subscribe({
+                            next: () => {
+                                this.messageService.add({ severity: 'success', summary: 'BOQ amount and document uploaded successfully.' });
+                                this.loading = false;
+                                this.displayDialog = false;
+                                this.loadPreliminaries();
+                            },
+                            error: (err) => {
+                                this.loading = false;
+                                this.messageService.add({ severity: 'error', summary: err.message || 'Failed to submit BOQ amount' });
+                            }
+                        });
+                    } else {
+                        this.messageService.add({ severity: 'success', summary: 'Document uploaded successfully.' });
+                        this.loading = false;
+                        this.displayDialog = false;
+                        this.loadPreliminaries();
+                    }
+                },
+                error: (err) => {
+                    this.loading = false;
+                    this.messageService.add({ severity: 'error', summary: err.message || 'Failed to upload document' });
+                }
+            });
+
+        }else {
             this.uploadDocument(this.modalPreliminary);
             this.preliminaryService.submitTechnicalWorks(this.client.id, this.modalPreliminary).subscribe({
                 next: () => {
@@ -323,15 +371,16 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
                 }
             });
         }
+
     }
 
     acceptTechnicalWorks(type: string): void {
         if (type === 'SUBMITTED_TO_COUNTY') {
             this.confirmationService.confirm({
                 message: 'Please confirm that all required documents are available and ready for submission to the county.',
-                header: 'Confirm Document Availability',
+                header: 'Confirm Document Availability and Submission',
                 icon: 'pi pi-exclamation-triangle',
-                acceptLabel: 'Yes, Documents Submitted',
+                acceptLabel: 'Yes, Submitted',
                 rejectLabel: 'No, Cancel',
                 accept: () => {
                     this.loading = true;
@@ -499,13 +548,19 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
             this.loading = false;
             return;
         }
+        if (fileType ==='APPROVED_DOC'){
+            fileType =`APPROVED_${this.modalPreliminary.preliminaryType.name}`;
+            console.log('filetype ', fileType);
+        }
         this.uploadService
             .upload(fileType, this.uploadedFile, this.client.id, this.modalPreliminary.id)
             .pipe(
                 switchMap(() => {
                     this.loading = false;
                     this.loadPreliminaries();
-                    if (fileType=="COUNTY_INVOICE") {
+                    this.modalPreliminary = this.preliminaries.find((prelim) => prelim.id === this.modalPreliminary.id);
+
+                    if (fileType=="COUNTY_INVOICE" || fileType=="COUNTY_RECEIPT" || fileType==='APPROVED_ARCHITECTURAL_DRAWINGS' || fileType==='APPROVED_STRUCTURAL_DESIGNS') {
                         this.displayDialog = false;
                     }
                     this.messagesService.showSuccess('Invoices uploaded successfully.');
@@ -652,6 +707,69 @@ export class PreliminaryManagementComponent implements OnInit, OnChanges {
         const file: File = event.files[0];
         this.uploadedFile = file;
         this.selectedDocument = { fileType: 'COUNTY_INVOICE', fileName: file.name, fileUrl: '' };
+    }
+
+    isCountyReceiptUploaded(): boolean {
+        return this.modalPreliminary?.files?.some((file: Files) => file.fileType === 'COUNTY_RECEIPT') || false;
+    }
+
+    onCountyReceiptSelect(event: { files: File[] }): void {
+        const file = event.files[0];
+        this.uploadedFile = file;
+        this.selectedDocument = {
+            fileName: file.name,
+            fileType: 'COUNTY_RECEIPT',
+            fileUrl: URL.createObjectURL(file)
+        };
+    }
+
+    isApprovedDocumentUploaded(): boolean {
+        return this.modalPreliminary?.files?.some((file: Files) => file.fileType === 'COUNTY_APPROVED_DOCUMENT') || false;
+    }
+
+    onApprovedDocumentSelect(event: { files: File[] }): void {
+        const file = event.files[0];
+        this.uploadedFile = file;
+        this.selectedDocument = {
+            fileName: file.name,
+            fileType: 'COUNTY_APPROVED_DOCUMENT',
+            fileUrl: URL.createObjectURL(file)
+        };
+    }
+
+    submitCountyApprovalStatus(): void {
+        if (!this.countyApprovalStatus) {
+            this.messagesService.showError('Please select an approval status');
+            return;
+        }
+
+        if (this.countyApprovalStatus === 'APPROVED' && !this.isApprovedDocumentUploaded()) {
+            this.messagesService.showError('Please upload the approved document');
+            return;
+        }
+
+        if (this.countyApprovalStatus === 'REJECTED' && !this.countyRejectionRemarks) {
+            this.messagesService.showError('Please provide rejection remarks');
+            return;
+        }
+
+        this.loading = true;
+        this.preliminaryService.updateCountyApprovalStatus(
+            this.modalPreliminary.id,
+            this.countyApprovalStatus,
+            this.countyRejectionRemarks
+        ).subscribe({
+            next: () => {
+                this.loading = false;
+                this.messagesService.showSuccess('County approval status updated successfully');
+                this.displayDialog = false;
+                this.loadPreliminaries();
+            },
+            error: (error: { error: { details: string } }) => {
+                this.loading = false;
+                this.messagesService.showError(error.error.details || 'Failed to update county approval status');
+            }
+        });
     }
 
     protected readonly Permissions = Permissions;

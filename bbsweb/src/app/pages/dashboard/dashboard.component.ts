@@ -25,6 +25,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ClientMilestoneChecklistComponent } from './components/client-milestone-checklist/client-milestone-checklist.component';
+import { UserService } from '../users/user.service';
 @Component({
     selector: 'app-dashboard',
     standalone: true,
@@ -77,6 +78,7 @@ export class DashboardComponent implements OnInit {
     selectedApproval: any = null;
     showApprovalModal = false;
     rejectionReason = '';
+    clientId!: number
 
     clientSource = [
         { label: 'Social Media', value: 'socialMedia' },
@@ -210,7 +212,7 @@ export class DashboardComponent implements OnInit {
         private notificationService: NotificationService,
         private agentApprovalService: AgentApprovalService,
         private confirmationService: ConfirmationService,
-        private messageService: MessageService
+        private messageService: MessageService,
     ) {}
 
     ngOnInit(): void {
@@ -221,7 +223,11 @@ export class DashboardComponent implements OnInit {
             this.loadAgentDashboardStats();
         }
         this.loadPendingApprovals();
+        this.clientId = this.userService.getClientId();
+        console.log('clientId', this.clientId);
+
     }
+
 
     loadNotifications(): void {
         this.notificationLoading = true;

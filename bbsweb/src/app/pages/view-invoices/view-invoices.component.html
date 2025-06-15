@@ -1,5 +1,5 @@
-<div class="p-4 sm:p-6 min-h-screen">
-    <div class="mx-auto max-w-7xl">
+<div class="p-4 sm:p-6 min-h-screen bg-white/80 backdrop-blur-md shadow-xl rounded-2xl border border-blue-100">
+    <div class="mx-auto ">
         <!-- No Invoices Message -->
 
 
@@ -77,10 +77,10 @@
                                       label="View Invoice" (onClick)="viewPreliminaryInvoice(invoice?.preliminary?.id)"
                                       text severity="info" size="small"></p-button>
                             <p-button *ngIf="(invoice.invoiceType === InvoiceType.SITE_VISIT ) && invoice.invoiceType != InvoiceType.PRELIMINARY.toString() && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
-                                      label="View c Invoice" (onClick)="viewInvoicePdf(invoice.invoiceType || 'SITE_VISIT')" text severity="info"
+                                      label="View Invoice" (onClick)="viewInvoicePdf(invoice.invoiceType || 'SITE_VISIT')" text severity="info"
                                       size="small"></p-button>
                             <p-button *ngIf="(invoice.invoiceType === InvoiceType.COUNTY_INVOICE.toString() ) && invoice.invoiceType != InvoiceType.PRELIMINARY.toString() && hasPrivilege(Permissions.VIEW_INVOICES)" icon="pi pi-arrow-up-right"
-                                      label="View v Invoice" (onClick)="viewInvoicePdf(invoice.invoiceType || 'SITE_VISIT', invoice.governmentApprovalType)" text severity="info"
+                                      label="View Invoice" (onClick)="viewInvoicePdf(invoice.invoiceType || 'SITE_VISIT', invoice.governmentApprovalType)" text severity="info"
                                       size="small"></p-button>
                             <p-button
                                 *ngIf="!invoice.invoiceReconciled && invoice.directorApproved && invoice.pendingBalance && !hasBalanceInvoices(invoice) && hasPrivilege(Permissions.CREATE_INVOICES)"
@@ -238,8 +238,9 @@
         </p-dialog>
 
         <!-- Dialog for Payment Confirmation -->
-        <p-dialog header="Confirm Payment" [(visible)]="displayPaymentDialog" [modal]="true"
-                  [style]="{ width: '90vw', 'max-width': '30rem' }" [baseZIndex]="10000" [draggable]="false"
+        <p-dialog header="Confirm Payment"  [(visible)]="displayPaymentDialog"
+                  [modal]="true"
+                  [style]="{ width: '90vw', 'max-width': '30rem' }" [baseZIndex]="10000" [draggable]="true"
                   [resizable]="false" class="shadow-lg">
             <div class="p-4">
                 <!-- Invoice Details -->
