@@ -2,6 +2,7 @@ package com.bbs.bbsapi.models
 import com.bbs.bbsapi.enums.PreliminaryStatus
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
@@ -25,6 +26,8 @@ data class Preliminary(
     @Column(name = "client_paid_for_approval", nullable = false)
     var clientPaidForApproval: Boolean = false,
 
+    @Column(name = "boq_amount", nullable = true)
+    var boqAmount: BigDecimal? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id", nullable = true)
@@ -36,6 +39,12 @@ data class Preliminary(
 
     @Column(name = "invoice_cleared", nullable = false)
     var invoiceClearedFlag: Boolean = false,
+
+   @Column(name = "county_receipt_uploaded", nullable = false)
+    var countyReceiptUploaded: Boolean = false,
+
+    @Column(name = "county_approved-document_uploaded", nullable = false)
+    var countyApprovedDocumentUploaded: Boolean = false,
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

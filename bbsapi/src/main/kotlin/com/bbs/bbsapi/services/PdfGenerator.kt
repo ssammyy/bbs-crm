@@ -24,7 +24,7 @@ class PdfGenerator {
     private val companyBoldFont = Font(Font.HELVETICA, 10f, Font.BOLD, CMYKColor.BLACK)
     private val normalFont = Font(Font.HELVETICA, 8f, Font.NORMAL, CMYKColor.BLACK)
     private val titleFont = Font(Font.HELVETICA, 16f, Font.BOLD, CMYKColor.BLACK)
-    private val logoResource = ClassPathResource("static/logo.jpeg")
+    private val logoResource = ClassPathResource("static/Colored.png")
 
     fun generateInvoicePdf(invoice: PdfInvoiceDTO): ByteArray {
         val outputStream = ByteArrayOutputStream()

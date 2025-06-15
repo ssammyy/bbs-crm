@@ -6,6 +6,7 @@ import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
 import com.bbs.bbsapi.models.Invoice
 import com.bbs.bbsapi.services.InvoiceService
+import com.bbs.bbsapi.dtos.ContractDTO
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -112,5 +113,11 @@ class InvoiceController(
     ): ResponseEntity<Invoice> {
         val updatedInvoice = invoiceService.confirmPayment(invoiceId, payment)
         return ResponseEntity.ok(updatedInvoice)
+    }
+
+    @PostMapping("/contract")
+    fun createContractInvoices(@RequestBody contract: ContractDTO): ResponseEntity<Any> {
+        val result = invoiceService.createContractInvoices(contract)
+        return ResponseEntity.ok(result)
     }
 }

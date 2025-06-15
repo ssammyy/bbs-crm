@@ -2,10 +2,8 @@ package com.bbs.bbsapi.services
 
 import com.bbs.bbsapi.controllers.ApprovalRequest
 import com.bbs.bbsapi.controllers.InitiatePreliminaryRequest
-import com.bbs.bbsapi.enums.ApprovalStage
+import com.bbs.bbsapi.enums.*
 import com.bbs.bbsapi.enums.ApprovalStatus
-import com.bbs.bbsapi.enums.PreliminaryStatus
-import com.bbs.bbsapi.enums.RoleEnum
 import com.bbs.bbsapi.models.*
 import com.bbs.bbsapi.repositories.*
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +15,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -208,16 +209,27 @@ class PreliminaryService(
     }
 
 
-
+    @Transactional
     fun approveCountyInvoice(clientId: Long, type: String): ResponseEntity<Invoice> {
-        val preliminary= preliminaryRepository.findByClientIdAndPreliminaryType_Name(clientId, type);
-        preliminary?.status = PreliminaryStatus.PENDING_APPROVAL_BY_COUNTY
-        preliminaryRepository.save(preliminary!!)
         val invoice = invoiceRepository.findByClientIdAndGovernmentApprovalType(clientId, type)
+        invoice?.directorApproved = true
+        invoiceRepository.save(invoice!!)
+
+        val preliminary= preliminaryRepository.findByClientIdAndPreliminaryType_Name(clientId, type)
+            ?: throw (IllegalArgumentException("preliminary not found"))
+        preliminary.status = PreliminaryStatus.PENDING_APPROVAL_BY_COUNTY
+        preliminaryRepository.save(preliminary)
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(invoice)
+    }
+    @Transactional
+    fun approveMainProforma(clientId: Long): ResponseEntity<Invoice> {
+        val invoice = invoiceRepository.findByClientIdAndInvoiceType(clientId, InvoiceType.MAIN_PROFORMA)
         invoice?.directorApproved = true
         invoiceRepository.save(invoice!!)
         return ResponseEntity.status(HttpStatus.CREATED).body(invoice)
     }
+
 
     fun getPreliminaryById(preliminaryId: Long): Preliminary {
         return preliminaryRepository.findById(preliminaryId)
@@ -225,6 +237,7 @@ class PreliminaryService(
     }
 
     fun approvePreliminaryStage(preliminary: Preliminary, approvalStage: ApprovalStage): Preliminary {
+        log.info("logging preliminary type ", preliminary.preliminaryType?.name)
 
         val authentication = SecurityContextHolder.getContext().authentication
 
@@ -272,7 +285,26 @@ class PreliminaryService(
             }
             preliminary.status = when{
                 pendingGovApprovals == true -> PreliminaryStatus.PENDING_SUBMISSION_OF_FILES_TO_COUNTY
-                else -> PreliminaryStatus.COMPLETE
+                else -> {
+                    log.info("iko hapa >>")
+                    val prelim = preliminaryRepository.findById(preliminary.id!!)
+                    log.info("preliminary found: {}", prelim.get().preliminaryType?.name)
+                    val prelimType = prelim.get().preliminaryType?.name
+
+
+                    if(prelimType.toString().equals( "BOQ_PREPARATION")){
+                        log.info("preliminary approved: {}", prelim)
+//                        do something
+                        val client = clientService.getClientById(preliminary.client.id)
+                        client.clientStage = ClientStage.CONTRACT_SIGNING
+                        client.nextStage = ClientStage.CONSTRUCTION
+                        clientRepository.save(client)
+                        PreliminaryStatus.COMPLETE
+
+                    }else {
+                        PreliminaryStatus.COMPLETE
+                    }
+                }
             }
             preliminary.rejectionRemarks = null
             CoroutineScope(Dispatchers.IO).launch {
@@ -290,11 +322,37 @@ class PreliminaryService(
         return savedPreliminary
 
     }
-
+    @Transactional
     fun updatePreliminaryStatus(preliminaryId: Long, status: PreliminaryStatus) {
         val preliminary = preliminaryRepository.findById(preliminaryId).orElseThrow()
+        log.info("preliminary type ", preliminary.preliminaryType?.name)
+        if(preliminary.preliminaryType?.name.toString()==="BOQ_PREPARATION"){
+//                        do something
+            val client = clientService.getClientById(preliminary.client!!.id)
+            client.clientStage = ClientStage.CONTRACT_SIGNING
+            client.nextStage = ClientStage.CONSTRUCTION
+            clientRepository.save(client)
+        }
         preliminary.status = status
         preliminary.rejectionRemarks = null
         preliminaryRepository.save(preliminary)
+    }
+
+    @Transactional
+    fun submitBOQAmount(preliminaryId: Long, amount: BigDecimal): Preliminary {
+        val preliminary = preliminaryRepository.findById(preliminaryId)
+            .orElseThrow { IllegalArgumentException("Preliminary not found") }
+
+        if (preliminary.preliminaryType?.name != "BOQ_PREPARATION") {
+            throw IllegalArgumentException("This preliminary is not a BOQ preparation")
+        }
+        val client = clientService.getClientById(preliminary.client!!.id)
+        client.boqAmount = amount
+        clientRepository.save(client)
+
+        preliminary.boqAmount = amount
+        preliminary.status = PreliminaryStatus.PENDING_T_D_APPROVAL
+
+        return preliminaryRepository.save(preliminary)
     }
 }

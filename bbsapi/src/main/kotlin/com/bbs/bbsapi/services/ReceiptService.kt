@@ -3,6 +3,7 @@ package com.bbs.bbsapi.services
 import com.bbs.bbsapi.entities.ReceiptDTO
 import com.bbs.bbsapi.enums.ClientStage
 import com.bbs.bbsapi.enums.InvoiceType
+import com.bbs.bbsapi.enums.PreliminaryStatus
 import com.bbs.bbsapi.models.Receipt
 import com.bbs.bbsapi.repositories.InvoiceRepository
 import com.bbs.bbsapi.repositories.ReceiptRepository
@@ -82,12 +83,18 @@ class ReceiptService(
             )
 
             if (invoice.invoiceReconciled) {
-
-
-                val prelimsToClear = preliminaryRepository.findByInvoiceId(invoice.id)
-                prelimsToClear.forEach { prelim ->
-                    prelim.invoiceClearedFlag = true
+                if (invoice.invoiceType === InvoiceType.COUNTY_INVOICE) {
+                    val prelim = preliminaryRepository.findByClientIdAndPreliminaryType_Name(client.id, invoice.governmentApprovalType)
+                        ?: throw IllegalArgumentException("preliminary not found")
+                    prelim.status = PreliminaryStatus.PENDING_APPROVAL_BY_COUNTY
+                    prelim.clientPaidForApproval = true
                     preliminaryRepository.save(prelim)
+                }else{
+                    val prelimsToClear = preliminaryRepository.findByInvoiceId(invoice.id)
+                    prelimsToClear.forEach { prelim ->
+                        prelim.invoiceClearedFlag = true
+                        preliminaryRepository.save(prelim)
+                    }
                 }
 
                 if (invoice.invoiceType === InvoiceType.SITE_VISIT && !client.siteVisitDone) {

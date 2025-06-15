@@ -13,6 +13,7 @@ import com.bbs.bbsapi.services.PreliminaryService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
+import kotlin.math.log
 
 @RestController
 @RequestMapping("/api/preliminaries")
@@ -94,6 +95,12 @@ class PreliminaryController(
     ): ResponseEntity<Invoice> {
         return preliminaryService.approveCountyInvoice(clientId, invoiceType)
     }
+   @PostMapping("/{clientId}/approve-main-proforma")
+    fun approveMainProformaInvoice(
+        @PathVariable clientId: Long,
+    ): ResponseEntity<Invoice> {
+        return preliminaryService.approveMainProforma(clientId)
+    }
 
 
 
@@ -143,6 +150,15 @@ class PreliminaryController(
         preliminaryService.updatePreliminaryStatus(preliminary.id, PreliminaryStatus.COMPLETE)
         return ResponseEntity.ok(preliminary)
     }
+
+    @PostMapping("/{preliminaryId}/boq-amount")
+    fun submitBOQAmount(
+        @PathVariable preliminaryId: Long,
+        @RequestBody request: BOQAmountRequest
+    ): ResponseEntity<Preliminary> {
+        val preliminary = preliminaryService.submitBOQAmount(preliminaryId, request.amount)
+        return ResponseEntity.ok(preliminary)
+    }
 }
 
 data class InitiatePreliminaryRequest(
@@ -152,3 +168,4 @@ data class InitiatePreliminaryRequest(
 data class InvoiceRequest(val amount: BigDecimal)
 data class ApprovalRequest(val approvalStage: ApprovalStage, val status: String, val comments: String?)
 data class RejectionRequest(val preliminary: Preliminary, val remarks: String?)
+data class BOQAmountRequest(val amount: BigDecimal)

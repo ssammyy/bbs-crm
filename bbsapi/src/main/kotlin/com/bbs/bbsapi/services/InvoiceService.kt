@@ -11,7 +11,6 @@ import com.bbs.bbsapi.repositories.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Throw
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,7 +18,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import org.springframework.context.annotation.Lazy
-import kotlin.math.log
+import com.bbs.bbsapi.dtos.ContractDTO
 
 data class ReceiptDTO(
     val invoiceId: Long,
@@ -46,7 +45,8 @@ class InvoiceService(
     @Lazy private val preliminaryService: PreliminaryService,
     private val preliminaryTypeRepository: PreliminaryTypeRepository,
     private val userRepository: UserRepository,
-    private val clientRepository: ClientRepository
+    private val clientRepository: ClientRepository,
+    private val milestoneChecklistService: MilestoneChecklistService
 ) {
     val log = LoggerFactory.getLogger(PreliminaryService::class.java)
 
@@ -193,13 +193,22 @@ class InvoiceService(
                 log.info("working on county invoice >>>>>>>>>>>>>///>>>>>>///>>>>>>>///>>>>>>>///>>>>>///>>>>>>///")
                 savedInvoice.governmentApprovalType = request.countyInvoiceType.toString()
                 invoiceRepository.save(savedInvoice)
-                val preliminaryType = preliminaryTypeRepository.findByName("REGULATORY_APPROVALS")
+                val preliminaryType = preliminaryTypeRepository.findByName(request.countyInvoiceType!!)
                     .orElseThrow { IllegalArgumentException("Preliminary type not found") }
                 log.info("preliminary being checked is ${preliminary?.id}")
                 prelim?.clientInvoicedForApproval = true
                 prelim?.status = PreliminaryStatus.PENDING_CLIENT_FACILITATION_PAYMENT
                 prelim?.preliminaryType = preliminaryType
                 prelim?.let { preliminaryRepository.save(it) }
+            }
+            InvoiceType.CONSTRUCTION_BOQ->{
+
+            }
+            InvoiceType.INSTALLMENT->{
+
+            }
+            InvoiceType.MAIN_PROFORMA->{
+
             }
         }
 
@@ -557,6 +566,28 @@ class InvoiceService(
             }
         }
 
+        // If this is the first cleared INSTALLMENT invoice, update client stage to CONSTRUCTION
+        if (invoice.invoiceType == InvoiceType.INSTALLMENT && invoice.cleared) {
+            val clearedInstallments = invoiceRepository.findByClientId(invoice.clientId)
+                .count { it.invoiceType == InvoiceType.INSTALLMENT && it.cleared }
+            if (clearedInstallments == 1) {
+                val client = clientRepository.findById(invoice.clientId).orElse(null)
+                if (client != null) {
+                    clientService.changeClientStatus(
+                        com.bbs.bbsapi.enums.ClientStage.CONSTRUCTION,
+                        client,
+                        com.bbs.bbsapi.enums.ClientStage.CONSTRUCTION,
+                        "First contract installment paid. Moved to CONSTRUCTION."
+                    )
+//                   update the @Milestone checklist
+                    milestoneChecklistService.updateMilestoneStatus(client.id, "Site handover.", true)
+                    milestoneChecklistService.updateMilestoneStatus(client.id, "Mobilization.", true)
+                    milestoneChecklistService.updateMilestoneStatus(client.id, "Groundbreaking.", true)
+                    milestoneChecklistService.updateMilestoneStatus(client.id, "Construction process.", true)
+                }
+            }
+        }
+
         return ReceiptResponse(
             receiptId = savedReceipt.id,
             invoiceId = invoice.id
@@ -601,5 +632,70 @@ class InvoiceService(
         invoice.clientConfirmedPayment = true
 
         return invoiceRepository.save(invoice)
+    }
+
+    @Transactional
+    fun createContractInvoices(contract: ContractDTO): Map<String, Any> {
+        val client = clientService.getClientById(contract.clientId)
+        val now = LocalDate.now()
+        val mainInvoiceNumber = "CONTRACT-${contract.clientId}-${now.toEpochDay()}"
+
+        // Create MAIN_PROFORMA invoice items (breakdown)
+        val mainItems = contract.installments.map {
+            InvoiceItem(
+                description = it.description,
+                quantity = 1,
+                unitPrice = it.amount,
+                totalPrice = it.amount
+            )
+        }.toMutableList()
+
+        val mainInvoice = Invoice(
+            invoiceNumber = mainInvoiceNumber,
+            dateIssued = now,
+            clientId = contract.clientId,
+            clientName = client.firstName,
+            clientPhone = client.phoneNumber,
+            projectName = contract.projectName,
+            items = mainItems,
+            total = contract.boqAmount,
+            invoiceType = InvoiceType.MAIN_PROFORMA,
+            subtotal = contract.boqAmount,
+            finalTotal = contract.boqAmount
+        )
+        mainItems.forEach { it.invoice = mainInvoice }
+        val savedMainInvoice = invoiceRepository.save(mainInvoice)
+
+        // Create INSTALLMENT invoices
+        val installmentInvoices = contract.installments.mapIndexed { idx, inst ->
+            val invoiceNumber = "INSTALLMENT-${idx + 1}-${contract.clientId}-${now.toEpochDay()}"
+            val item = InvoiceItem(
+                description = inst.description,
+                quantity = 1,
+                unitPrice = inst.amount,
+                totalPrice = inst.amount
+            )
+            val invoice = Invoice(
+                invoiceNumber = invoiceNumber,
+                dateIssued = now,
+                clientId = contract.clientId,
+                clientName = client.firstName,
+                clientPhone = client.phoneNumber,
+                projectName = contract.projectName,
+                items = mutableListOf(item),
+                total = inst.amount,
+                invoiceType = InvoiceType.INSTALLMENT,
+                parentInvoice = savedMainInvoice,
+                subtotal = inst.amount,
+                finalTotal = inst.amount
+            )
+            item.invoice = invoice
+            invoiceRepository.save(invoice)
+        }
+
+        return mapOf(
+            "mainInvoice" to savedMainInvoice,
+            "installmentInvoices" to installmentInvoices
+        )
     }
 }

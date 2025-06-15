@@ -11,6 +11,7 @@ import com.bbs.bbsapi.repositories.PreliminaryRepository
 import com.bbs.bbsapi.repositories.UserRepository
 import com.bbs.bbsapi.services.ClientService
 import com.bbs.bbsapi.services.DigitalOceanService
+import com.bbs.bbsapi.services.MilestoneChecklistService
 import org.apache.coyote.BadRequestException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -31,7 +32,8 @@ class UploadFile(
     private val clientService: ClientService,
     private val userRepository: UserRepository,
     private val clientRepo: ClientRepository,
-    private val preliminaryRepository: PreliminaryRepository
+    private val preliminaryRepository: PreliminaryRepository,
+    private val milestoneChecklistService: MilestoneChecklistService
 ) {
     @PostMapping("/upload")
     @Transactional
@@ -53,13 +55,57 @@ class UploadFile(
             } catch (e: IllegalArgumentException) {
                 return ResponseEntity.badRequest().body("Invalid file type")
             }
-            if(preliminaryId != null) {
-                preliminary = preliminaryRepository.findById(preliminaryId).orElseThrow { IllegalArgumentException("Preliminary not found") }
+            if (preliminaryId != null) {
+
+                preliminary = preliminaryRepository.findById(preliminaryId)
+                    .orElseThrow { IllegalArgumentException("Preliminary not found") }
+                if (preliminary.preliminaryType?.name.equals("ARCHITECTURAL_DRAWINGS")) {
+                    milestoneChecklistService.updateMilestoneStatus(clientId, "Designing architectural drawings.", true)
+                }
+                if (preliminary.preliminaryType?.name.equals("STRUCTURAL_DESIGNS")) {
+                    milestoneChecklistService.updateMilestoneStatus(clientId, "Preparing structural drawings.", true)
+                }
+                if (preliminary.preliminaryType?.name.equals("GEOTECHNICAL_ANALYSIS")) {
+                    milestoneChecklistService.updateMilestoneStatus(clientId, "Geotechnical analysis report.", true)
+                }
+                if (preliminary.preliminaryType?.name.equals("BOQ_PREPARATION")) {
+                    milestoneChecklistService.updateMilestoneStatus(
+                        clientId,
+                        "Preparation of bills of quantities.",
+                        true
+                    )
+                }
             }
 
-            if(fileTypeEnum=== FileType.COUNTY_INVOICE){
+            if (fileTypeEnum === FileType.COUNTY_RECEIPT) {
+                preliminary?.countyReceiptUploaded = true
+                preliminary?.let { preliminaryRepository.save(it) }
+            }
+            if (fileTypeEnum === FileType.COUNTY_INVOICE) {
+                preliminary?.status = PreliminaryStatus.PENDING_CLIENT_FACILITATION_PAYMENT
+                preliminary?.let { preliminaryRepository.save(it) }
+            }
+            if (fileTypeEnum === FileType.CHANGE_OF_USE) {
+                milestoneChecklistService.updateMilestoneStatus(clientId, "Change of use/user.", true)
+            }
+            if (
+                fileTypeEnum === FileType.APPROVED_ARCHITECTURAL_DRAWINGS
+                || fileTypeEnum === FileType.APPROVED_STRUCTURAL_DESIGNS
+                || fileTypeEnum === FileType.APPROVED_NCA_APPROVALS
+                || fileTypeEnum === FileType.APPROVED_NEMA_APPROVALS
+                ) {
+                val string: String = when (fileTypeEnum) {
+                    FileType.APPROVED_STRUCTURAL_DESIGNS -> "Approval of structural drawings by the county government."
+                    FileType.APPROVED_ARCHITECTURAL_DRAWINGS -> "Approval of architectural drawings by the county government."
+                    FileType.APPROVED_NEMA_APPROVALS -> "NEMA permit."
+                    FileType.APPROVED_NCA_APPROVALS -> "NCA project registration."
 
-                preliminary?.status= PreliminaryStatus.PENDING_CLIENT_FACILITATION_PAYMENT
+                    else -> "null"
+                }
+
+                milestoneChecklistService.updateMilestoneStatus(clientId, string, true)
+                preliminary?.countyApprovedDocumentUploaded = true
+                preliminary?.status = PreliminaryStatus.COMPLETE
                 preliminary?.let { preliminaryRepository.save(it) }
             }
 
@@ -90,11 +136,13 @@ class UploadFile(
 
 
 
-            return ResponseEntity.ok(mapOf(
-                "message" to "File uploaded successfully",
-                "fileUrl" to fileUrl,
-                "version" to version
-            ))
+            return ResponseEntity.ok(
+                mapOf(
+                    "message" to "File uploaded successfully",
+                    "fileUrl" to fileUrl,
+                    "version" to version
+                )
+            )
         }
 
         if (userId != null) {
@@ -126,11 +174,13 @@ class UploadFile(
             )
             fileRepository.save(fileMetadata)
 
-            return ResponseEntity.ok(mapOf(
-                "message" to "File uploaded successfully",
-                "fileUrl" to fileUrl,
-                "version" to 1
-            ))
+            return ResponseEntity.ok(
+                mapOf(
+                    "message" to "File uploaded successfully",
+                    "fileUrl" to fileUrl,
+                    "version" to 1
+                )
+            )
         }
         return ResponseEntity.badRequest().body("Either clientId or userId must be provided")
     }
@@ -189,9 +239,9 @@ class UploadFile(
     ): ResponseEntity<FileMetadata> {
         val client = clientRepository.findById(clientId)
             .orElseThrow { RuntimeException("Client with ID $clientId not found") }
-        
+
         val (objectKey, fileUrl) = digitalOceanService.uploadFile(file)
-        return digitalOceanService.updateMetadata(client, file, fileType,  fileId, versionNotes)
+        return digitalOceanService.updateMetadata(client, file, fileType, fileId, versionNotes)
     }
 
     @GetMapping("/licenses")

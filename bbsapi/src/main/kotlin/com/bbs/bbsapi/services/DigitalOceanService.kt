@@ -169,7 +169,7 @@ class DigitalOceanService(
             mapOf(
                 "id" to fileMetadata.id,
                 "fileType" to fileMetadata.fileType,
-                "specific" to (if (fileMetadata.fileType == FileType.COUNTY_INVOICE) null else fileMetadata.preliminary?.preliminaryType?.name),
+                "specific" to (if (fileMetadata.fileType == FileType.COUNTY_INVOICE || fileMetadata.fileType== FileType.COUNTY_RECEIPT || fileMetadata.fileType== FileType.APPROVED_ARCHITECTURAL_DRAWINGS || fileMetadata.fileType== FileType.APPROVED_STRUCTURAL_DESIGNS ) null else fileMetadata.preliminary?.preliminaryType?.name),
                 "fileName" to fileMetadata.fileName,
                 "fileUrl" to presignedUrl,
                 "version" to fileMetadata.version,

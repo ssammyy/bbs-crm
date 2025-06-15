@@ -97,7 +97,9 @@ class DataInitializer(
             "VIEW_AGENT_DASHBOARD",
             "APPROVE_PRELIMINARY",
             "UPLOAD_BOQ",
-            "MANAGE_LICENCES"
+            "MANAGE_LICENCES",
+            "MANAGE_CLIENT_DOCUMENTS",
+            "MANAGE_COUNTY_APPROVAL"
         ).map { privilegeRepository.findByName(it).orElseGet { privilegeRepository.save(Privilege(name = it)) } }
             .toSet()
 
@@ -196,7 +198,8 @@ class DataInitializer(
                     "VIEW_CLIENT_PROFILE",
                     "MANAGE_INVOICES",
                     "VIEW_ACTIVITY_FEED",
-                    "MANAGE_CLIENT_ACTIVITY"
+                    "MANAGE_CLIENT_ACTIVITY",
+                    "MANAGE_CLIENT_DOCUMENTS"
                 ).toSet()
             },
             "AGENT" to privileges.filter {
@@ -264,31 +267,26 @@ class DataInitializer(
                 description = "Bill of Quantities listing materials, labor, and costs"
             ),
             PreliminaryType(
-                name = "SITE_SURVEY",
-                description = "Topographical and boundary survey of the construction site"
-            ),
-            PreliminaryType(
                 name = "STRUCTURAL_DESIGNS",
                 requiresGovernmentApproval = true,
                 description = "Engineering drawings for the structural framework"
             ),
             PreliminaryType(
-                name = "ENVIRONMENTAL_IMPACT_ASSESSMENT",
-                description = "Study to assess environmental effects, required for regulatory approval"
-            ),
-            PreliminaryType(
-                name = "GEOTECHNICAL_INVESTIGATION",
+                name = "GEOTECHNICAL_ANALYSIS",
                 description = "Soil testing to determine foundation requirements"
-            ),
-            PreliminaryType(
-                name = "COST_ESTIMATION",
-                description = "Preliminary budgeting based on initial designs and BOQ"
             ),
             PreliminaryType(
                 name = "REGULATORY_APPROVALS",
                 description = "Documentation for permits from local authorities"
             ),
-            PreliminaryType(name = "OPEN", description = "Open")
+            PreliminaryType(
+                name = "NEMA_APPROVALS",
+                description = "Refers to the environmental licenses and permits issued by the National Environment Management Authority (NEMA)"
+            ),
+            PreliminaryType(
+                name = "NCA_APPROVALS",
+                description = "Registration and accreditation from the National Construction Authority (NCA)"
+            ),
         )
 
         preliminaryTypes.forEach { type ->

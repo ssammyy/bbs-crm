@@ -4,6 +4,7 @@ import com.bbs.bbsapi.enums.*
 import com.fasterxml.jackson.annotation.JsonBackReference
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -65,6 +66,9 @@ data class Client(
     var bankName: String? = null,
     @Column(nullable = true)
     var bankBranch: String? = null,
+
+    @Column(nullable = true)
+    var boqAmount: BigDecimal? = null,
 
     // Enum-based consultancy subtags
     @ElementCollection
