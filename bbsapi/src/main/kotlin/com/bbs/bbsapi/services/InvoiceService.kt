@@ -85,7 +85,8 @@ class InvoiceService(
             discountPercentage = request.discountPercentage,
             discountAmount = discountAmount,
             subtotal = subtotal,
-            finalTotal = finalTotal
+            finalTotal = finalTotal,
+            notes = request.notes
         )
 
         if (preliminary != null  && request.invoiceType != InvoiceType.COUNTY_INVOICE) {
@@ -510,7 +511,8 @@ class InvoiceService(
             discountAmount = invoice.discountAmount,
             subtotal = invoice.subtotal,
             finalTotal = invoice.finalTotal,
-            parentInvoiceId = invoice.parentInvoice?.id
+            parentInvoiceId = invoice.parentInvoice?.id,
+            notes = invoice.notes
         )
     }
 

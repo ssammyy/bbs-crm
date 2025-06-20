@@ -23,7 +23,8 @@ class DashboardService(
     private val userRepository: UserRepository,
     private val clientRepo: ClientRepository,
     private val clientService: ClientService,
-    private val roleRepository: RoleRepository
+    private val roleRepository: RoleRepository,
+    private val clientContractRepository: ClientContractRepository
 ) {
     private val log = LoggerFactory.getLogger(DashboardService::class.java)
 
@@ -177,14 +178,63 @@ class DashboardService(
         val clients = clientRepository.findByAgentIdAndSoftDeleteFalse(agentId)
         val noOfClients = clients.count()
         val clientIdList = clients.map { it.id }
-        val clientInvoices = invoiceRepository.findByClientIdIn(clientIdList)
+        val clientMap = clients.associateBy { it.id }
         val user = userRepository.findById(agentId).get()
-
+        val commissionPercentage = user.commissionPercentage
+        // Fetch all contracts for these clients
+        val contracts = clientContractRepository.findByClientIdIn(clientIdList)
+        val contractDTOs = contracts.map { contract ->
+            val client = contract.clientId?.let { clientMap[it] }
+            val clientName = listOfNotNull(client?.firstName, client?.lastName).joinToString(" ")
+            val potentialRevenue = (commissionPercentage ?: 0L) / 100.0 * (contract.boqAmount ?: 0.0)
+            val revenueEarned = (commissionPercentage ?: 0L) / 100.0 * (contract.moneyUsedSoFar ?: 0.0)
+            val installmentInvoices = invoiceRepository.findByClientId(contract.clientId ?: 0L)
+                .filter { it.invoiceType.name.contains("INSTALLMENT") }
+                .map { InvoiceSummaryDTO(
+                    invoiceId = it.id,
+                    amount = it.total,
+                    cleared = it.cleared,
+                    dateIssued = it.dateIssued?.toString()
+                ) }
+            AgentContractDTO(
+                contractId = contract.id,
+                clientId = contract.clientId,
+                clientName = clientName,
+                projectName = contract.projectName,
+                boqAmount = contract.boqAmount,
+                moneyUsedSoFar = contract.moneyUsedSoFar,
+                commissionPercentage = commissionPercentage,
+                potentialRevenue = potentialRevenue,
+                revenueEarned = revenueEarned,
+                status = contract.status,
+                installmentInvoices = installmentInvoices
+            )
+        }
+        // Calculate total potential revenue (sum of all contract commissions)
+        val totalPotentialRevenue = contractDTOs.sumOf { it.potentialRevenue ?: 0.0 }
+        // Calculate pending installment revenue (sum of commission% × amount for all unpaid installments)
+        val pendingInstallmentRevenue = contractDTOs.sumOf { contract ->
+            contract.installmentInvoices.filter { !it.cleared }.sumOf { (contract.commissionPercentage ?: 0L) / 100.0 * (it.amount) }
+        }
+        // Commission-based revenue over time
+        val now = LocalDateTime.now()
+        val revenueOverTime = (0..11).map { i ->
+            val yearMonth = YearMonth.now().minusMonths(i.toLong())
+            val start = yearMonth.atDay(1).atStartOfDay()
+            val end = yearMonth.atEndOfMonth().atTime(23, 59, 59)
+            val monthContracts = contracts.filter { contract ->
+                contract.updatedAt.isAfter(start) && contract.updatedAt.isBefore(end)
+            }
+            val monthRevenue = monthContracts.sumOf { (commissionPercentage ?: 0L) / 100.0 * (it.moneyUsedSoFar ?: 0.0) }
+            TimeSeriesDataDTO(
+                period = yearMonth.toString(),
+                value = monthRevenue
+            )
+        }.reversed()
         val invoiceStats = InvoiceStatsDTO(
-            totalRevenue = clientInvoices.sumOf { it.total },
-            pendingToBeClearedAmount = clientInvoices.sumOf { it.balance }
+            totalRevenue = totalPotentialRevenue,
+            pendingToBeClearedAmount = pendingInstallmentRevenue
         )
-
         val recentActivities = activityRepository.findByClientIdIn(clientIdList).map {
             ActivityDTO(
                 id = it.id,
@@ -195,29 +245,16 @@ class DashboardService(
                 user = it.user
             )
         }
-        val commissionPercentage = user.commissionPercentage
-        log.info("saved percent is $commissionPercentage %")
-
-        // Revenue over time for agent (last 12 months)
-        val now = LocalDateTime.now()
-        val revenueOverTime = (0..11).map { i ->
-            val yearMonth = YearMonth.now().minusMonths(i.toLong())
-            val start = yearMonth.atDay(1).atStartOfDay()
-            val end = yearMonth.atEndOfMonth().atTime(23, 59, 59)
-            val revenue = invoiceRepository.findByClientIdInAndClearedTrueAndDateIssuedBetween(clientIdList, start.toLocalDate(), end.toLocalDate()).sumOf { it.total }
-            TimeSeriesDataDTO(
-                period = yearMonth.toString(),
-                value = revenue
-            )
-        }.reversed()
-
         return AgentDTO(
             numberOfClients = noOfClients,
             clients = clients,
             invoiceStats = invoiceStats,
             recentActivities = recentActivities,
             revenueOverTime = revenueOverTime,
-            commissionPercentage = commissionPercentage ?: 0L
+            commissionPercentage = commissionPercentage ?: 0L,
+            contracts = contractDTOs,
+            totalPotentialRevenue = totalPotentialRevenue,
+            pendingInstallmentRevenue = pendingInstallmentRevenue
         )
     }
 
@@ -313,7 +350,10 @@ data class AgentDTO(
     val invoiceStats: InvoiceStatsDTO,
     val recentActivities: List<ActivityDTO>,
     val revenueOverTime: List<TimeSeriesDataDTO>,
-    val commissionPercentage: Long
+    val commissionPercentage: Long,
+    val contracts: List<AgentContractDTO>,
+    val totalPotentialRevenue: Double,
+    val pendingInstallmentRevenue: Double
 )
 
 data class InvoiceStatsDTO(
@@ -357,4 +397,25 @@ data class SuperAdminDTO(
 data class TimeSeriesDataDTO(
     val period: String,
     val value: Double
+)
+
+data class AgentContractDTO(
+    val contractId: Long,
+    val clientId: Long?,
+    val clientName: String?,
+    val projectName: String?,
+    val boqAmount: Double?,
+    val moneyUsedSoFar: Double?,
+    val commissionPercentage: Long?,
+    val potentialRevenue: Double?,
+    val revenueEarned: Double?,
+    val status: String?,
+    val installmentInvoices: List<InvoiceSummaryDTO> = emptyList()
+)
+
+data class InvoiceSummaryDTO(
+    val invoiceId: Long,
+    val amount: Double,
+    val cleared: Boolean,
+    val dateIssued: String?
 )

@@ -1,6 +1,7 @@
 package com.bbs.bbsapi.services
 
 import com.bbs.bbsapi.dtos.ContractDTO
+import com.bbs.bbsapi.dtos.ContractProgressUpdateDTO
 import com.bbs.bbsapi.models.ClientContract
 import com.bbs.bbsapi.repositories.ClientContractRepository
 import com.bbs.bbsapi.repositories.InvoiceRepository
@@ -24,7 +25,7 @@ class ClientContractService(
             val updated = savedContract.copy(mainInvoice = mainInvoice)
             contractRepository.save(updated)
         }
-        milestoneChecklistService.updateMilestoneStatus(contractDTO.clientId, "Contract signing", true)
+        milestoneChecklistService.updateMilestoneStatus(contractDTO.clientId, "Contract signing.", true)
 
         return mapOf(
             "contract" to savedContract,
@@ -63,6 +64,33 @@ class ClientContractService(
             .filter { it.invoiceType == com.bbs.bbsapi.enums.InvoiceType.INSTALLMENT }
         return mapOf(
             "contract" to contract,
+            "mainInvoice" to mainInvoice,
+            "installmentInvoices" to installmentInvoices
+        )
+    }
+
+    @Transactional
+    fun updateContractProgress(contractId: Long, progressUpdate: ContractProgressUpdateDTO): Map<String, Any?>? {
+        val existing = contractRepository.findById(contractId).orElse(null) ?: return null
+
+        val updated = existing.copy(
+            moneyUsedSoFar =  progressUpdate.moneyUsedSoFar.toDouble(),
+            lastReportFileUrl = progressUpdate.lastReportFileUrl,
+            updatedAt = java.time.LocalDateTime.now()
+        )
+        
+        val savedContract = contractRepository.save(updated)
+        
+        // Fetch main invoice (MAIN_PROFORMA) for this client
+        val mainInvoice = savedContract.clientId?.let { invoiceRepository.findByClientIdAndInvoiceType(it, com.bbs.bbsapi.enums.InvoiceType.MAIN_PROFORMA) }
+        // Fetch all INSTALLMENT invoices for this client
+        val installmentInvoices = savedContract.clientId?.let {
+            invoiceRepository.findByClientId(it)
+                .filter { it.invoiceType == com.bbs.bbsapi.enums.InvoiceType.INSTALLMENT }
+        }
+            
+        return mapOf(
+            "contract" to savedContract,
             "mainInvoice" to mainInvoice,
             "installmentInvoices" to installmentInvoices
         )

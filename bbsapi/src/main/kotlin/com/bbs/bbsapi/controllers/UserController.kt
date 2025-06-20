@@ -52,6 +52,12 @@ class UserController(private val userService: UserService) {
             .map { User(it.id, it.username, "", it.email, it.phonenumber) }
         return ResponseEntity.ok(agents)
     }
+
+    @PostMapping("/accept-terms")
+    fun acceptTerms(@AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<UserDTO> {
+        val updatedUser = userService.acceptTerms(userDetails.username)
+        return ResponseEntity.ok(updatedUser)
+    }
 }
 
 

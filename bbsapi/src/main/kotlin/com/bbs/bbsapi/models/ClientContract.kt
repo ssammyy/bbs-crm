@@ -20,5 +20,7 @@ data class ClientContract(
     var updatedAt: LocalDateTime = LocalDateTime.now(),
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "main_invoice_id")
-    val mainInvoice: Invoice? = null
+    val mainInvoice: Invoice? = null,
+    val moneyUsedSoFar: Double? = null,
+    val lastReportFileUrl: String? = null
 )

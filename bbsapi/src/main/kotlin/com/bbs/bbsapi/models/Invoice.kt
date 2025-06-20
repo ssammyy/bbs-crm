@@ -97,4 +97,7 @@ data class Invoice(
 
     @Column(nullable = false)
     var clientConfirmedPayment: Boolean = false,
+
+    @Column(nullable = true)
+    var notes: String? = null
 )

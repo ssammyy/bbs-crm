@@ -31,6 +31,7 @@ data class UserDTO(
     val bankAccountHolderName: String? = null,
     val role: RoleDTO,
     val percentage : Long? = null,
+    val termsAccepted: Boolean = false
 )
 
 data class UserRegeDTO(

@@ -31,7 +31,7 @@ interface UserRepository : JpaRepository<User, Long> {
 @Repository
 interface TokenRepository : JpaRepository<VerificationToken, Long> {
     fun findByToken(token: String): VerificationToken?
-
+    fun deleteAllByUser_Id(userId: Long)
 }
 
 

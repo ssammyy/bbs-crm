@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ClientContractRepository : JpaRepository<ClientContract, Long> {
     fun findByClientId(clientId: Long): ClientContract?
+    fun findByClientIdIn(clientIds: List<Long>): List<ClientContract>
 } 

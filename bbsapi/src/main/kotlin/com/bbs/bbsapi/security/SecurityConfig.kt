@@ -58,7 +58,7 @@ class SecurityConfig(private val userDetailsService: CustomUserDetailsService, p
                     "/auth/login",
                     "/api/portfolio-items/**",
                     "/api/products/**",
-                    "/actuator/**"
+                    "/actuator/**",
                 ).permitAll() // Public endpoints
                 it.anyRequest().authenticated()
             }

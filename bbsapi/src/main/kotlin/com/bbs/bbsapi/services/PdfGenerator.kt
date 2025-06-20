@@ -25,8 +25,9 @@ class PdfGenerator {
     private val normalFont = Font(Font.HELVETICA, 8f, Font.NORMAL, CMYKColor.BLACK)
     private val titleFont = Font(Font.HELVETICA, 16f, Font.BOLD, CMYKColor.BLACK)
     private val logoResource = ClassPathResource("static/Colored.png")
-
+    val log = org.slf4j.LoggerFactory.getLogger(PdfGenerator::class.java)
     fun generateInvoicePdf(invoice: PdfInvoiceDTO): ByteArray {
+        log.info("Generating invoice pdf for invoice number: ${invoice.invoiceNumber}")
         val outputStream = ByteArrayOutputStream()
         val document = Document(PageSize.A4, 36f, 36f, 36f, 36f)
         val writer = PdfWriter.getInstance(document, outputStream)
@@ -93,7 +94,7 @@ class PdfGenerator {
             addCell(Phrase("Submitted on:", companyBoldFont))
             addCell(Phrase(invoice.dateIssued.format(DateTimeFormatter.ofPattern("d'th' MMMM yyyy")), normalFont))
             addCell(Phrase("Due Date:", companyBoldFont))
-            addCell(Phrase("12th March 2025", normalFont))
+            addCell(Phrase(invoice.dateIssued.plusDays(7).format(DateTimeFormatter.ofPattern("d'th' MMMM yyyy")), normalFont))
 
             addCell(Phrase("Invoice for", companyBoldFont))
             addCell(Phrase(invoice.clientName, normalFont))
@@ -145,10 +146,10 @@ class PdfGenerator {
             addCell(createCell("Total price(kshs)", companyBoldFont, true))
 
             invoice.items.forEach {
-                addCell(createCell(it.description, normalFont))
+                addCell(createCell(formatDescription(it.description), normalFont))
                 addCell(createCell(it.quantity.toString(), normalFont))
-                addCell(createCell(it.unitPrice.toString(), normalFont))
-                addCell(createCell(it.totalPrice.toString(), normalFont))
+                addCell(createCell(formatAmount(it.unitPrice), normalFont))
+                addCell(createCell(formatAmount(it.totalPrice), normalFont))
             }
         }
         document.add(itemsTable)
@@ -161,7 +162,7 @@ class PdfGenerator {
             setSpacingBefore(10f)
 
             addCell(createCell("Subtotal", normalFont, horizontalAlignment = Element.ALIGN_RIGHT))
-            addCell(createCell("kshs ${invoice.subtotal}", normalFont))
+            addCell(createCell("kshs ${formatAmount(invoice.subtotal)}", normalFont))
 
             if (invoice.discountPercentage > 0 || invoice.discountAmount > 0) {
                 if (invoice.discountPercentage > 0) {
@@ -169,11 +170,11 @@ class PdfGenerator {
                 } else {
                     addCell(createCell("Discount", normalFont, horizontalAlignment = Element.ALIGN_RIGHT))
                 }
-                addCell(createCell("kshs ${invoice.discountAmount}", normalFont))
+                addCell(createCell("kshs ${formatAmount(invoice.discountAmount)}", normalFont))
             }
 
             addCell(createCell("TOTAL", companyBoldFont, horizontalAlignment = Element.ALIGN_RIGHT))
-            addCell(createCell("kshs ${invoice.finalTotal}", companyBoldFont))
+            addCell(createCell("kshs ${formatAmount(invoice.finalTotal)}", companyBoldFont))
         }
         document.add(totalTable)
 
@@ -183,6 +184,22 @@ class PdfGenerator {
             spacingBefore = 5f
         }
         document.add(totalWords)
+
+        // Notes Section
+        if (!invoice.notes.isNullOrBlank()) {
+            log.info("Adding notes to invoice ${invoice.invoiceNumber}")
+            val notesTitle = Paragraph("Notes:", companyBoldFont).apply {
+                alignment = Element.ALIGN_LEFT
+                spacingBefore = 10f
+            }
+            document.add(notesTitle)
+            val notesBody = Paragraph(invoice.notes, normalFont).apply {
+                alignment = Element.ALIGN_LEFT
+                spacingBefore = 2f
+            }
+            document.add(notesBody)
+        }else
+            log.info("No notes provided for invoice ${invoice.invoiceNumber}")
 
         document.close()
         writer.close()
@@ -222,5 +239,19 @@ class PdfGenerator {
             number < 1000000 -> convertToWords(number / 1000) + " thousand " + convertToWords(number % 1000)
             else -> number.toString()
         }.trim().replace("\\s+".toRegex(), " ")
+    }
+
+    // Add helper for formatting description
+    private fun formatDescription(description: String): String {
+        return description.replace("_", " ")
+            .lowercase()
+            .split(" ")
+            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+            .trim()
+    }
+
+    // Add helper for formatting amounts with commas
+    private fun formatAmount(amount: Double): String {
+        return "%,.2f".format(amount)
     }
 }

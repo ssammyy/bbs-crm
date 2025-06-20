@@ -46,7 +46,7 @@ class AuthController(
 
         val user = userRepository.findByUsernameOrEmail(username, username) ?: throw BadRequestException("User not found")
         if (!userService.validatePassword(password, user.password)) {
-            return ResponseEntity.status(401).body("Invalid credentials")
+            return ResponseEntity.status(401).body(mapOf("message" to "Invalid credentials"))
         }
 
 
@@ -55,9 +55,9 @@ class AuthController(
     }
 
     @PostMapping("/request-password-reset")
-    fun requestReset(@RequestParam email: String): ResponseEntity<String> {
+    fun requestReset(@RequestParam email: String): ResponseEntity<*> {
         val user = userRepository.findByEmail(email)
-            ?: return ResponseEntity.badRequest().body("No user with this email")
+            ?:   return ResponseEntity.badRequest().body(mapOf("message" to "No user with this email"))
 
         val token = UUID.randomUUID().toString()
         val expiry = LocalDateTime.now().plusHours(1)
@@ -72,7 +72,7 @@ class AuthController(
 
         emailService.sendResetPasswordEmail(email, token)
 
-        return ResponseEntity.ok("Reset link sent to email")
+        return ResponseEntity.ok(mapOf("message" to "Reset link sent to email"))
     }
 
     @PostMapping("/reset-password")

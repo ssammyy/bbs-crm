@@ -49,6 +49,9 @@ data class User(
     @Column
     var commissionPercentage: Long? = null,
 
+    @Column(nullable = false)
+    var termsAccepted: Boolean = false,
+
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     var role: Role? = null,
@@ -69,5 +72,6 @@ data class User(
         nextOfKinPhoneNumber = null,
         role = Role(),
         commissionPercentage = null,
+        termsAccepted = false
     )
 }

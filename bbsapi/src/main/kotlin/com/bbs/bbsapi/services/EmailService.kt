@@ -84,7 +84,8 @@ class EmailService(
             attachments.disposition = "attachment"
             mail.addAttachments(attachments)
         }
-
+//bbsltd.co.ke
+//        https://cart.godaddy.com/go/checkout?cart_ref=sso&cart_count=2&sc_code=1#/complete
         try {
             val request = Request()
             request.method = Method.POST
@@ -143,7 +144,7 @@ class EmailService(
     }
 
     fun sendResetPasswordEmail(to: String, token: String, user: User? = null, attachment: EmailAttachment? = null) {
-        val link = "$siteUrl/reset-password?token=$token"
+        val link = "$siteUrl/api/set-password/$token"
         val htmlContent = """
             <html>
             <body>

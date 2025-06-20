@@ -9,4 +9,5 @@ interface NotificationRepository : JpaRepository<Notification, Long> {
     fun findByUserIdAndIsReadIsFalseOrderByCreatedOnDesc(userId: Long): List<Notification>
     fun countByUserIdAndIsReadFalse(userId: Long): Long
     fun findByUserIdAndIsReadFalseOrderByCreatedOnDesc(userId: Long): List<Notification>
+    fun deleteAllByUserId(userId: Long)
 } 

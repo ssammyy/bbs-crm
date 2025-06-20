@@ -25,7 +25,8 @@ class UserService(
     private val roleRepository: RoleRepository,
     private val tokenRepository: TokenRepository,
     private val emailService: EmailService,
-    private val pendingAgentApprovalRepository: PendingAgentApprovalRepository
+    private val pendingAgentApprovalRepository: PendingAgentApprovalRepository,
+    private val notificationRepository: NotificationRepository
 ) {
     val logger = LoggerFactory.getLogger(UserService::class.java)
 
@@ -210,6 +211,8 @@ class UserService(
 
     @Transactional
     fun deleteUser(userId: Long) {
+        notificationRepository.deleteAllByUserId(userId)
+        tokenRepository.deleteAllByUser_Id(userId)
         userRepository.deleteById(userId)
     }
 
@@ -261,8 +264,17 @@ class UserService(
                         it.updatedOn
                     )
                 } ?: emptyList(),
-            )
+            ),
+            termsAccepted = user.termsAccepted
         )
+    }
+
+    @Transactional
+    fun acceptTerms(username: String): UserDTO {
+        val user = userRepository.findByUsername(username) ?: throw RuntimeException("User not found")
+        user.termsAccepted = true
+        val updatedUser = userRepository.save(user)
+        return getUserDetails(updatedUser.username)
     }
 
     fun getLoggedInUser(): CustomUserDetails {
